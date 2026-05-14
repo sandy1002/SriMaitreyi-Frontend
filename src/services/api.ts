@@ -29,7 +29,7 @@ export async function createSession(payload: {
   session_date: string;
   hospital_name: string;
 }) {
-  return apiRequest('/sessions/start/', {
+  return apiRequest('/sessions/start', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
