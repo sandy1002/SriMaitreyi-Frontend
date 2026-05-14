@@ -20,7 +20,7 @@ export function Header() {
             <Activity className="h-5 w-5 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground">DialyCare</h1>
+            <h1 className="text-lg font-bold text-foreground">Srimai</h1>
             <p className="text-xs text-muted-foreground">Patient Journal</p>
           </div>
         </div>
