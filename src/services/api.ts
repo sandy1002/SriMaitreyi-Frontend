@@ -10,14 +10,14 @@ async function apiRequest(path: string, options?: RequestInit) {
 }
 
 export async function fetchPatients() {
-  const data = await apiRequest('/patients');
+  const data = await apiRequest('/patients/');
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.patients)) return data.patients;
   return [];
 }
 
 export async function loginApi(patientId: string, role: 'patient' | 'clinician') {
-  return apiRequest('/auth/login', {
+  return apiRequest('/auth/login/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ patient_id: patientId, role }),
@@ -29,7 +29,7 @@ export async function createSession(payload: {
   session_date: string;
   hospital_name: string;
 }) {
-  return apiRequest('/sessions/start', {
+  return apiRequest('/sessions/start/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
