@@ -10,13 +10,20 @@ import { Activity, User, Stethoscope } from 'lucide-react';
 export default function Login() {
   const [selectedPatient, setSelectedPatient] = useState('');
   const [role, setRole] = useState<'patient' | 'clinician'>('patient');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, patients, patientsError } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    if (selectedPatient) {
-      login(selectedPatient, role);
+  const handleLogin = async () => {
+    if (!selectedPatient) return;
+    setIsSubmitting(true);
+    try {
+      await login(selectedPatient, role);
       navigate('/dashboard');
+    } catch (err) {
+      console.error('Login failed', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -97,11 +104,11 @@ export default function Login() {
 
             <Button
               onClick={handleLogin}
-              disabled={!selectedPatient}
+              disabled={!selectedPatient || isSubmitting}
               className="w-full"
               size="lg"
             >
-              Continue to Dashboard
+              {isSubmitting ? 'Continuing...' : 'Continue to Dashboard'}
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">

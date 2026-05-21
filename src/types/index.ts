@@ -7,6 +7,16 @@ export interface Patient {
   dialysisStartDate: string;
 }
 
+export interface PreDialysisAssessment {
+  weightKg: number;
+  bloodPressure: string;
+  pulse: number;
+  temperature: number;
+  bloodSugar: number;
+  accessCondition: 'Normal' | 'Abnormal';
+  ufGoal: string;
+}
+
 export interface DialysisSession {
   id: string;
   patientId: string;
@@ -15,6 +25,7 @@ export interface DialysisSession {
   status: 'in-progress' | 'completed';
   createdAt: string;
   summary?: string;
+  preDialysisAssessment?: PreDialysisAssessment;
 }
 
 export interface SessionNote {

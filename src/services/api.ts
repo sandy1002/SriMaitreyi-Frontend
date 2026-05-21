@@ -28,6 +28,13 @@ export async function createSession(payload: {
   patient_id: string;
   session_date: string;
   hospital_name: string;
+  weight_kg: number;
+  blood_pressure: string;
+  pulse: number;
+  temperature: number;
+  blood_sugar: number;
+  access_condition: 'Normal' | 'Abnormal';
+  uf_goal: string;
 }) {
   return apiRequest('/sessions/start', {
     method: 'POST',
@@ -52,10 +59,21 @@ export async function addNote(sessionId: string, noteText: string) {
   });
 }
 
-export async function closeSession(sessionId: string) {
-  return apiRequest(`/sessions/${sessionId}/end`, {
-    method: 'POST',
-  });
+export async function closeSession(sessionId: string, payload?: {
+  post_weight_kg?: number;
+  post_bp?: string;
+  total_uf_removed?: number;
+  condition?: 'Stable' | 'Unstable';
+  technician_name?: string;
+  nurse_name?: string;
+  doctor_name?: string;
+}) {
+  const options: RequestInit = { method: 'POST' };
+  if (payload) {
+    options.headers = { 'Content-Type': 'application/json' };
+    options.body = JSON.stringify(payload);
+  }
+  return apiRequest(`/sessions/${sessionId}/end`, options);
 }
 
 export async function uploadAttachment(
