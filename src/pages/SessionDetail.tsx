@@ -19,6 +19,12 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 import {
@@ -36,6 +42,9 @@ import {
   Clock,
   CheckCircle,
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -78,6 +87,17 @@ export default function SessionDetail() {
   const [noteText, setNoteText] = useState('');
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+
+  // post-dialysis form fields
+  const [postWeight, setPostWeight] = useState<string>('');
+  const [postBp, setPostBp] = useState<string>('');
+  const [totalUf, setTotalUf] = useState<string>('');
+  const [condition, setCondition] = useState<'Stable' | 'Unstable'>('Stable');
+  const [technicianName, setTechnicianName] = useState('');
+  const [nurseName, setNurseName] = useState('');
+  const [doctorName, setDoctorName] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Local attachment state so we can append newly uploaded files
   const [allAttachments, setAllAttachments] = useState<SessionAttachment[]>(
@@ -101,6 +121,94 @@ export default function SessionDetail() {
   }, [attachments]);
 
   const session = currentSession;
+
+  const assessment = session
+    ? (session as any).preDialysisAssessment ?? {
+        weightKg:
+          (session as any).preDialysisAssessment?.weightKg ??
+          (session as any).weightKg ??
+          (session as any).weight_kg ?? null,
+        bloodPressure:
+          (session as any).preDialysisAssessment?.bloodPressure ??
+          (session as any).bloodPressure ??
+          (session as any).blood_pressure ?? '',
+        pulse:
+          (session as any).preDialysisAssessment?.pulse ??
+          (session as any).pulse ??
+          (session as any).pulse ?? null,
+        temperature:
+          (session as any).preDialysisAssessment?.temperature ??
+          (session as any).temperature ??
+          (session as any).temperature ?? null,
+        bloodSugar:
+          (session as any).preDialysisAssessment?.bloodSugar ??
+          (session as any).bloodSugar ??
+          (session as any).blood_sugar ?? null,
+        accessCondition:
+          (session as any).preDialysisAssessment?.accessCondition ??
+          (session as any).accessCondition ??
+          (session as any).access_condition ?? '',
+        ufGoal:
+          (session as any).preDialysisAssessment?.ufGoal ??
+          (session as any).ufGoal ??
+          (session as any).uf_goal ?? '',
+      }
+    : null;
+
+  const hasAssessmentData = !!assessment &&
+    [
+      assessment.weightKg,
+      assessment.bloodPressure,
+      assessment.pulse,
+      assessment.temperature,
+      assessment.bloodSugar,
+      assessment.accessCondition,
+      assessment.ufGoal,
+    ].some((value) => value !== null && value !== undefined && value !== '');
+
+  const postAssessment = session
+    ? (session as any).postDialysisAssessment ?? {
+        postWeightKg:
+          (session as any).postDialysisAssessment?.postWeightKg ??
+          (session as any).postWeightKg ??
+          (session as any).post_weight_kg ?? null,
+        postBp:
+          (session as any).postDialysisAssessment?.postBp ??
+          (session as any).postBp ??
+          (session as any).post_bp ?? '',
+        totalUfRemoved:
+          (session as any).postDialysisAssessment?.totalUfRemoved ??
+          (session as any).totalUfRemoved ??
+          (session as any).total_uf_removed ?? null,
+        condition:
+          (session as any).postDialysisAssessment?.condition ??
+          (session as any).condition ??
+          (session as any).condition ?? '',
+        technicianName:
+          (session as any).postDialysisAssessment?.technicianName ??
+          (session as any).technicianName ??
+          (session as any).technician_name ?? '',
+        nurseName:
+          (session as any).postDialysisAssessment?.nurseName ??
+          (session as any).nurseName ??
+          (session as any).nurse_name ?? '',
+        doctorName:
+          (session as any).postDialysisAssessment?.doctorName ??
+          (session as any).doctorName ??
+          (session as any).doctor_name ?? '',
+      }
+    : null;
+
+  const hasPostAssessmentData = !!postAssessment &&
+    [
+      postAssessment.postWeightKg,
+      postAssessment.postBp,
+      postAssessment.totalUfRemoved,
+      postAssessment.condition,
+      postAssessment.technicianName,
+      postAssessment.nurseName,
+      postAssessment.doctorName,
+    ].some((value) => value !== null && value !== undefined && value !== '');
 
   const photoAttachments =
     allAttachments?.filter((a) => a.fileType === 'image') ?? [];
@@ -252,24 +360,201 @@ export default function SessionDetail() {
               </Badge>
 
               {!isCompleted && isPatient && (
-                <Button
-                  disabled={closing}
-                  onClick={async () => {
-                    setClosing(true);
-                    await closeSession(session.id);
-                    toast({
-                      title: 'Session Closed',
-                      description: 'Your dialysis session is completed.',
-                    });
-                  }}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Close Session
-                </Button>
+                <>
+                  <Button
+                    disabled={closing}
+                    onClick={() => setCloseDialogOpen(true)}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Close Session
+                  </Button>
+
+                  <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Complete Session</DialogTitle>
+                        <DialogDescription>
+                          Please enter the mandatory post-dialysis values and staff names.
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      <div className="grid gap-3 py-2">
+                        {formError && (
+                          <p className="text-sm text-destructive">{formError}</p>
+                        )}
+
+                        <div className="grid sm:grid-cols-2 gap-2">
+                          <div>
+                            <Label htmlFor="postWeight">Post Weight (kg)</Label>
+                            <Input id="postWeight" type="number" value={postWeight} onChange={e => setPostWeight(e.target.value)} />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="postBp">Post BP</Label>
+                            <Input id="postBp" type="text" value={postBp} onChange={e => setPostBp(e.target.value)} />
+                          </div>
+                        </div>
+
+                        <div className="grid sm:grid-cols-2 gap-2">
+                          <div>
+                            <Label htmlFor="totalUf">Total UF Removed (L)</Label>
+                            <Input id="totalUf" type="number" value={totalUf} onChange={e => setTotalUf(e.target.value)} />
+                          </div>
+                          <div>
+                            <Label htmlFor="condition">Condition</Label>
+                            <select id="condition" className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm" value={condition} onChange={e => setCondition(e.target.value as 'Stable' | 'Unstable')}>
+                              <option value="Stable">Stable</option>
+                              <option value="Unstable">Unstable</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid sm:grid-cols-3 gap-2">
+                          <div>
+                            <Label htmlFor="technician">Technician Name</Label>
+                            <Input id="technician" value={technicianName} onChange={e => setTechnicianName(e.target.value)} />
+                          </div>
+                          <div>
+                            <Label htmlFor="nurse">Nurse Name</Label>
+                            <Input id="nurse" value={nurseName} onChange={e => setNurseName(e.target.value)} />
+                          </div>
+                          <div>
+                            <Label htmlFor="doctor">Doctor Name</Label>
+                            <Input id="doctor" value={doctorName} onChange={e => setDoctorName(e.target.value)} />
+                          </div>
+                        </div>
+                      </div>
+
+                      <DialogFooter>
+                        <div className="flex gap-2">
+                          <Button variant="outline" onClick={() => setCloseDialogOpen(false)}>Cancel</Button>
+                          <Button onClick={async () => {
+                            // validate required fields
+                            if (!postWeight || !postBp || !totalUf || !technicianName || !nurseName || !doctorName) {
+                              setFormError('All fields are required before closing the session.');
+                              return;
+                            }
+                            setFormError(null);
+                            setClosing(true);
+                            try {
+                              await closeSession(session.id, {
+                                postWeightKg: Number(postWeight),
+                                postBp: postBp,
+                                totalUfRemoved: Number(totalUf),
+                                condition,
+                                technicianName,
+                                nurseName,
+                                doctorName,
+                              });
+
+                              toast({ title: 'Session Closed', description: 'Your dialysis session is completed.' });
+                              setCloseDialogOpen(false);
+                            } catch (err) {
+                              console.error(err);
+                              toast({ title: 'Error', description: 'Failed to close session.', variant: 'destructive' });
+                            } finally {
+                              setClosing(false);
+                            }
+                          }} disabled={closing}>{closing ? 'Closing...' : 'Close Session'}</Button>
+                        </div>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </>
               )}
             </div>
           </CardContent>
         </Card>
+
+        <Accordion type="single" collapsible className="pt-2">
+          <AccordionItem value="pre-dialysis">
+            <AccordionTrigger className="text-lg font-medium">
+              Pre-Dialysis Assessment
+            </AccordionTrigger>
+            <AccordionContent>
+              <p className="text-sm text-muted-foreground">
+                Assessment values recorded when the session was started.
+              </p>
+
+              <div className="mt-3 space-y-1 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Weight (kg): </span>
+                  <span className="font-semibold">{assessment.weightKg ?? 'null'}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Blood Pressure: </span>
+                  <span className="font-semibold">{assessment.bloodPressure || 'null'}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Pulse: </span>
+                  <span className="font-semibold">{assessment.pulse ?? 'null'}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Temperature: </span>
+                  <span className="font-semibold">{assessment.temperature ?? 'null'}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Blood Sugar: </span>
+                  <span className="font-semibold">{assessment.bloodSugar ?? 'null'}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Access Condition: </span>
+                  <span className="font-semibold">{assessment.accessCondition || 'null'}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">UF Goal (Pre - Dry): </span>
+                  <span className="font-semibold">{assessment.ufGoal || 'null'}</span>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+
+        {/* {isCompleted && hasPostAssessmentData && ( */}
+          <Accordion type="single" collapsible className="pt-2">
+            <AccordionItem value="post-dialysis">
+              <AccordionTrigger className="text-lg font-medium">
+                Post-Dialysis Assessment
+              </AccordionTrigger>
+              <AccordionContent>
+                <p className="text-sm text-muted-foreground">
+                  Assessment values recorded when the session was closed.
+                </p>
+
+                <div className="mt-3 space-y-1 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Post Weight (kg): </span>
+                    <span className="font-semibold">{postAssessment.postWeightKg ?? 'null'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Post BP: </span>
+                    <span className="font-semibold">{postAssessment.postBp || 'null'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Total UF Removed: </span>
+                    <span className="font-semibold">{postAssessment.totalUfRemoved ?? 'null'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Condition: </span>
+                    <span className="font-semibold">{postAssessment.condition || 'null'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Technician Name: </span>
+                    <span className="font-semibold">{postAssessment.technicianName || 'null'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Nurse Name: </span>
+                    <span className="font-semibold">{postAssessment.nurseName || 'null'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Doctor Name: </span>
+                    <span className="font-semibold">{postAssessment.doctorName || 'null'}</span>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        {/* )} */}
 
         {/* Notes / Attachments / Photos / Audio */}
         <Tabs defaultValue="notes">

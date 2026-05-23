@@ -16,11 +16,28 @@ interface SessionContextType {
   createSession: (
     patientId: string,
     hospitalName: string,
-    sessionDate: string
+    sessionDate: string,
+    assessment: {
+      weightKg: number;
+      bloodPressure: string;
+      pulse: number;
+      temperature: number;
+      bloodSugar: number;
+      accessCondition: 'Normal' | 'Abnormal';
+      ufGoal: string;
+    }
   ) => Promise<DialysisSession>;
 
   addNote: (sessionId: string, noteText: string) => Promise<void>;
-  closeSession: (sessionId: string) => Promise<void>;
+  closeSession: (sessionId: string, payload?: {
+    postWeightKg?: number;
+    postBp?: string;
+    totalUfRemoved?: number;
+    condition?: 'Stable' | 'Unstable';
+    technicianName?: string;
+    nurseName?: string;
+    doctorName?: string;
+  }) => Promise<void>;
 
   notes: SessionNote[];
   attachments: SessionAttachment[];
@@ -60,12 +77,28 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const createSession = async (
     patientId: string,
     hospitalName: string,
-    sessionDate: string
+    sessionDate: string,
+    assessment: {
+      weightKg: number;
+      bloodPressure: string;
+      pulse: number;
+      temperature: number;
+      bloodSugar: number;
+      accessCondition: 'Normal' | 'Abnormal';
+      ufGoal: string;
+    }
   ): Promise<DialysisSession> => {
     const session = await api.createSession({
       patient_id: patientId,
       hospital_name: hospitalName,
       session_date: sessionDate,
+      weight_kg: assessment.weightKg,
+      blood_pressure: assessment.bloodPressure,
+      pulse: assessment.pulse,
+      temperature: assessment.temperature,
+      blood_sugar: assessment.bloodSugar,
+      access_condition: assessment.accessCondition,
+      uf_goal: assessment.ufGoal,
     });
 
     setSessions(prev => [...prev, session]);
@@ -87,8 +120,29 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   // -------------------------------
   // Close session
   // -------------------------------
-  const closeSession = async (sessionId: string) => {
-    await api.closeSession(sessionId);
+  const closeSession = async (sessionId: string, payload?: {
+    postWeightKg?: number;
+    postBp?: string;
+    totalUfRemoved?: number;
+    condition?: 'Stable' | 'Unstable';
+    technicianName?: string;
+    nurseName?: string;
+    doctorName?: string;
+  }) => {
+    // map to backend field names
+    const body = payload
+      ? {
+          post_weight_kg: payload.postWeightKg,
+          post_bp: payload.postBp,
+          total_uf_removed: payload.totalUfRemoved,
+          condition: payload.condition,
+          technician_name: payload.technicianName,
+          nurse_name: payload.nurseName,
+          doctor_name: payload.doctorName,
+        }
+      : undefined;
+
+    await api.closeSession(sessionId, body);
 
     setCurrentSession(prev =>
       prev ? { ...prev, status: 'completed' } : prev
