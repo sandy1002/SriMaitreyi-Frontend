@@ -4,42 +4,42 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage } from '@/types';
+import { askClinicalAgent } from '@/services/api';
+import { AlertsPanel } from '@/components/clinical/AlertsPanel';
 import { Bot, Send, User, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { ClinicalAlert, ClinicalCheck } from '@/types';
 
 interface AIAssistantProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  patientId: string;
 }
 
-const mockResponses = [
-  "Based on your recent sessions, I noticed you've experienced dizziness on two occasions. This pattern might be worth discussing with your care team.",
-  "Your last three sessions show stable vital signs overall. The mild fatigue you reported is common after dialysis treatment.",
-  "I found that your sessions at City General Hospital have been consistent. No significant adverse events have been recorded.",
-  "Looking at your notes, saline administration has been effective when dizziness occurred. Your care team has been monitoring this closely.",
-];
-
-export function AIAssistant({ open, onOpenChange }: AIAssistantProps) {
+export function AIAssistant({ open, onOpenChange, patientId }: AIAssistantProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
       role: 'assistant',
-      content: "Hello! I'm your AI health assistant. I can help you understand your dialysis sessions, find patterns, and answer questions about your treatment history. How can I help you today?",
+      content:
+        "Hello! I'm your dialysis health assistant. Ask about your sessions, symptoms, or what to watch for. I'll use your session data and clinical alerts to respond.",
       timestamp: new Date().toISOString(),
     },
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [latestAlerts, setLatestAlerts] = useState<ClinicalAlert[]>([]);
+  const [latestChecks, setLatestChecks] = useState<ClinicalCheck[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, latestAlerts]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !patientId) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -48,26 +48,40 @@ export function AIAssistant({ open, onOpenChange }: AIAssistantProps) {
       timestamp: new Date().toISOString(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
+    const question = input;
     setInput('');
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const result = await askClinicalAgent(patientId, question);
+      setLatestAlerts(result.alerts);
+      setLatestChecks(result.checks);
+
       const response: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: mockResponses[Math.floor(Math.random() * mockResponses.length)],
+        content: result.answer,
         timestamp: new Date().toISOString(),
       };
-      setMessages(prev => [...prev, response]);
+      setMessages((prev) => [...prev, response]);
+    } catch {
+      const response: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content:
+          'Sorry, I could not reach the clinical assistant. Please check your connection and try again.',
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, response]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] h-[600px] flex flex-col p-0">
+      <DialogContent className="sm:max-w-[560px] h-[640px] flex flex-col p-0">
         <DialogHeader className="px-6 py-4 border-b border-border">
           <DialogTitle className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
@@ -79,6 +93,10 @@ export function AIAssistant({ open, onOpenChange }: AIAssistantProps) {
 
         <ScrollArea className="flex-1 px-6 py-4" ref={scrollRef}>
           <div className="space-y-4">
+            {(latestAlerts.length > 0 || latestChecks.length > 0) && (
+              <AlertsPanel alerts={latestAlerts} checks={latestChecks} title="From your records" />
+            )}
+
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -101,27 +119,27 @@ export function AIAssistant({ open, onOpenChange }: AIAssistantProps) {
                 </div>
                 <div
                   className={cn(
-                    'rounded-2xl px-4 py-3 max-w-[80%]',
+                    'rounded-2xl px-4 py-3 max-w-[85%]',
                     message.role === 'assistant'
                       ? 'bg-secondary text-foreground'
                       : 'bg-primary text-primary-foreground'
                   )}
                 >
-                  <p className="text-sm leading-relaxed">{message.content}</p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                 </div>
               </div>
             ))}
-            
+
             {isTyping && (
-              <div className="flex gap-3 animate-fade-in">
+              <div className="flex gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
                   <Bot className="h-4 w-4 text-primary-foreground" />
                 </div>
                 <div className="rounded-2xl bg-secondary px-4 py-3">
                   <div className="flex gap-1">
-                    <span className="h-2 w-2 rounded-full bg-muted-foreground animate-pulse-soft" />
-                    <span className="h-2 w-2 rounded-full bg-muted-foreground animate-pulse-soft [animation-delay:0.2s]" />
-                    <span className="h-2 w-2 rounded-full bg-muted-foreground animate-pulse-soft [animation-delay:0.4s]" />
+                    <span className="h-2 w-2 rounded-full bg-muted-foreground animate-pulse" />
+                    <span className="h-2 w-2 rounded-full bg-muted-foreground animate-pulse [animation-delay:0.2s]" />
+                    <span className="h-2 w-2 rounded-full bg-muted-foreground animate-pulse [animation-delay:0.4s]" />
                   </div>
                 </div>
               </div>
@@ -131,7 +149,7 @@ export function AIAssistant({ open, onOpenChange }: AIAssistantProps) {
 
         <div className="px-6 py-4 border-t border-border">
           <p className="text-xs text-muted-foreground mb-3 text-center">
-            ⚠️ This assistant provides information only. Always consult your healthcare provider for medical decisions.
+            This assistant provides information only. Always consult your healthcare provider for medical decisions.
           </p>
           <form
             onSubmit={(e) => {
@@ -143,7 +161,7 @@ export function AIAssistant({ open, onOpenChange }: AIAssistantProps) {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about your sessions..."
+              placeholder="Ask about your sessions or symptoms..."
               className="flex-1"
             />
             <Button type="submit" size="icon" disabled={!input.trim() || isTyping}>

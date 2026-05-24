@@ -158,7 +158,11 @@ export default function Dashboard() {
         </Card>
       </main>
 
-      <AIAssistant open={showAssistant} onOpenChange={setShowAssistant} />
+      <AIAssistant
+        open={showAssistant}
+        onOpenChange={setShowAssistant}
+        patientId={patient.id}
+      />
     </div>
   );
 }
