@@ -50,6 +50,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import * as api from '@/services/api';
 import { SessionAttachment } from '@/types';
+import { AlertsPanel } from '@/components/clinical/AlertsPanel';
 
 /* ---------------------------------------
    Safe Date Formatter (CRITICAL)
@@ -71,6 +72,8 @@ export default function SessionDetail() {
     currentSession,
     notes,
     attachments,
+    alerts,
+    checks,
     loadSessionDetails,
     addNote,
     closeSession,
@@ -121,94 +124,8 @@ export default function SessionDetail() {
   }, [attachments]);
 
   const session = currentSession;
-
-  const assessment = session
-    ? (session as any).preDialysisAssessment ?? {
-        weightKg:
-          (session as any).preDialysisAssessment?.weightKg ??
-          (session as any).weightKg ??
-          (session as any).weight_kg ?? null,
-        bloodPressure:
-          (session as any).preDialysisAssessment?.bloodPressure ??
-          (session as any).bloodPressure ??
-          (session as any).blood_pressure ?? '',
-        pulse:
-          (session as any).preDialysisAssessment?.pulse ??
-          (session as any).pulse ??
-          (session as any).pulse ?? null,
-        temperature:
-          (session as any).preDialysisAssessment?.temperature ??
-          (session as any).temperature ??
-          (session as any).temperature ?? null,
-        bloodSugar:
-          (session as any).preDialysisAssessment?.bloodSugar ??
-          (session as any).bloodSugar ??
-          (session as any).blood_sugar ?? null,
-        accessCondition:
-          (session as any).preDialysisAssessment?.accessCondition ??
-          (session as any).accessCondition ??
-          (session as any).access_condition ?? '',
-        ufGoal:
-          (session as any).preDialysisAssessment?.ufGoal ??
-          (session as any).ufGoal ??
-          (session as any).uf_goal ?? '',
-      }
-    : null;
-
-  const hasAssessmentData = !!assessment &&
-    [
-      assessment.weightKg,
-      assessment.bloodPressure,
-      assessment.pulse,
-      assessment.temperature,
-      assessment.bloodSugar,
-      assessment.accessCondition,
-      assessment.ufGoal,
-    ].some((value) => value !== null && value !== undefined && value !== '');
-
-  const postAssessment = session
-    ? (session as any).postDialysisAssessment ?? {
-        postWeightKg:
-          (session as any).postDialysisAssessment?.postWeightKg ??
-          (session as any).postWeightKg ??
-          (session as any).post_weight_kg ?? null,
-        postBp:
-          (session as any).postDialysisAssessment?.postBp ??
-          (session as any).postBp ??
-          (session as any).post_bp ?? '',
-        totalUfRemoved:
-          (session as any).postDialysisAssessment?.totalUfRemoved ??
-          (session as any).totalUfRemoved ??
-          (session as any).total_uf_removed ?? null,
-        condition:
-          (session as any).postDialysisAssessment?.condition ??
-          (session as any).condition ??
-          (session as any).condition ?? '',
-        technicianName:
-          (session as any).postDialysisAssessment?.technicianName ??
-          (session as any).technicianName ??
-          (session as any).technician_name ?? '',
-        nurseName:
-          (session as any).postDialysisAssessment?.nurseName ??
-          (session as any).nurseName ??
-          (session as any).nurse_name ?? '',
-        doctorName:
-          (session as any).postDialysisAssessment?.doctorName ??
-          (session as any).doctorName ??
-          (session as any).doctor_name ?? '',
-      }
-    : null;
-
-  const hasPostAssessmentData = !!postAssessment &&
-    [
-      postAssessment.postWeightKg,
-      postAssessment.postBp,
-      postAssessment.totalUfRemoved,
-      postAssessment.condition,
-      postAssessment.technicianName,
-      postAssessment.nurseName,
-      postAssessment.doctorName,
-    ].some((value) => value !== null && value !== undefined && value !== '');
+  const assessment = session?.preDialysisAssessment;
+  const postAssessment = session?.postDialysisAssessment;
 
   const photoAttachments =
     allAttachments?.filter((a) => a.fileType === 'image') ?? [];
@@ -242,11 +159,14 @@ export default function SessionDetail() {
 
     setIsSubmittingNote(true);
     try {
-      await addNote(session.id, noteText);
+      const result = await addNote(session.id, noteText);
       setNoteText('');
       toast({
         title: 'Note Added',
-        description: 'Your session note has been saved.',
+        description:
+          result.alerts.length > 0
+            ? `Note saved. ${result.alerts.length} new alert(s) to review.`
+            : 'Your session note has been saved.',
       });
     } catch {
       toast({
@@ -437,7 +357,7 @@ export default function SessionDetail() {
                             setFormError(null);
                             setClosing(true);
                             try {
-                              await closeSession(session.id, {
+                              const result = await closeSession(session.id, {
                                 postWeightKg: Number(postWeight),
                                 postBp: postBp,
                                 totalUfRemoved: Number(totalUf),
@@ -447,7 +367,14 @@ export default function SessionDetail() {
                                 doctorName,
                               });
 
-                              toast({ title: 'Session Closed', description: 'Your dialysis session is completed.' });
+                              await loadSessionDetails(session.id);
+                              toast({
+                                title: 'Session Closed',
+                                description:
+                                  result.alerts.length > 0
+                                    ? `Session completed. ${result.alerts.length} alert(s) recorded.`
+                                    : 'Your dialysis session is completed.',
+                              });
                               setCloseDialogOpen(false);
                             } catch (err) {
                               console.error(err);
@@ -466,6 +393,14 @@ export default function SessionDetail() {
           </CardContent>
         </Card>
 
+        {(alerts.length > 0 || checks.length > 0) && (
+          <Card>
+            <CardContent className="p-6">
+              <AlertsPanel alerts={alerts} checks={checks} />
+            </CardContent>
+          </Card>
+        )}
+
         <Accordion type="single" collapsible className="pt-2">
           <AccordionItem value="pre-dialysis">
             <AccordionTrigger className="text-lg font-medium">
@@ -479,38 +414,38 @@ export default function SessionDetail() {
               <div className="mt-3 space-y-1 text-sm">
                 <div>
                   <span className="text-muted-foreground">Weight (kg): </span>
-                  <span className="font-semibold">{assessment.weightKg ?? 'null'}</span>
+                  <span className="font-semibold">{assessment?.weightKg ?? '—'}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Blood Pressure: </span>
-                  <span className="font-semibold">{assessment.bloodPressure || 'null'}</span>
+                  <span className="font-semibold">{assessment?.bloodPressure || '—'}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Pulse: </span>
-                  <span className="font-semibold">{assessment.pulse ?? 'null'}</span>
+                  <span className="font-semibold">{assessment?.pulse ?? '—'}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Temperature: </span>
-                  <span className="font-semibold">{assessment.temperature ?? 'null'}</span>
+                  <span className="font-semibold">{assessment?.temperature ?? '—'}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Blood Sugar: </span>
-                  <span className="font-semibold">{assessment.bloodSugar ?? 'null'}</span>
+                  <span className="font-semibold">{assessment?.bloodSugar ?? '—'}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Access Condition: </span>
-                  <span className="font-semibold">{assessment.accessCondition || 'null'}</span>
+                  <span className="font-semibold">{assessment?.accessCondition || '—'}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">UF Goal (Pre - Dry): </span>
-                  <span className="font-semibold">{assessment.ufGoal || 'null'}</span>
+                  <span className="font-semibold">{assessment?.ufGoal || '—'}</span>
                 </div>
               </div>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
 
-        {/* {isCompleted && hasPostAssessmentData && ( */}
+        {isCompleted && (
           <Accordion type="single" collapsible className="pt-2">
             <AccordionItem value="post-dialysis">
               <AccordionTrigger className="text-lg font-medium">
@@ -524,45 +459,46 @@ export default function SessionDetail() {
                 <div className="mt-3 space-y-1 text-sm">
                   <div>
                     <span className="text-muted-foreground">Post Weight (kg): </span>
-                    <span className="font-semibold">{postAssessment.postWeightKg ?? 'null'}</span>
+                    <span className="font-semibold">{postAssessment?.postWeightKg ?? '—'}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Post BP: </span>
-                    <span className="font-semibold">{postAssessment.postBp || 'null'}</span>
+                    <span className="font-semibold">{postAssessment?.postBp || '—'}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Total UF Removed: </span>
-                    <span className="font-semibold">{postAssessment.totalUfRemoved ?? 'null'}</span>
+                    <span className="font-semibold">{postAssessment?.totalUfRemoved ?? '—'}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Condition: </span>
-                    <span className="font-semibold">{postAssessment.condition || 'null'}</span>
+                    <span className="font-semibold">{postAssessment?.condition || '—'}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Technician Name: </span>
-                    <span className="font-semibold">{postAssessment.technicianName || 'null'}</span>
+                    <span className="font-semibold">{postAssessment?.technicianName || '—'}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Nurse Name: </span>
-                    <span className="font-semibold">{postAssessment.nurseName || 'null'}</span>
+                    <span className="font-semibold">{postAssessment?.nurseName || '—'}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Doctor Name: </span>
-                    <span className="font-semibold">{postAssessment.doctorName || 'null'}</span>
+                    <span className="font-semibold">{postAssessment?.doctorName || '—'}</span>
                   </div>
                 </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-        {/* )} */}
+        )}
 
         {/* Notes / Attachments / Photos / Audio */}
         <Tabs defaultValue="notes">
-          <TabsList className="grid grid-cols-4">
+          <TabsList className="grid grid-cols-5">
             <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="attachments">All Attachments</TabsTrigger>
             <TabsTrigger value="photos">Photos</TabsTrigger>
             <TabsTrigger value="audio">Audio Session</TabsTrigger>
+            {isCompleted && <TabsTrigger value="summary">Summary</TabsTrigger>}
           </TabsList>
 
           {/* NOTES TAB */}
@@ -607,18 +543,15 @@ export default function SessionDetail() {
               <CardContent>
                 {notes.length ? (
                   <ScrollArea className="h-72 pr-4">
-                    {notes.map((note: any) => (
+                    {notes.map((note) => (
                       <div
                         key={note.id}
                         className="p-4 border rounded mb-3"
                       >
-                        <p>{note.note_text}</p>
+                        <p>{note.noteText}</p>
                         <div className="text-xs text-muted-foreground mt-2">
                           <Clock className="inline h-3 w-3 mr-1" />
-                          {safeFormat(
-                            note.created_at,
-                            'MMM d, yyyy h:mm a'
-                          )}
+                          {safeFormat(note.createdAt, 'MMM d, yyyy h:mm a')}
                         </div>
                       </div>
                     ))}
@@ -675,11 +608,19 @@ export default function SessionDetail() {
                     className="flex gap-3 p-3 border rounded items-center"
                   >
                     {getFileIcon(a.fileType)}
-                    <div>
+                    <div className="flex-1">
                       <p className="font-medium">{a.fileName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {a.fileType}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{a.fileType}</p>
+                      {a.fileUrl && (
+                        <a
+                          href={a.fileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-primary underline"
+                        >
+                          View file
+                        </a>
+                      )}
                     </div>
                   </div>
                 ))}

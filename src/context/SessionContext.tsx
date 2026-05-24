@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState } from 'react';
 import * as api from '@/services/api';
 import {
+  ClinicalAlert,
+  ClinicalCheck,
   DialysisSession,
   SessionNote,
   SessionAttachment,
@@ -26,54 +28,56 @@ interface SessionContextType {
       accessCondition: 'Normal' | 'Abnormal';
       ufGoal: string;
     }
-  ) => Promise<DialysisSession>;
+  ) => Promise<{ session: DialysisSession; alerts: ClinicalAlert[]; checks: ClinicalCheck[] }>;
 
-  addNote: (sessionId: string, noteText: string) => Promise<void>;
-  closeSession: (sessionId: string, payload?: {
-    postWeightKg?: number;
-    postBp?: string;
-    totalUfRemoved?: number;
-    condition?: 'Stable' | 'Unstable';
-    technicianName?: string;
-    nurseName?: string;
-    doctorName?: string;
-  }) => Promise<void>;
+  addNote: (
+    sessionId: string,
+    noteText: string
+  ) => Promise<{ alerts: ClinicalAlert[]; checks: ClinicalCheck[] }>;
+
+  closeSession: (
+    sessionId: string,
+    payload?: {
+      postWeightKg?: number;
+      postBp?: string;
+      totalUfRemoved?: number;
+      condition?: 'Stable' | 'Unstable';
+      technicianName?: string;
+      nurseName?: string;
+      doctorName?: string;
+    }
+  ) => Promise<{ session: DialysisSession; alerts: ClinicalAlert[]; checks: ClinicalCheck[] }>;
 
   notes: SessionNote[];
   attachments: SessionAttachment[];
+  alerts: ClinicalAlert[];
+  checks: ClinicalCheck[];
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [sessions, setSessions] = useState<DialysisSession[]>([]);
-  const [currentSession, setCurrentSession] =
-    useState<DialysisSession | null>(null);
+  const [currentSession, setCurrentSession] = useState<DialysisSession | null>(null);
   const [notes, setNotes] = useState<SessionNote[]>([]);
-  const [attachments, setAttachments] =
-    useState<SessionAttachment[]>([]);
+  const [attachments, setAttachments] = useState<SessionAttachment[]>([]);
+  const [alerts, setAlerts] = useState<ClinicalAlert[]>([]);
+  const [checks, setChecks] = useState<ClinicalCheck[]>([]);
 
-  // -------------------------------
-  // Load all sessions for a patient
-  // -------------------------------
   const loadSessionsByPatient = async (patientId: string) => {
     const data = await api.getPatientSessions(patientId);
     setSessions(data);
   };
 
-  // -------------------------------
-  // Load a single session details
-  // -------------------------------
   const loadSessionDetails = async (sessionId: string) => {
     const data = await api.getSession(sessionId);
     setCurrentSession(data.session);
     setNotes(data.notes);
     setAttachments(data.attachments);
+    setAlerts(data.alerts);
+    setChecks([]);
   };
 
-  // -------------------------------
-  // Create new dialysis session
-  // -------------------------------
   const createSession = async (
     patientId: string,
     hospitalName: string,
@@ -87,8 +91,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       accessCondition: 'Normal' | 'Abnormal';
       ufGoal: string;
     }
-  ): Promise<DialysisSession> => {
-    const session = await api.createSession({
+  ) => {
+    const result = await api.createSession({
       patient_id: patientId,
       hospital_name: hospitalName,
       session_date: sessionDate,
@@ -101,35 +105,36 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       uf_goal: assessment.ufGoal,
     });
 
-    setSessions(prev => [...prev, session]);
-    setCurrentSession(session);
+    setSessions((prev) => [result.session, ...prev]);
+    setCurrentSession(result.session);
     setNotes([]);
     setAttachments([]);
+    setAlerts(result.alerts);
+    setChecks(result.checks);
 
-    return session;
+    return result;
   };
 
-  // -------------------------------
-  // Add session note
-  // -------------------------------
   const addNote = async (sessionId: string, noteText: string) => {
-    const note = await api.addNote(sessionId, noteText);
-    setNotes(prev => [...prev, note]);
+    const result = await api.addNote(sessionId, noteText);
+    setNotes((prev) => [...prev, result.note]);
+    setAlerts(result.alerts);
+    setChecks(result.checks);
+    return result;
   };
 
-  // -------------------------------
-  // Close session
-  // -------------------------------
-  const closeSession = async (sessionId: string, payload?: {
-    postWeightKg?: number;
-    postBp?: string;
-    totalUfRemoved?: number;
-    condition?: 'Stable' | 'Unstable';
-    technicianName?: string;
-    nurseName?: string;
-    doctorName?: string;
-  }) => {
-    // map to backend field names
+  const closeSession = async (
+    sessionId: string,
+    payload?: {
+      postWeightKg?: number;
+      postBp?: string;
+      totalUfRemoved?: number;
+      condition?: 'Stable' | 'Unstable';
+      technicianName?: string;
+      nurseName?: string;
+      doctorName?: string;
+    }
+  ) => {
     const body = payload
       ? {
           post_weight_kg: payload.postWeightKg,
@@ -140,19 +145,16 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           nurse_name: payload.nurseName,
           doctor_name: payload.doctorName,
         }
-      : undefined;
+      : {};
 
-    await api.closeSession(sessionId, body);
-
-    setCurrentSession(prev =>
-      prev ? { ...prev, status: 'completed' } : prev
+    const result = await api.closeSession(sessionId, body);
+    setCurrentSession(result.session);
+    setAlerts(result.alerts);
+    setChecks(result.checks);
+    setSessions((prev) =>
+      prev.map((s) => (s.id === sessionId ? result.session : s))
     );
-
-    setSessions(prev =>
-      prev.map(s =>
-        s.id === sessionId ? { ...s, status: 'completed' } : s
-      )
-    );
+    return result;
   };
 
   return (
@@ -167,6 +169,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         closeSession,
         notes,
         attachments,
+        alerts,
+        checks,
       }}
     >
       {children}

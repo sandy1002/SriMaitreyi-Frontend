@@ -12,8 +12,7 @@ export function SessionCard({ session }: SessionCardProps) {
   const navigate = useNavigate();
 
   // Safe date handling
-  const rawSessionDate =
-    session.sessionDate ?? session.session_date ?? null;
+  const rawSessionDate = session.sessionDate ?? null;
 
   const sessionDate = rawSessionDate
     ? new Date(rawSessionDate)
@@ -48,7 +47,7 @@ export function SessionCard({ session }: SessionCardProps) {
 
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <Building2 className="h-3.5 w-3.5" />
-                  {session.hospitalName ?? session.hospital_name}
+                  {session.hospitalName}
                 </div>
               </div>
             </div>

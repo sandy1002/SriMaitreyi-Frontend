@@ -59,7 +59,7 @@ export default function NewSession() {
     setIsSubmitting(true);
 
     try {
-      const session = await createSession(
+      const { session, alerts } = await createSession(
         patient.id,
         hospitalName,
         sessionDate,
@@ -77,7 +77,9 @@ export default function NewSession() {
       toast({
         title: 'Session Started',
         description:
-          'Your dialysis session has been created successfully.',
+          alerts.length > 0
+            ? `Session created. ${alerts.length} alert(s) flagged for review.`
+            : 'Your dialysis session has been created successfully.',
       });
 
       navigate(`/session/${session.id}`);
