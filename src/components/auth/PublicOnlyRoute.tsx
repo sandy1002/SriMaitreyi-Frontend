@@ -1,7 +1,8 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
-const Index = () => {
+/** Login page: redirect to dashboard if already signed in (after session restore). */
+export function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
@@ -16,7 +17,5 @@ const Index = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <Navigate to="/login" replace />;
-};
-
-export default Index;
+  return <>{children}</>;
+}

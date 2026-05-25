@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -114,7 +114,9 @@ export default function Login() {
             <p className="text-xs text-center text-muted-foreground">
               This is a demonstration system for healthcare professionals and patients.
               <br />
-              No real medical data is stored or processed.
+              <Link to="/architecture" className="text-primary underline underline-offset-2">
+                View system architecture & query guide
+              </Link>
             </p>
           </CardContent>
         </Card>

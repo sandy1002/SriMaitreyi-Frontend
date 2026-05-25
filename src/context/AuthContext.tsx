@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { User, Patient } from '@/types';
 import { fetchPatients, loginApi } from '@/services/api';
 
+const AUTH_STORAGE_KEY = 'srimai_auth';
+
 const DEMO_PATIENTS: Patient[] = [
   {
     id: '00000000-0000-0000-0000-000000000001',
@@ -21,6 +23,36 @@ const DEMO_PATIENTS: Patient[] = [
   },
 ];
 
+interface StoredAuth {
+  user: User;
+  patient: Patient;
+}
+
+function normalizePatient(raw: Record<string, unknown>): Patient {
+  return {
+    id: String(raw.id),
+    name: String(raw.name ?? ''),
+    age: (raw.age as number | string) ?? '',
+    gender: (raw.gender as Patient['gender']) ?? 'Other',
+    medicalRecordNumber: String(
+      raw.medicalRecordNumber ?? raw.medical_record_number ?? `MRN-${String(raw.id).slice(0, 8)}`
+    ),
+    dialysisStartDate: String(
+      raw.dialysisStartDate ?? raw.dialysis_since ?? raw.dialysisSince ?? ''
+    ),
+    dialysisSince: String(raw.dialysisSince ?? raw.dialysis_since ?? ''),
+  };
+}
+
+function normalizeUser(raw: Record<string, unknown>): User {
+  return {
+    id: String(raw.id),
+    role: raw.role as User['role'],
+    patientId: raw.patientId ? String(raw.patientId) : raw.patient_id ? String(raw.patient_id) : undefined,
+    name: String(raw.name ?? ''),
+  };
+}
+
 interface AuthContextType {
   user: User | null;
   patient: Patient | null;
@@ -29,6 +61,7 @@ interface AuthContextType {
   login: (patientId: string, role: 'patient' | 'clinician') => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,6 +71,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [patient, setPatient] = useState<Patient | null>(null);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [patientsError, setPatientsError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
+      if (raw) {
+        const stored = JSON.parse(raw) as StoredAuth;
+        setUser(normalizeUser(stored.user as unknown as Record<string, unknown>));
+        setPatient(normalizePatient(stored.patient as unknown as Record<string, unknown>));
+      }
+    } catch (e) {
+      console.error('Failed to restore auth session', e);
+      sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const loadPatients = async () => {
@@ -55,27 +105,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadPatients();
   }, []);
 
+  const persistAuth = (nextUser: User, nextPatient: Patient | null) => {
+    if (nextPatient) {
+      sessionStorage.setItem(
+        AUTH_STORAGE_KEY,
+        JSON.stringify({ user: nextUser, patient: nextPatient })
+      );
+    }
+  };
+
   const login = async (patientId: string, role: 'patient' | 'clinician') => {
     try {
       const response = await loginApi(patientId, role);
-      setUser(response.user);
-      setPatient(response.patient);
+      const nextUser = normalizeUser(response.user);
+      const nextPatient = normalizePatient(response.patient);
+      setUser(nextUser);
+      setPatient(nextPatient);
+      persistAuth(nextUser, nextPatient);
     } catch (error) {
       console.error('Login API unavailable, using local fallback user', error);
       const selected = patients.find((p) => p.id === patientId) ?? null;
-      setUser({
+      const nextUser: User = {
         id: `local-user-${patientId}`,
         role,
         patientId,
         name: role === 'patient' ? selected?.name ?? 'Patient' : 'Clinician',
-      });
+      };
+      setUser(nextUser);
       setPatient(selected);
+      if (selected) persistAuth(nextUser, selected);
     }
   };
 
   const logout = () => {
     setUser(null);
     setPatient(null);
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
   };
 
   return (
@@ -88,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         isAuthenticated: !!user,
+        isLoading,
       }}
     >
       {children}

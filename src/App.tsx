@@ -10,7 +10,10 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import NewSession from "./pages/NewSession";
 import SessionDetail from "./pages/SessionDetail";
+import Architecture from "./pages/Architecture";
 import NotFound from "./pages/NotFound";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
 
 const queryClient = new QueryClient();
 
@@ -24,10 +27,39 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/session/new" element={<NewSession />} />
-              <Route path="/session/:sessionId" element={<SessionDetail />} />
+              <Route path="/architecture" element={<Architecture />} />
+              <Route
+                path="/login"
+                element={
+                  <PublicOnlyRoute>
+                    <Login />
+                  </PublicOnlyRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/session/new"
+                element={
+                  <ProtectedRoute>
+                    <NewSession />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/session/:sessionId"
+                element={
+                  <ProtectedRoute>
+                    <SessionDetail />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
