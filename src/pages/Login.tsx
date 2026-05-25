@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -205,11 +205,6 @@ export default function Login() {
           </Card>
         )}
 
-        <p className="text-xs text-center text-muted-foreground">
-          <Link to="/architecture" className="text-primary underline underline-offset-2">
-            System architecture & query guide
-          </Link>
-        </p>
       </div>
     </div>
   );

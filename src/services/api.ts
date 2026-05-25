@@ -401,6 +401,8 @@ export async function fetchPatientTrends(patientId: string): Promise<PatientTren
     recentAlerts: (data.recent_alerts ?? []).map(mapAlert),
     propertyGraph: {
       neo4jAvailable: pg.neo4j_available === true,
+      neo4jMessage: (pg.neo4j_message as string | undefined) ?? undefined,
+      neo4jUri: (pg.neo4j_uri as string | undefined) ?? undefined,
       recurringSymptoms: (pg.recurring_symptoms ?? []).map(
         (r: Record<string, unknown>) => ({
           symptom: String(r.symptom ?? ''),
