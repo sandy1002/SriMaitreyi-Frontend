@@ -11,9 +11,12 @@ import Dashboard from "./pages/Dashboard";
 import NewSession from "./pages/NewSession";
 import SessionDetail from "./pages/SessionDetail";
 import Architecture from "./pages/Architecture";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
+import { AdminRoute } from "@/components/auth/AdminRoute";
+import { PatientRoute } from "@/components/auth/PatientRoute";
 
 const queryClient = new QueryClient();
 
@@ -37,19 +40,27 @@ const App = () => (
                 }
               />
               <Route
+                path="/admin"
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                }
+              />
+              <Route
                 path="/dashboard"
                 element={
-                  <ProtectedRoute>
+                  <PatientRoute>
                     <Dashboard />
-                  </ProtectedRoute>
+                  </PatientRoute>
                 }
               />
               <Route
                 path="/session/new"
                 element={
-                  <ProtectedRoute>
+                  <PatientRoute>
                     <NewSession />
-                  </ProtectedRoute>
+                  </PatientRoute>
                 }
               />
               <Route

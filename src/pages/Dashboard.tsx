@@ -28,6 +28,10 @@ export default function Dashboard() {
 
   const isPatient = user?.role === 'patient';
 
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />

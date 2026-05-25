@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { User, Patient } from '@/types';
+import { User, Patient, UserRole } from '@/types';
 import { fetchPatients, loginApi } from '@/services/api';
 
 const AUTH_STORAGE_KEY = 'srimai_auth';
@@ -25,10 +25,11 @@ const DEMO_PATIENTS: Patient[] = [
 
 interface StoredAuth {
   user: User;
-  patient: Patient;
+  patient: Patient | null;
 }
 
-function normalizePatient(raw: Record<string, unknown>): Patient {
+function normalizePatient(raw: Record<string, unknown> | null | undefined): Patient | null {
+  if (!raw) return null;
   return {
     id: String(raw.id),
     name: String(raw.name ?? ''),
@@ -41,13 +42,16 @@ function normalizePatient(raw: Record<string, unknown>): Patient {
       raw.dialysisStartDate ?? raw.dialysis_since ?? raw.dialysisSince ?? ''
     ),
     dialysisSince: String(raw.dialysisSince ?? raw.dialysis_since ?? ''),
+    createdAt: raw.createdAt as string | undefined,
   };
 }
 
 function normalizeUser(raw: Record<string, unknown>): User {
+  const rawRole = String(raw.role ?? 'patient');
+  const role: UserRole = rawRole === 'admin' || rawRole === 'clinician' ? 'admin' : 'patient';
   return {
     id: String(raw.id),
-    role: raw.role as User['role'],
+    role,
     patientId: raw.patientId ? String(raw.patientId) : raw.patient_id ? String(raw.patient_id) : undefined,
     name: String(raw.name ?? ''),
   };
@@ -58,9 +62,13 @@ interface AuthContextType {
   patient: Patient | null;
   patients: Patient[];
   patientsError: string | null;
-  login: (patientId: string, role: 'patient' | 'clinician') => Promise<void>;
+  loginAsPatient: (patientId: string) => Promise<void>;
+  loginAsAdmin: () => Promise<void>;
+  refreshPatients: () => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  isAdmin: boolean;
+  isPatient: boolean;
   isLoading: boolean;
 }
 
@@ -79,7 +87,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (raw) {
         const stored = JSON.parse(raw) as StoredAuth;
         setUser(normalizeUser(stored.user as unknown as Record<string, unknown>));
-        setPatient(normalizePatient(stored.patient as unknown as Record<string, unknown>));
+        setPatient(
+          stored.patient
+            ? normalizePatient(stored.patient as unknown as Record<string, unknown>)
+            : null
+        );
       }
     } catch (e) {
       console.error('Failed to restore auth session', e);
@@ -89,51 +101,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  useEffect(() => {
-    const loadPatients = async () => {
-      try {
-        const patientList = await fetchPatients();
-        setPatients(patientList);
-        setPatientsError(null);
-      } catch (error) {
-        console.error('Failed to fetch patients', error);
-        setPatients(DEMO_PATIENTS);
-        setPatientsError(null);
-      }
-    };
-
-    loadPatients();
-  }, []);
-
-  const persistAuth = (nextUser: User, nextPatient: Patient | null) => {
-    if (nextPatient) {
-      sessionStorage.setItem(
-        AUTH_STORAGE_KEY,
-        JSON.stringify({ user: nextUser, patient: nextPatient })
-      );
+  const refreshPatients = async () => {
+    try {
+      const patientList = await fetchPatients();
+      setPatients(patientList);
+      setPatientsError(null);
+    } catch (error) {
+      console.error('Failed to fetch patients', error);
+      setPatients(DEMO_PATIENTS);
+      setPatientsError(null);
     }
   };
 
-  const login = async (patientId: string, role: 'patient' | 'clinician') => {
+  useEffect(() => {
+    refreshPatients();
+  }, []);
+
+  const persistAuth = (nextUser: User, nextPatient: Patient | null) => {
+    sessionStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({ user: nextUser, patient: nextPatient })
+    );
+  };
+
+  const applyLoginResponse = (response: { user: Record<string, unknown>; patient?: Record<string, unknown> | null }) => {
+    const nextUser = normalizeUser(response.user);
+    const nextPatient = normalizePatient(response.patient ?? null);
+    setUser(nextUser);
+    setPatient(nextPatient);
+    persistAuth(nextUser, nextPatient);
+  };
+
+  const loginAsPatient = async (patientId: string) => {
     try {
-      const response = await loginApi(patientId, role);
-      const nextUser = normalizeUser(response.user);
-      const nextPatient = normalizePatient(response.patient);
-      setUser(nextUser);
-      setPatient(nextPatient);
-      persistAuth(nextUser, nextPatient);
+      const response = await loginApi('patient', patientId);
+      applyLoginResponse(response);
     } catch (error) {
-      console.error('Login API unavailable, using local fallback user', error);
+      console.error('Login API unavailable, using local fallback', error);
       const selected = patients.find((p) => p.id === patientId) ?? null;
+      if (!selected) throw new Error('Patient not found');
       const nextUser: User = {
         id: `local-user-${patientId}`,
-        role,
+        role: 'patient',
         patientId,
-        name: role === 'patient' ? selected?.name ?? 'Patient' : 'Clinician',
+        name: selected.name,
       };
       setUser(nextUser);
       setPatient(selected);
-      if (selected) persistAuth(nextUser, selected);
+      persistAuth(nextUser, selected);
+    }
+  };
+
+  const loginAsAdmin = async () => {
+    try {
+      const response = await loginApi('admin');
+      applyLoginResponse(response);
+    } catch (error) {
+      console.error('Admin login API unavailable, using local fallback', error);
+      const nextUser: User = {
+        id: 'admin',
+        role: 'admin',
+        name: 'Administrator',
+      };
+      setUser(nextUser);
+      setPatient(null);
+      persistAuth(nextUser, null);
     }
   };
 
@@ -143,6 +175,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessionStorage.removeItem(AUTH_STORAGE_KEY);
   };
 
+  const isAdmin = user?.role === 'admin';
+  const isPatient = user?.role === 'patient';
+
   return (
     <AuthContext.Provider
       value={{
@@ -150,9 +185,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         patient,
         patients,
         patientsError,
-        login,
+        loginAsPatient,
+        loginAsAdmin,
+        refreshPatients,
         logout,
         isAuthenticated: !!user,
+        isAdmin,
+        isPatient,
         isLoading,
       }}
     >
@@ -165,4 +204,9 @@ export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
+}
+
+/** Where to send the user after login or when already authenticated */
+export function getHomePath(role: UserRole | undefined): string {
+  return role === 'admin' ? '/admin' : '/dashboard';
 }
