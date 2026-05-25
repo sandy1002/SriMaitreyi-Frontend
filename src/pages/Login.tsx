@@ -11,7 +11,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Activity, User, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 type Persona = 'patient' | 'admin' | null;
 
@@ -19,8 +21,11 @@ export default function Login() {
   const [persona, setPersona] = useState<Persona>(null);
   const [selectedPatient, setSelectedPatient] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [adminUsername, setAdminUsername] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
   const { loginAsPatient, loginAsAdmin, patients, patientsError } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handlePatientLogin = async () => {
     if (!selectedPatient) return;
@@ -36,12 +41,21 @@ export default function Login() {
   };
 
   const handleAdminLogin = async () => {
+    if (!adminUsername.trim() || !adminPassword) {
+      toast({ title: 'Enter username and password', variant: 'destructive' });
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await loginAsAdmin();
+      await loginAsAdmin(adminUsername.trim(), adminPassword);
       navigate('/admin');
     } catch (err) {
       console.error('Admin login failed', err);
+      toast({
+        title: 'Login failed',
+        description: 'Invalid admin username or password.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -157,10 +171,34 @@ export default function Login() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground rounded-lg bg-muted/50 p-3">
-                Demo mode: no password required. In production, use secured admin credentials.
-              </p>
-              <Button onClick={handleAdminLogin} disabled={isSubmitting} className="w-full" size="lg">
+              <div className="space-y-2">
+                <Label htmlFor="adminUser">Username</Label>
+                <Input
+                  id="adminUser"
+                  type="text"
+                  autoComplete="username"
+                  value={adminUsername}
+                  onChange={(e) => setAdminUsername(e.target.value)}
+                  placeholder="Admin"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="adminPass">Password</Label>
+                <Input
+                  id="adminPass"
+                  type="password"
+                  autoComplete="current-password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="Enter password"
+                />
+              </div>
+              <Button
+                onClick={handleAdminLogin}
+                disabled={isSubmitting || !adminUsername.trim() || !adminPassword}
+                className="w-full"
+                size="lg"
+              >
                 {isSubmitting ? 'Signing in...' : 'Enter admin console'}
               </Button>
             </CardContent>

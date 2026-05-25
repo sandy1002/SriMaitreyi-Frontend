@@ -63,7 +63,7 @@ interface AuthContextType {
   patients: Patient[];
   patientsError: string | null;
   loginAsPatient: (patientId: string) => Promise<void>;
-  loginAsAdmin: () => Promise<void>;
+  loginAsAdmin: (username: string, password: string) => Promise<void>;
   refreshPatients: () => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -134,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginAsPatient = async (patientId: string) => {
     try {
-      const response = await loginApi('patient', patientId);
+      const response = await loginApi('patient', { patientId });
       applyLoginResponse(response);
     } catch (error) {
       console.error('Login API unavailable, using local fallback', error);
@@ -152,21 +152,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loginAsAdmin = async () => {
-    try {
-      const response = await loginApi('admin');
-      applyLoginResponse(response);
-    } catch (error) {
-      console.error('Admin login API unavailable, using local fallback', error);
-      const nextUser: User = {
-        id: 'admin',
-        role: 'admin',
-        name: 'Administrator',
-      };
-      setUser(nextUser);
-      setPatient(null);
-      persistAuth(nextUser, null);
-    }
+  const loginAsAdmin = async (username: string, password: string) => {
+    const response = await loginApi('admin', { username, password });
+    applyLoginResponse(response);
   };
 
   const logout = () => {
