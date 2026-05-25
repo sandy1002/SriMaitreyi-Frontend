@@ -96,3 +96,27 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
 }
+
+export interface WeightTrendPoint {
+  sessionId: string;
+  sessionDate: string;
+  preWeightKg?: number | null;
+  postWeightKg?: number | null;
+  status: string;
+}
+
+export interface PropertyGraphTrends {
+  neo4jAvailable: boolean;
+  recurringSymptoms?: { symptom: string; sessionCount: number }[];
+  dizzinessSessionCount?: number;
+  sessions?: Record<string, unknown>[];
+  error?: string;
+}
+
+export interface PatientTrendsResponse {
+  patientId: string;
+  patientName: string;
+  weightTrend: WeightTrendPoint[];
+  recentAlerts: ClinicalAlert[];
+  propertyGraph: PropertyGraphTrends;
+}

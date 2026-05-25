@@ -5,6 +5,7 @@ import type {
   ClinicalCheck,
   DialysisSession,
   PatientOverview,
+  PatientTrendsResponse,
   SessionAttachment,
   SessionNote,
 } from '@/types';
@@ -298,6 +299,35 @@ export async function askClinicalAgent(
     answer: data.answer,
     alerts: (data.alerts ?? []).map(mapAlert),
     checks: data.checks ?? [],
+  };
+}
+
+export async function fetchPatientTrends(patientId: string): Promise<PatientTrendsResponse> {
+  const data = await apiRequest(`/patients/${patientId}/trends`);
+  const pg = data.property_graph ?? {};
+  return {
+    patientId: String(data.patient_id),
+    patientName: String(data.patient_name ?? ''),
+    weightTrend: (data.weight_trend ?? []).map((w: Record<string, unknown>) => ({
+      sessionId: String(w.session_id),
+      sessionDate: String(w.session_date),
+      preWeightKg: w.pre_weight_kg as number | null | undefined,
+      postWeightKg: w.post_weight_kg as number | null | undefined,
+      status: String(w.status ?? ''),
+    })),
+    recentAlerts: (data.recent_alerts ?? []).map(mapAlert),
+    propertyGraph: {
+      neo4jAvailable: pg.neo4j_available === true,
+      recurringSymptoms: (pg.recurring_symptoms ?? []).map(
+        (r: Record<string, unknown>) => ({
+          symptom: String(r.symptom ?? ''),
+          sessionCount: Number(r.sessionCount ?? r.session_count ?? 0),
+        })
+      ),
+      dizzinessSessionCount: Number(pg.dizziness_session_count ?? 0),
+      sessions: pg.sessions,
+      error: pg.error as string | undefined,
+    },
   };
 }
 
