@@ -1,9 +1,9 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, getHomePath } from '@/context/AuthContext';
 
-/** Login page: redirect to dashboard if already signed in (after session restore). */
+/** Login page: redirect to role home if already signed in (after session restore). */
 export function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -13,8 +13,8 @@ export function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+  if (isAuthenticated && user) {
+    return <Navigate to={getHomePath(user.role)} replace />;
   }
 
   return <>{children}</>;

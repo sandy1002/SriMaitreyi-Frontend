@@ -4,6 +4,7 @@ import type {
   ClinicalAlert,
   ClinicalCheck,
   DialysisSession,
+  PatientOverview,
   SessionAttachment,
   SessionNote,
 } from '@/types';
@@ -102,12 +103,61 @@ export async function fetchPatients() {
   return [];
 }
 
-export async function loginApi(patientId: string, role: 'patient' | 'clinician') {
+export async function loginApi(role: 'patient' | 'admin', patientId?: string) {
   return apiRequest('/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ patient_id: patientId, role }),
+    body: JSON.stringify({
+      role,
+      ...(patientId ? { patient_id: patientId } : {}),
+    }),
   });
+}
+
+export async function fetchPatientsOverview(): Promise<{
+  patients: PatientOverview[];
+  totalPatients: number;
+}> {
+  const data = await apiRequest('/patients/overview');
+  return {
+    totalPatients: data.totalPatients ?? data.patients?.length ?? 0,
+    patients: (data.patients ?? []).map((p: Record<string, unknown>) => ({
+      id: String(p.id),
+      name: String(p.name),
+      age: p.age as number | string,
+      gender: String(p.gender ?? ''),
+      medicalRecordNumber: String(p.medicalRecordNumber ?? ''),
+      createdAt: p.createdAt as string | undefined,
+      sessionCount: Number(p.sessionCount ?? 0),
+      noteCount: Number(p.noteCount ?? 0),
+      attachmentCount: Number(p.attachmentCount ?? 0),
+      alertCount: Number(p.alertCount ?? 0),
+      sessions: (p.sessions ?? []).map(mapSession),
+    })),
+  };
+}
+
+export async function deleteSession(sessionId: string) {
+  return apiRequest(`/sessions/${sessionId}`, { method: 'DELETE' });
+}
+
+export async function createPatient(payload: {
+  name: string;
+  age?: number;
+  gender?: string;
+}) {
+  return apiRequest('/patients/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deletePatient(patientId: string): Promise<{
+  message: string;
+  sessions_removed?: number;
+}> {
+  return apiRequest(`/patients/${patientId}`, { method: 'DELETE' });
 }
 
 export async function createSession(payload: {

@@ -6,7 +6,18 @@ export interface Patient {
   medicalRecordNumber: string;
   dialysisStartDate?: string;
   dialysisSince?: string;
+  createdAt?: string;
 }
+
+export interface PatientOverview extends Patient {
+  sessionCount: number;
+  noteCount: number;
+  attachmentCount: number;
+  alertCount: number;
+  sessions: DialysisSession[];
+}
+
+export type UserRole = 'patient' | 'admin';
 
 export interface PreDialysisAssessment {
   weightKg?: number | null;
@@ -74,7 +85,7 @@ export interface SessionAttachment {
 
 export interface User {
   id: string;
-  role: 'patient' | 'clinician';
+  role: UserRole;
   patientId?: string;
   name: string;
 }

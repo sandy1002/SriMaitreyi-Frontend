@@ -41,7 +41,19 @@ import {
   Music,
   Clock,
   CheckCircle,
+  Trash2,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -67,7 +79,7 @@ function safeFormat(
 
 export default function SessionDetail() {
   const { sessionId } = useParams<{ sessionId: string }>();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isAdmin } = useAuth();
   const {
     currentSession,
     notes,
@@ -107,6 +119,7 @@ export default function SessionDetail() {
     attachments ?? []
   );
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const [deletingSession, setDeletingSession] = useState(false);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -153,6 +166,20 @@ export default function SessionDetail() {
 
   const isPatient = user?.role === 'patient';
   const isCompleted = session.status === 'completed';
+
+  const handleDeleteSession = async () => {
+    if (!session) return;
+    setDeletingSession(true);
+    try {
+      await api.deleteSession(session.id);
+      toast({ title: 'Session deleted' });
+      navigate(isAdmin ? '/admin' : '/dashboard');
+    } catch {
+      toast({ title: 'Delete failed', variant: 'destructive' });
+    } finally {
+      setDeletingSession(false);
+    }
+  };
 
   const handleAddNote = async () => {
     if (!noteText.trim()) return;
@@ -247,10 +274,10 @@ export default function SessionDetail() {
       <main className="container py-6 space-y-6">
         <Button
           variant="ghost"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate(isAdmin ? '/admin' : '/dashboard')}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
+          {isAdmin ? 'Back to Admin' : 'Back to Dashboard'}
         </Button>
 
         {/* Session Header */}
@@ -274,10 +301,38 @@ export default function SessionDetail() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap justify-end">
               <Badge>
                 {isCompleted ? 'Completed' : 'In Progress'}
               </Badge>
+
+              {isAdmin && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" disabled={deletingSession}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete session
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this session?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Permanently removes notes, attachments, and assessments for this session.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={handleDeleteSession}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
 
               {!isCompleted && isPatient && (
                 <>
