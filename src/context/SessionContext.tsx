@@ -27,6 +27,7 @@ interface SessionContextType {
       bloodSugar: number;
       accessCondition: 'Normal' | 'Abnormal';
       ufGoal: string;
+      potassiumMmolL?: number;
     }
   ) => Promise<{ session: DialysisSession; alerts: ClinicalAlert[]; checks: ClinicalCheck[] }>;
 
@@ -52,6 +53,8 @@ interface SessionContextType {
   attachments: SessionAttachment[];
   alerts: ClinicalAlert[];
   checks: ClinicalCheck[];
+  vitalReadings: import('@/types').SessionVitalReading[];
+  vitalsWorkflow: import('@/types').VitalsWorkflowState | null;
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
@@ -63,6 +66,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [attachments, setAttachments] = useState<SessionAttachment[]>([]);
   const [alerts, setAlerts] = useState<ClinicalAlert[]>([]);
   const [checks, setChecks] = useState<ClinicalCheck[]>([]);
+  const [vitalReadings, setVitalReadings] = useState<import('@/types').SessionVitalReading[]>([]);
+  const [vitalsWorkflow, setVitalsWorkflow] = useState<import('@/types').VitalsWorkflowState | null>(null);
 
   const loadSessionsByPatient = async (patientId: string) => {
     const data = await api.getPatientSessions(patientId);
@@ -76,6 +81,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setAttachments(data.attachments);
     setAlerts(data.alerts);
     setChecks([]);
+    setVitalReadings(data.vitalReadings);
+    setVitalsWorkflow(data.vitalsWorkflow);
   };
 
   const createSession = async (
@@ -90,6 +97,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       bloodSugar: number;
       accessCondition: 'Normal' | 'Abnormal';
       ufGoal: string;
+      potassiumMmolL?: number;
     }
   ) => {
     const result = await api.createSession({
@@ -103,6 +111,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       blood_sugar: assessment.bloodSugar,
       access_condition: assessment.accessCondition,
       uf_goal: assessment.ufGoal,
+      potassium_mmol_l: assessment.potassiumMmolL,
     });
 
     setSessions((prev) => [result.session, ...prev]);
@@ -171,6 +180,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         attachments,
         alerts,
         checks,
+        vitalReadings,
+        vitalsWorkflow,
       }}
     >
       {children}

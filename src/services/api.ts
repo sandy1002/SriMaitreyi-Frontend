@@ -29,6 +29,42 @@ function mapPreAssessment(raw: Record<string, unknown> | null | undefined) {
     bloodSugar: raw.blood_sugar as number | undefined,
     accessCondition: raw.access_condition as string | undefined,
     ufGoal: raw.uf_goal as string | undefined,
+    potassiumMmolL: raw.potassium_mmol_l as number | null | undefined,
+  };
+}
+
+function mapVitalReading(raw: Record<string, unknown>) {
+  return {
+    id: String(raw.id),
+    sessionId: String(raw.session_id),
+    intervalMinutes: Number(raw.interval_minutes ?? 0),
+    label: raw.label as string | undefined,
+    bloodPressure: raw.blood_pressure as string | undefined,
+    pulse: raw.pulse as number | null | undefined,
+    potassiumMmolL: raw.potassium_mmol_l as number | null | undefined,
+    ufRemovedLiters: raw.uf_removed_liters as number | null | undefined,
+    notes: raw.notes as string | undefined,
+    recordedAt: raw.recorded_at as string | undefined,
+  };
+}
+
+function mapVitalsWorkflow(raw: Record<string, unknown>) {
+  return {
+    intervalMinutes: Number(raw.interval_minutes ?? 30),
+    sessionStartedAt: raw.session_started_at as string | undefined,
+    readings: (raw.readings ?? []).map((r: Record<string, unknown>) => mapVitalReading(r)),
+    slots: (raw.slots ?? []).map((s: Record<string, unknown>) => ({
+      intervalMinutes: Number(s.interval_minutes),
+      label: String(s.label),
+      status: s.status as 'recorded' | 'pending',
+    })),
+    nextDue: raw.next_due
+      ? {
+          intervalMinutes: Number((raw.next_due as Record<string, unknown>).interval_minutes),
+          label: String((raw.next_due as Record<string, unknown>).label),
+          dueAt: (raw.next_due as Record<string, unknown>).due_at as string | undefined,
+        }
+      : null,
   };
 }
 
@@ -177,6 +213,7 @@ export async function createSession(payload: {
   blood_sugar: number;
   access_condition: 'Normal' | 'Abnormal';
   uf_goal: string;
+  potassium_mmol_l?: number;
 }): Promise<{
   session: DialysisSession;
   alerts: ClinicalAlert[];
@@ -204,6 +241,8 @@ export async function getSession(sessionId: string): Promise<{
   notes: SessionNote[];
   attachments: SessionAttachment[];
   alerts: ClinicalAlert[];
+  vitalReadings: import('@/types').SessionVitalReading[];
+  vitalsWorkflow: import('@/types').VitalsWorkflowState | null;
 }> {
   const data = await apiRequest(`/sessions/${sessionId}`);
   return {
@@ -211,6 +250,50 @@ export async function getSession(sessionId: string): Promise<{
     notes: (data.notes ?? []).map(mapNote),
     attachments: (data.attachments ?? []).map(mapAttachment),
     alerts: (data.alerts ?? []).map(mapAlert),
+    vitalReadings: (data.vital_readings ?? []).map(mapVitalReading),
+    vitalsWorkflow: data.vitals_workflow
+      ? mapVitalsWorkflow(data.vitals_workflow)
+      : null,
+  };
+}
+
+export async function getVitalsWorkflow(
+  sessionId: string,
+  intervalMinutes = 30
+) {
+  const data = await apiRequest(
+    `/sessions/${sessionId}/vitals/workflow?interval_minutes=${intervalMinutes}`
+  );
+  return mapVitalsWorkflow(data);
+}
+
+export async function recordSessionVitals(
+  sessionId: string,
+  payload: {
+    blood_pressure?: string;
+    pulse?: number;
+    potassium_mmol_l?: number;
+    uf_removed_liters?: number;
+    notes?: string;
+    interval_minutes?: number;
+    label?: string;
+  }
+): Promise<{
+  reading: import('@/types').SessionVitalReading;
+  workflow: import('@/types').VitalsWorkflowState;
+  alerts: ClinicalAlert[];
+  checks: ClinicalCheck[];
+}> {
+  const data = await apiRequest(`/sessions/${sessionId}/vitals`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return {
+    reading: mapVitalReading(data.reading),
+    workflow: mapVitalsWorkflow(data.workflow),
+    alerts: (data.alerts ?? []).map(mapAlert),
+    checks: data.checks ?? [],
   };
 }
 

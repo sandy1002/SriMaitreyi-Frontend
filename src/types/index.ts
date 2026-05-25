@@ -27,6 +27,38 @@ export interface PreDialysisAssessment {
   bloodSugar?: number | null;
   accessCondition?: string;
   ufGoal?: string;
+  potassiumMmolL?: number | null;
+}
+
+export interface SessionVitalReading {
+  id: string;
+  sessionId: string;
+  intervalMinutes: number;
+  label?: string;
+  bloodPressure?: string;
+  pulse?: number | null;
+  potassiumMmolL?: number | null;
+  ufRemovedLiters?: number | null;
+  notes?: string;
+  recordedAt?: string;
+}
+
+export interface VitalsWorkflowSlot {
+  intervalMinutes: number;
+  label: string;
+  status: 'recorded' | 'pending';
+}
+
+export interface VitalsWorkflowState {
+  intervalMinutes: number;
+  sessionStartedAt?: string;
+  readings: SessionVitalReading[];
+  slots: VitalsWorkflowSlot[];
+  nextDue?: {
+    intervalMinutes: number;
+    label: string;
+    dueAt?: string;
+  } | null;
 }
 
 export interface PostDialysisAssessment {
