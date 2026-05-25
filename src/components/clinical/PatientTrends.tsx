@@ -129,10 +129,22 @@ export function PatientTrends({ patientId, compact }: PatientTrendsProps) {
               </ul>
             </div>
           ) : (
-            <p className="text-muted-foreground">
-              Session chains and symptom patterns sync to Neo4j when notes are saved and Neo4j is
-              reachable.
-            </p>
+            <div className="text-muted-foreground space-y-2">
+              <p>
+                Session chains and symptom patterns sync to Neo4j when notes are saved and Neo4j is
+                reachable.
+              </p>
+              {pg.neo4jMessage && (
+                <p className="text-xs font-mono bg-muted/50 rounded p-2 break-all">
+                  {pg.neo4jMessage}
+                </p>
+              )}
+              <p className="text-xs">
+                Deploy Neo4j in the cluster:{' '}
+                <code className="text-foreground">kubectl apply -f k8s-neo4j.yaml</code>
+                , then restart the backend pod.
+              </p>
+            </div>
           )}
           {pg.dizzinessSessionCount != null && pg.dizzinessSessionCount > 0 && (
             <p className="flex items-center gap-2 text-amber-700 dark:text-amber-400">

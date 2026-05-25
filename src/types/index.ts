@@ -139,6 +139,8 @@ export interface WeightTrendPoint {
 
 export interface PropertyGraphTrends {
   neo4jAvailable: boolean;
+  neo4jMessage?: string;
+  neo4jUri?: string;
   recurringSymptoms?: { symptom: string; sessionCount: number }[];
   dizzinessSessionCount?: number;
   sessions?: Record<string, unknown>[];
