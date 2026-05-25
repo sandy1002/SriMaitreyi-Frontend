@@ -103,14 +103,19 @@ export async function fetchPatients() {
   return [];
 }
 
-export async function loginApi(role: 'patient' | 'admin', patientId?: string) {
+export async function loginApi(
+  role: 'patient' | 'admin',
+  options?: { patientId?: string; username?: string; password?: string }
+) {
+  const body: Record<string, string> = { role };
+  if (options?.patientId) body.patient_id = options.patientId;
+  if (options?.username) body.username = options.username;
+  if (options?.password) body.password = options.password;
+
   return apiRequest('/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      role,
-      ...(patientId ? { patient_id: patientId } : {}),
-    }),
+    body: JSON.stringify(body),
   });
 }
 
