@@ -66,12 +66,15 @@ export default function ArchitecturePage() {
     │                           → Re-run alerts
     │
     ├─ POST /sessions/{id}/attachment → PostgreSQL + disk (/uploads)
+    │                           → PDF/text → Chroma (Phase 2)
     │
     ├─ POST /sessions/{id}/end  → PostgreSQL (post_assessment, summary)
     │                           → Fuseki (post-dialysis triples)
-    │                           → Alerts + optional OpenAI summary
+    │                           → Neo4j status + alerts
     │
-    └─ POST /agent/clinical-summary → Fuseki + Postgres + Chroma + OpenAI`}
+    ├─ GET /patients/{id}/trends → weight series + Neo4j patterns (Phase 2)
+    │
+    └─ POST /agent/clinical-summary → Fuseki + Postgres + Chroma + Neo4j + OpenAI`}
             </div>
             <div className="flex flex-wrap gap-2">
               <Badge>Pre-dialysis</Badge>
@@ -103,10 +106,11 @@ export default function ArchitecturePage() {
                 <tbody className="text-muted-foreground">
                   <tr className="border-b"><td className="py-2">Patients, session metadata</td><td>PostgreSQL</td><td>—</td></tr>
                   <tr className="border-b"><td className="py-2">Pre/post vitals</td><td>PostgreSQL</td><td>Fuseki (typed properties)</td></tr>
-                  <tr className="border-b"><td className="py-2">Note full text</td><td>PostgreSQL</td><td>Chroma (vector), Fuseki (keywords)</td></tr>
-                  <tr className="border-b"><td className="py-2">Attachments (files)</td><td>Disk <code className="text-xs">uploads/</code></td><td>PG metadata + URL</td></tr>
-                  <tr className="border-b"><td className="py-2">Clinical alerts</td><td>PostgreSQL</td><td>—</td></tr>
-                  <tr className="border-b"><td className="py-2">Symptoms / interventions (structured)</td><td>Fuseki RDF</td><td>—</td></tr>
+                  <tr className="border-b"><td className="py-2">Note full text</td><td>PostgreSQL</td><td>Chroma (vector), Fuseki (NLP keywords)</td></tr>
+                  <tr className="border-b"><td className="py-2">Attachments (files)</td><td>Disk <code className="text-xs">uploads/</code></td><td>Chroma if PDF/text extracted (Phase 2)</td></tr>
+                  <tr className="border-b"><td className="py-2">Clinical alerts</td><td>PostgreSQL</td><td>Neo4j Alert nodes (Phase 2)</td></tr>
+                  <tr className="border-b"><td className="py-2">Symptoms / interventions</td><td>Fuseki RDF</td><td>Neo4j HAD_SYMPTOM edges</td></tr>
+                  <tr className="border-b"><td className="py-2">Session chains / trends</td><td>Neo4j</td><td>Postgres weight series in /trends</td></tr>
                   <tr><td className="py-2">Session summary</td><td>PostgreSQL</td><td>OpenAI-generated on close</td></tr>
                 </tbody>
               </table>
@@ -223,20 +227,19 @@ INSERT DATA {
 
           {/* Neo4j */}
           <AccordionItem value="neo4j">
-            <AccordionTrigger>Property graph — Neo4j (planned / optional)</AccordionTrigger>
+            <AccordionTrigger>Property graph — Neo4j (Phase 2)</AccordionTrigger>
             <AccordionContent className="space-y-3 text-sm text-muted-foreground">
               <p>
-                Neo4j runs in the <strong className="text-foreground">database</strong> namespace but is
-                <strong className="text-foreground"> not wired</strong> in application code yet. Use it for
-                temporal paths and pattern queries across many sessions.
+                Synced from <code>app/graph/neo4j_service.py</code> on session start, notes, alerts, and delete.
+                Disable with <code>NEO4J_ENABLED=false</code> if the cluster instance is unavailable.
               </p>
-              <p className="text-foreground font-medium">Intended graph model</p>
+              <p className="text-foreground font-medium">Graph model</p>
               <CodeBlock>{`(p:Patient {id})-[:HAD_SESSION]->(s:Session {id, date})
 (s)-[:HAD_SYMPTOM]->(sym:Symptom {name})
 (s)-[:HAD_INTERVENTION]->(i:Intervention {name})
 (s)-[:FOLLOWED_BY]->(s2:Session)
 (s)-[:TRIGGERED]->(a:Alert {code, severity})`}</CodeBlock>
-              <p className="text-foreground font-medium">Example Cypher (when synced)</p>
+              <p className="text-foreground font-medium">Example Cypher</p>
               <CodeBlock>{`// Last 5 sessions with dizziness
 MATCH (p:Patient {id: $patientId})-[:HAD_SESSION]->(s)-[:HAD_SYMPTOM]->(sym:Symptom {name: 'dizziness'})
 RETURN s.id, s.date
@@ -258,10 +261,11 @@ RETURN s;`}</CodeBlock>
                 Collection: <strong className="text-foreground">dialysis_notes</strong> ·
                 Persisted under <code>./chroma</code> on the API pod.
               </p>
-              <CodeBlock>{`# Document shape (on each note save)
-id:        <note-uuid>
-document:  <full note text>
-metadata:  { session_id, patient_id, type: "note" }`}</CodeBlock>
+              <CodeBlock>{`# Note
+metadata:  { session_id, patient_id, type: "note" }
+
+# Attachment (PDF/text extract, Phase 2)
+metadata:  { session_id, patient_id, type: "attachment", file_name }`}</CodeBlock>
               <p>Used by <code>/agent/clinical-summary</code> to find notes similar to the user question.</p>
               <p className="text-foreground font-medium">Query (Python / app)</p>
               <CodeBlock>{`from app.vector.chroma_client import collection
@@ -281,8 +285,9 @@ collection.query(
 GET    /patients/
 POST   /patients/register
 GET    /patients/{id}/sessions
+GET    /patients/{id}/trends         → Phase 2 weight + graph insights
 
-POST   /sessions/start              → session + pre + alerts
+POST   /sessions/start              → session + pre + alerts + Neo4j
 GET    /sessions/{id}               → session + notes + attachments + alerts
 POST   /sessions/{id}/note          → note + KG + Chroma + alerts
 POST   /sessions/{id}/attachment    → file upload
@@ -328,6 +333,19 @@ POST   /agent/clinical-summary      → AI answer + alerts + checks`}</CodeBlock
               <code>OPENAI_API_KEY</code>): explains context from Postgres + Fuseki + Chroma. Does not
               replace clinical judgment.
             </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Phase 2 status</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2 text-sm">
+            <Badge>Neo4j sync</Badge>
+            <Badge variant="secondary">IDWG_HIGH alert</Badge>
+            <Badge variant="secondary">PDF → Chroma</Badge>
+            <Badge variant="outline">KG delete on cascade</Badge>
+            <Badge variant="outline">Patient trends UI</Badge>
           </CardContent>
         </Card>
 

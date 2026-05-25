@@ -63,6 +63,7 @@ import { format } from 'date-fns';
 import * as api from '@/services/api';
 import { SessionAttachment } from '@/types';
 import { AlertsPanel } from '@/components/clinical/AlertsPanel';
+import { SessionVitalsWorkflow } from '@/components/clinical/SessionVitalsWorkflow';
 
 /* ---------------------------------------
    Safe Date Formatter (CRITICAL)
@@ -86,6 +87,7 @@ export default function SessionDetail() {
     attachments,
     alerts,
     checks,
+    vitalReadings,
     loadSessionDetails,
     addNote,
     closeSession,
@@ -456,6 +458,13 @@ export default function SessionDetail() {
           </Card>
         )}
 
+        <SessionVitalsWorkflow
+          sessionId={session.id}
+          isCompleted={isCompleted}
+          initialReadings={vitalReadings}
+          onAlertsUpdated={() => loadSessionDetails(session.id)}
+        />
+
         <Accordion type="single" collapsible className="pt-2">
           <AccordionItem value="pre-dialysis">
             <AccordionTrigger className="text-lg font-medium">
@@ -474,6 +483,14 @@ export default function SessionDetail() {
                 <div>
                   <span className="text-muted-foreground">Blood Pressure: </span>
                   <span className="font-semibold">{assessment?.bloodPressure || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Potassium (Pre K): </span>
+                  <span className="font-semibold">
+                    {assessment?.potassiumMmolL != null
+                      ? `${assessment.potassiumMmolL} mmol/L`
+                      : '—'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Pulse: </span>

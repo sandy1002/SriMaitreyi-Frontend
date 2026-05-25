@@ -36,6 +36,7 @@ export default function NewSession() {
   const [bloodSugar, setBloodSugar] = useState('');
   const [accessCondition, setAccessCondition] = useState<'Normal' | 'Abnormal'>('Normal');
   const [ufGoal, setUfGoal] = useState('');
+  const [potassiumMmolL, setPotassiumMmolL] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // -------------------------------
@@ -71,6 +72,7 @@ export default function NewSession() {
           bloodSugar: Number(bloodSugar),
           accessCondition,
           ufGoal,
+          potassiumMmolL: potassiumMmolL ? Number(potassiumMmolL) : undefined,
         }
       );
 
@@ -187,6 +189,17 @@ export default function NewSession() {
                     onChange={e => setBloodPressure(e.target.value)}
                     placeholder="e.g. 120/80"
                     required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="potassium">Potassium — Pre K (mmol/L)</Label>
+                  <Input
+                    id="potassium"
+                    type="number"
+                    step="0.1"
+                    value={potassiumMmolL}
+                    onChange={e => setPotassiumMmolL(e.target.value)}
+                    placeholder="e.g. 4.5 (optional)"
                   />
                 </div>
                 <div className="space-y-2">

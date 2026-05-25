@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/Header';
 import { PatientInfoCard } from '@/components/cards/PatientInfoCard';
 import { SessionCard } from '@/components/cards/SessionCard';
 import { AIAssistant } from '@/components/chat/AIAssistant';
+import { PatientTrends } from '@/components/clinical/PatientTrends';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, MessageSquare, Calendar, TrendingUp } from 'lucide-react';
@@ -127,6 +128,8 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        <PatientTrends patientId={patient.id} />
 
         {/* Recent Sessions */}
         <Card className="shadow-clinical">

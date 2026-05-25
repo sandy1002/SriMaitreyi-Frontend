@@ -27,6 +27,38 @@ export interface PreDialysisAssessment {
   bloodSugar?: number | null;
   accessCondition?: string;
   ufGoal?: string;
+  potassiumMmolL?: number | null;
+}
+
+export interface SessionVitalReading {
+  id: string;
+  sessionId: string;
+  intervalMinutes: number;
+  label?: string;
+  bloodPressure?: string;
+  pulse?: number | null;
+  potassiumMmolL?: number | null;
+  ufRemovedLiters?: number | null;
+  notes?: string;
+  recordedAt?: string;
+}
+
+export interface VitalsWorkflowSlot {
+  intervalMinutes: number;
+  label: string;
+  status: 'recorded' | 'pending';
+}
+
+export interface VitalsWorkflowState {
+  intervalMinutes: number;
+  sessionStartedAt?: string;
+  readings: SessionVitalReading[];
+  slots: VitalsWorkflowSlot[];
+  nextDue?: {
+    intervalMinutes: number;
+    label: string;
+    dueAt?: string;
+  } | null;
 }
 
 export interface PostDialysisAssessment {
@@ -95,4 +127,28 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
+}
+
+export interface WeightTrendPoint {
+  sessionId: string;
+  sessionDate: string;
+  preWeightKg?: number | null;
+  postWeightKg?: number | null;
+  status: string;
+}
+
+export interface PropertyGraphTrends {
+  neo4jAvailable: boolean;
+  recurringSymptoms?: { symptom: string; sessionCount: number }[];
+  dizzinessSessionCount?: number;
+  sessions?: Record<string, unknown>[];
+  error?: string;
+}
+
+export interface PatientTrendsResponse {
+  patientId: string;
+  patientName: string;
+  weightTrend: WeightTrendPoint[];
+  recentAlerts: ClinicalAlert[];
+  propertyGraph: PropertyGraphTrends;
 }
