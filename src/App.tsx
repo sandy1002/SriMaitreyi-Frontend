@@ -12,6 +12,7 @@ import NewSession from "./pages/NewSession";
 import SessionDetail from "./pages/SessionDetail";
 import Architecture from "./pages/Architecture";
 import AdminDashboard from "./pages/AdminDashboard";
+import NutritionDiary from "./pages/NutritionDiary";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
@@ -59,6 +60,14 @@ const App = () => (
                 element={
                   <PatientRoute>
                     <Dashboard />
+                  </PatientRoute>
+                }
+              />
+              <Route
+                path="/nutrition-diary"
+                element={
+                  <PatientRoute>
+                    <NutritionDiary />
                   </PatientRoute>
                 }
               />
