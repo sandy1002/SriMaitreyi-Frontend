@@ -223,6 +223,10 @@ POST   /sessions/{id}/end
 POST   /sessions/{id}/evaluate
 DELETE /sessions/{id}
 
+GET    /medicines/                       medicine catalog
+POST   /patients/{id}/nutrition-diary   Postgres → KG + Neo4j
+GET    /patients/{id}/nutrition-diary
+
 POST   /agent/clinical-summary
 GET    /health/neo4j`}</CodeBlock>
             </AccordionContent>

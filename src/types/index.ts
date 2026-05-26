@@ -147,6 +147,73 @@ export interface PropertyGraphTrends {
   error?: string;
 }
 
+export interface Medicine {
+  id: string;
+  name: string;
+  genericName?: string;
+  category: string;
+  unit?: string;
+  description?: string;
+  active?: boolean;
+}
+
+export interface MealNutrient {
+  id?: string;
+  nutrientCode: string;
+  amount?: number | null;
+  unit: string;
+}
+
+export interface MealMedicationIntake {
+  id?: string;
+  medicineId?: string | null;
+  medicineName?: string | null;
+  taken: boolean;
+  doseText?: string;
+}
+
+export interface NutritionMeal {
+  id?: string;
+  mealType: string;
+  foodDescription?: string;
+  nutrients?: MealNutrient[];
+  medicationIntakes?: MealMedicationIntake[];
+}
+
+export interface NutritionAlert {
+  id: string;
+  patientId: string;
+  diaryId: string;
+  severity: string;
+  code: string;
+  message: string;
+  evidence?: Record<string, unknown>;
+}
+
+export interface NutritionDiaryEntry {
+  id: string;
+  patientId: string;
+  diaryDate: string;
+  notesEndOfDay?: string;
+  totalProteinG?: number | null;
+  totalSodiumMg?: number | null;
+  totalPhosphorusMg?: number | null;
+  totalPotassiumMg?: number | null;
+  meals: NutritionMeal[];
+  alerts?: NutritionAlert[];
+}
+
+export interface NutritionMealInput {
+  meal_type: string;
+  food_description?: string;
+  nutrients: { nutrient_code: string; amount?: number; unit: string }[];
+  medication_intakes: {
+    medicine_id?: string;
+    taken: boolean;
+    dose_text?: string;
+  }[];
+}
+
 export interface PatientTrendsResponse {
   patientId: string;
   patientName: string;

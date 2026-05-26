@@ -7,7 +7,7 @@ import { AIAssistant } from '@/components/chat/AIAssistant';
 import { PatientTrends } from '@/components/clinical/PatientTrends';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, MessageSquare, Calendar, TrendingUp } from 'lucide-react';
+import { Plus, MessageSquare, Calendar, TrendingUp, Utensils } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
@@ -42,7 +42,7 @@ export default function Dashboard() {
         <PatientInfoCard patient={patient} />
 
         {/* Quick Actions */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {isPatient && (
             <Card
               className="cursor-pointer shadow-clinical transition-all duration-200 hover:shadow-clinical-lg hover:-translate-y-0.5 gradient-card border-primary/20"
@@ -56,6 +56,25 @@ export default function Dashboard() {
                   <h3 className="font-semibold text-foreground">Start New Session</h3>
                   <p className="text-sm text-muted-foreground">
                     Begin recording your dialysis session
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {isPatient && (
+            <Card
+              className="cursor-pointer shadow-clinical transition-all duration-200 hover:shadow-clinical-lg hover:-translate-y-0.5"
+              onClick={() => navigate('/nutrition-diary')}
+            >
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15">
+                  <Utensils className="h-6 w-6 text-emerald-700 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Nutrition diary</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Log meals, nutrients & phosphate binders
                   </p>
                 </div>
               </CardContent>

@@ -416,6 +416,84 @@ export async function fetchPatientTrends(patientId: string): Promise<PatientTren
   };
 }
 
+function mapMedicine(raw: Record<string, unknown>) {
+  return {
+    id: String(raw.id),
+    name: String(raw.name),
+    genericName: raw.generic_name as string | undefined,
+    category: String(raw.category ?? 'other'),
+    unit: raw.unit as string | undefined,
+    description: raw.description as string | undefined,
+    active: raw.active as boolean | undefined,
+  };
+}
+
+function mapNutritionDiary(raw: Record<string, unknown>) {
+  return {
+    id: String(raw.id),
+    patientId: String(raw.patient_id),
+    diaryDate: String(raw.diary_date),
+    notesEndOfDay: raw.notes_end_of_day as string | undefined,
+    totalProteinG: raw.total_protein_g as number | null | undefined,
+    totalSodiumMg: raw.total_sodium_mg as number | null | undefined,
+    totalPhosphorusMg: raw.total_phosphorus_mg as number | null | undefined,
+    totalPotassiumMg: raw.total_potassium_mg as number | null | undefined,
+    meals: ((raw.meals as Record<string, unknown>[]) ?? []).map((m) => ({
+      id: String(m.id),
+      mealType: String(m.meal_type),
+      foodDescription: m.food_description as string | undefined,
+      nutrients: ((m.nutrients as Record<string, unknown>[]) ?? []).map((n) => ({
+        nutrientCode: String(n.nutrient_code),
+        amount: n.amount as number | null | undefined,
+        unit: String(n.unit),
+      })),
+      medicationIntakes: ((m.medication_intakes as Record<string, unknown>[]) ?? []).map((i) => ({
+        medicineId: i.medicine_id as string | undefined,
+        medicineName: i.medicine_name as string | undefined,
+        taken: Boolean(i.taken),
+        doseText: i.dose_text as string | undefined,
+      })),
+    })),
+    alerts: ((raw.alerts as Record<string, unknown>[]) ?? []).map((a) => ({
+      id: String(a.id),
+      patientId: String(a.patient_id),
+      diaryId: String(a.diary_id),
+      severity: String(a.severity),
+      code: String(a.code),
+      message: String(a.message),
+    })),
+  };
+}
+
+export async function fetchMedicines() {
+  const data = await apiRequest('/medicines/');
+  return (data ?? []).map((m: Record<string, unknown>) => mapMedicine(m));
+}
+
+export async function fetchNutritionDiaries(patientId: string) {
+  const data = await apiRequest(`/patients/${patientId}/nutrition-diary`);
+  return (data.diaries ?? []).map((d: Record<string, unknown>) => mapNutritionDiary(d));
+}
+
+export async function saveNutritionDiary(
+  patientId: string,
+  payload: {
+    diary_date: string;
+    notes_end_of_day?: string;
+    meals: import('@/types').NutritionMealInput[];
+  }
+) {
+  const data = await apiRequest(`/patients/${patientId}/nutrition-diary`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return {
+    diary: mapNutritionDiary(data.diary),
+    checks: data.checks ?? [],
+  };
+}
+
 export async function getPatientAlerts(patientId: string): Promise<ClinicalAlert[]> {
   const sessions = await getPatientSessions(patientId);
   const allAlerts: ClinicalAlert[] = [];
