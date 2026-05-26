@@ -139,11 +139,6 @@ export function PatientTrends({ patientId, compact }: PatientTrendsProps) {
                   {pg.neo4jMessage}
                 </p>
               )}
-              <p className="text-xs">
-                Deploy Neo4j in the cluster:{' '}
-                <code className="text-foreground">kubectl apply -f k8s-neo4j.yaml</code>
-                , then restart the backend pod.
-              </p>
             </div>
           )}
           {pg.dizzinessSessionCount != null && pg.dizzinessSessionCount > 0 && (
