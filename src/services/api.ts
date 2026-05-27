@@ -30,6 +30,13 @@ function mapPreAssessment(raw: Record<string, unknown> | null | undefined) {
     accessCondition: raw.access_condition as string | undefined,
     ufGoal: raw.uf_goal as string | undefined,
     potassiumMmolL: raw.potassium_mmol_l as number | null | undefined,
+    targetDryWeightKg: raw.target_dry_weight_kg as number | null | undefined,
+    primeRinsebackMl: raw.prime_rinseback_ml as number | null | undefined,
+    ivFluidsMl: raw.iv_fluids_ml as number | null | undefined,
+    oralIntakeMl: raw.oral_intake_ml as number | null | undefined,
+    idwgKg: raw.idwg_kg as number | null | undefined,
+    fluidAddedLiters: raw.fluid_added_liters as number | null | undefined,
+    ufGoalLiters: raw.uf_goal_liters as number | null | undefined,
   };
 }
 
@@ -78,6 +85,21 @@ function mapPostAssessment(raw: Record<string, unknown> | null | undefined) {
     technicianName: raw.technician_name as string | undefined,
     nurseName: raw.nurse_name as string | undefined,
     doctorName: raw.doctor_name as string | undefined,
+    postPotassiumMmolL: raw.post_potassium_mmol_l as number | null | undefined,
+  };
+}
+
+function mapSessionMedicationIntake(raw: Record<string, unknown>) {
+  return {
+    id: String(raw.id),
+    sessionId: String(raw.session_id),
+    medicineId: raw.medicine_id as string | undefined,
+    medicineName: raw.medicine_name as string | undefined,
+    doseText: raw.dose_text as string | undefined,
+    route: raw.route as string | undefined,
+    takenAt: raw.taken_at as string | undefined,
+    notes: raw.notes as string | undefined,
+    createdAt: raw.created_at as string | undefined,
   };
 }
 
@@ -202,19 +224,32 @@ export async function deletePatient(patientId: string): Promise<{
   return apiRequest(`/patients/${patientId}`, { method: 'DELETE' });
 }
 
-export async function createSession(payload: {
-  patient_id: string;
-  session_date: string;
-  hospital_name: string;
-  weight_kg: number;
-  blood_pressure: string;
-  pulse: number;
-  temperature: number;
-  blood_sugar: number;
-  access_condition: 'Normal' | 'Abnormal';
-  uf_goal: string;
-  potassium_mmol_l?: number;
-}): Promise<{
+export async function fetchOpenSession(patientId: string) {
+  const data = await apiRequest(`/patients/${patientId}/open-session`);
+  return data.session ? mapSession(data.session) : null;
+}
+
+export async function calculateUfGoal(payload: {
+  pre_weight_kg: number;
+  target_dry_weight_kg: number;
+  prime_rinseback_ml?: number;
+  iv_fluids_ml?: number;
+  oral_intake_ml?: number;
+}): Promise<import('@/types').UfGoalCalculation> {
+  const data = await apiRequest('/sessions/uf-goal/calculate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return {
+    idwgKg: data.idwg_kg,
+    fluidAddedLiters: data.fluid_added_liters,
+    ufGoalLiters: data.uf_goal_liters,
+    ufGoal: data.uf_goal,
+  };
+}
+
+export async function createSession(payload: Record<string, unknown>): Promise<{
   session: DialysisSession;
   alerts: ClinicalAlert[];
   checks: ClinicalCheck[];
@@ -240,6 +275,7 @@ export async function getSession(sessionId: string): Promise<{
   session: DialysisSession;
   notes: SessionNote[];
   attachments: SessionAttachment[];
+  medicationIntakes: import('@/types').SessionMedicationIntake[];
   alerts: ClinicalAlert[];
   vitalReadings: import('@/types').SessionVitalReading[];
   vitalsWorkflow: import('@/types').VitalsWorkflowState | null;
@@ -249,12 +285,48 @@ export async function getSession(sessionId: string): Promise<{
     session: mapSession(data.session),
     notes: (data.notes ?? []).map(mapNote),
     attachments: (data.attachments ?? []).map(mapAttachment),
+    medicationIntakes: (data.medication_intakes ?? []).map(mapSessionMedicationIntake),
     alerts: (data.alerts ?? []).map(mapAlert),
     vitalReadings: (data.vital_readings ?? []).map(mapVitalReading),
     vitalsWorkflow: data.vitals_workflow
       ? mapVitalsWorkflow(data.vitals_workflow)
       : null,
   };
+}
+
+export async function updatePostPotassium(
+  sessionId: string,
+  postPotassiumMmolL: number
+): Promise<{ session: DialysisSession; alerts: ClinicalAlert[]; checks: ClinicalCheck[] }> {
+  const data = await apiRequest(`/sessions/${sessionId}/post-potassium`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ post_potassium_mmol_l: postPotassiumMmolL }),
+  });
+  return {
+    session: mapSession(data.session),
+    alerts: (data.alerts ?? []).map(mapAlert),
+    checks: data.checks ?? [],
+  };
+}
+
+export async function addSessionMedication(
+  sessionId: string,
+  payload: {
+    medicine_id?: string;
+    medicine_name?: string;
+    dose_text?: string;
+    route?: string;
+    taken_at?: string;
+    notes?: string;
+  }
+) {
+  const data = await apiRequest(`/sessions/${sessionId}/medications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return mapSessionMedicationIntake(data);
 }
 
 export async function getVitalsWorkflow(
@@ -327,6 +399,7 @@ export async function closeSession(
     technician_name?: string;
     nurse_name?: string;
     doctor_name?: string;
+    post_potassium_mmol_l?: number;
   }
 ): Promise<{
   session: DialysisSession;
@@ -492,6 +565,47 @@ export async function saveNutritionDiary(
     diary: mapNutritionDiary(data.diary),
     checks: data.checks ?? [],
   };
+}
+
+function mapFluidDiary(raw: Record<string, unknown>) {
+  return {
+    id: String(raw.id),
+    patientId: String(raw.patient_id),
+    diaryDate: String(raw.diary_date),
+    notes: raw.notes as string | undefined,
+    totalOralMl: raw.total_oral_ml as number | null | undefined,
+    totalIvMl: raw.total_iv_ml as number | null | undefined,
+    totalPrimeRinsebackMl: raw.total_prime_rinseback_ml as number | null | undefined,
+    totalOtherMl: raw.total_other_ml as number | null | undefined,
+    intakes: ((raw.intakes as Record<string, unknown>[]) ?? []).map((i) => ({
+      id: String(i.id),
+      category: String(i.category),
+      description: i.description as string | undefined,
+      volumeMl: i.volume_ml as number | null | undefined,
+      recordedTime: i.recorded_time as string | undefined,
+    })),
+  };
+}
+
+export async function fetchFluidDiaries(patientId: string) {
+  const data = await apiRequest(`/patients/${patientId}/fluid-diary`);
+  return (data.diaries ?? []).map((d: Record<string, unknown>) => mapFluidDiary(d));
+}
+
+export async function saveFluidDiary(
+  patientId: string,
+  payload: {
+    diary_date: string;
+    notes?: string;
+    intakes: import('@/types').RenalFluidIntakeInput[];
+  }
+) {
+  const data = await apiRequest(`/patients/${patientId}/fluid-diary`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return { diary: mapFluidDiary(data.diary) };
 }
 
 export async function getPatientAlerts(patientId: string): Promise<ClinicalAlert[]> {

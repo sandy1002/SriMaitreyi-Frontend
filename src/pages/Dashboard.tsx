@@ -7,7 +7,7 @@ import { AIAssistant } from '@/components/chat/AIAssistant';
 import { PatientTrends } from '@/components/clinical/PatientTrends';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, MessageSquare, Calendar, TrendingUp, Utensils } from 'lucide-react';
+import { Plus, MessageSquare, Calendar, TrendingUp, Utensils, Droplets } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
@@ -75,6 +75,25 @@ export default function Dashboard() {
                   <h3 className="font-semibold text-foreground">Nutrition diary</h3>
                   <p className="text-sm text-muted-foreground">
                     Log meals, nutrients & phosphate binders
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {isPatient && (
+            <Card
+              className="cursor-pointer shadow-clinical transition-all duration-200 hover:shadow-clinical-lg hover:-translate-y-0.5"
+              onClick={() => navigate('/fluid-diary')}
+            >
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/15">
+                  <Droplets className="h-6 w-6 text-sky-700 dark:text-sky-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Renal fluid diary</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Track oral, IV, and treatment fluids (ml)
                   </p>
                 </div>
               </CardContent>

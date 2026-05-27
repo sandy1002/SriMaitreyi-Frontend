@@ -13,6 +13,7 @@ import SessionDetail from "./pages/SessionDetail";
 import Architecture from "./pages/Architecture";
 import AdminDashboard from "./pages/AdminDashboard";
 import NutritionDiary from "./pages/NutritionDiary";
+import RenalFluidDiary from "./pages/RenalFluidDiary";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
@@ -68,6 +69,14 @@ const App = () => (
                 element={
                   <PatientRoute>
                     <NutritionDiary />
+                  </PatientRoute>
+                }
+              />
+              <Route
+                path="/fluid-diary"
+                element={
+                  <PatientRoute>
+                    <RenalFluidDiary />
                   </PatientRoute>
                 }
               />

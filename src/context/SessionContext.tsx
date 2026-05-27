@@ -28,6 +28,11 @@ interface SessionContextType {
       accessCondition: 'Normal' | 'Abnormal';
       ufGoal: string;
       potassiumMmolL?: number;
+      targetDryWeightKg?: number;
+      primeRinsebackMl?: number;
+      ivFluidsMl?: number;
+      oralIntakeMl?: number;
+      previousSessionPostK?: number;
     }
   ) => Promise<{ session: DialysisSession; alerts: ClinicalAlert[]; checks: ClinicalCheck[] }>;
 
@@ -46,15 +51,18 @@ interface SessionContextType {
       technicianName?: string;
       nurseName?: string;
       doctorName?: string;
+      postPotassiumMmolL?: number;
     }
   ) => Promise<{ session: DialysisSession; alerts: ClinicalAlert[]; checks: ClinicalCheck[] }>;
 
+  medicationIntakes: import('@/types').SessionMedicationIntake[];
   notes: SessionNote[];
   attachments: SessionAttachment[];
   alerts: ClinicalAlert[];
   checks: ClinicalCheck[];
   vitalReadings: import('@/types').SessionVitalReading[];
   vitalsWorkflow: import('@/types').VitalsWorkflowState | null;
+  medicationIntakes: import('@/types').SessionMedicationIntake[];
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
@@ -68,6 +76,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [checks, setChecks] = useState<ClinicalCheck[]>([]);
   const [vitalReadings, setVitalReadings] = useState<import('@/types').SessionVitalReading[]>([]);
   const [vitalsWorkflow, setVitalsWorkflow] = useState<import('@/types').VitalsWorkflowState | null>(null);
+  const [medicationIntakes, setMedicationIntakes] = useState<import('@/types').SessionMedicationIntake[]>([]);
 
   const loadSessionsByPatient = async (patientId: string) => {
     const data = await api.getPatientSessions(patientId);
@@ -83,6 +92,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setChecks([]);
     setVitalReadings(data.vitalReadings);
     setVitalsWorkflow(data.vitalsWorkflow);
+    setMedicationIntakes(data.medicationIntakes);
   };
 
   const createSession = async (
@@ -98,6 +108,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       accessCondition: 'Normal' | 'Abnormal';
       ufGoal: string;
       potassiumMmolL?: number;
+      targetDryWeightKg?: number;
+      primeRinsebackMl?: number;
+      ivFluidsMl?: number;
+      oralIntakeMl?: number;
+      previousSessionPostK?: number;
     }
   ) => {
     const result = await api.createSession({
@@ -112,6 +127,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       access_condition: assessment.accessCondition,
       uf_goal: assessment.ufGoal,
       potassium_mmol_l: assessment.potassiumMmolL,
+      target_dry_weight_kg: assessment.targetDryWeightKg,
+      prime_rinseback_ml: assessment.primeRinsebackMl,
+      iv_fluids_ml: assessment.ivFluidsMl,
+      oral_intake_ml: assessment.oralIntakeMl,
+      previous_session_post_k: assessment.previousSessionPostK,
     });
 
     setSessions((prev) => [result.session, ...prev]);
@@ -120,6 +140,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setAttachments([]);
     setAlerts(result.alerts);
     setChecks(result.checks);
+    setMedicationIntakes([]);
 
     return result;
   };
@@ -142,6 +163,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       technicianName?: string;
       nurseName?: string;
       doctorName?: string;
+      postPotassiumMmolL?: number;
     }
   ) => {
     const body = payload
@@ -153,6 +175,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           technician_name: payload.technicianName,
           nurse_name: payload.nurseName,
           doctor_name: payload.doctorName,
+          post_potassium_mmol_l: payload.postPotassiumMmolL,
         }
       : {};
 
@@ -182,6 +205,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         checks,
         vitalReadings,
         vitalsWorkflow,
+        medicationIntakes,
       }}
     >
       {children}
