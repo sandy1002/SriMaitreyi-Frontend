@@ -64,6 +64,7 @@ import * as api from '@/services/api';
 import { SessionAttachment } from '@/types';
 import { AlertsPanel } from '@/components/clinical/AlertsPanel';
 import { SessionVitalsWorkflow } from '@/components/clinical/SessionVitalsWorkflow';
+import { SessionMedicationSection } from '@/components/clinical/SessionMedicationSection';
 
 /* ---------------------------------------
    Safe Date Formatter (CRITICAL)
@@ -88,6 +89,7 @@ export default function SessionDetail() {
     alerts,
     checks,
     vitalReadings,
+    medicationIntakes,
     loadSessionDetails,
     addNote,
     closeSession,
@@ -114,7 +116,10 @@ export default function SessionDetail() {
   const [technicianName, setTechnicianName] = useState('');
   const [nurseName, setNurseName] = useState('');
   const [doctorName, setDoctorName] = useState('');
+  const [postPotassium, setPostPotassium] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [postKOnly, setPostKOnly] = useState('');
+  const [savingPostK, setSavingPostK] = useState(false);
 
   // Local attachment state so we can append newly uploaded files
   const [allAttachments, setAllAttachments] = useState<SessionAttachment[]>(
@@ -168,6 +173,9 @@ export default function SessionDetail() {
 
   const isPatient = user?.role === 'patient';
   const isCompleted = session.status === 'completed';
+  const isPostDialysis = session.status === 'post-dialysis';
+  const isInProgress = session.status === 'in-progress';
+  const isSessionOpen = !isCompleted;
 
   const handleDeleteSession = async () => {
     if (!session) return;
@@ -305,7 +313,11 @@ export default function SessionDetail() {
 
             <div className="flex items-center gap-3 flex-wrap justify-end">
               <Badge>
-                {isCompleted ? 'Completed' : 'In Progress'}
+                {isCompleted
+                  ? 'Completed'
+                  : isPostDialysis
+                    ? 'Awaiting Post K'
+                    : 'In Progress'}
               </Badge>
 
               {isAdmin && (
@@ -336,22 +348,23 @@ export default function SessionDetail() {
                 </AlertDialog>
               )}
 
-              {!isCompleted && isPatient && (
+              {isInProgress && isPatient && (
                 <>
                   <Button
                     disabled={closing}
                     onClick={() => setCloseDialogOpen(true)}
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
-                    Close Session
+                    End Dialysis
                   </Button>
 
                   <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Complete Session</DialogTitle>
+                        <DialogTitle>End dialysis</DialogTitle>
                         <DialogDescription>
-                          Please enter the mandatory post-dialysis values and staff names.
+                          Record post-dialysis vitals and staff. The session stays open until Post K
+                          is entered at your next visit (or below if known now).
                         </DialogDescription>
                       </DialogHeader>
 
@@ -400,6 +413,18 @@ export default function SessionDetail() {
                             <Input id="doctor" value={doctorName} onChange={e => setDoctorName(e.target.value)} />
                           </div>
                         </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="postK">Potassium — Post K (mmol/L)</Label>
+                          <Input
+                            id="postK"
+                            type="number"
+                            step="0.1"
+                            value={postPotassium}
+                            onChange={(e) => setPostPotassium(e.target.value)}
+                            placeholder="Optional now — required before next session"
+                          />
+                        </div>
                       </div>
 
                       <DialogFooter>
@@ -422,15 +447,20 @@ export default function SessionDetail() {
                                 technicianName,
                                 nurseName,
                                 doctorName,
+                                postPotassiumMmolL: postPotassium
+                                  ? Number(postPotassium)
+                                  : undefined,
                               });
 
                               await loadSessionDetails(session.id);
                               toast({
-                                title: 'Session Closed',
+                                title: result.session.status === 'completed'
+                                  ? 'Session completed'
+                                  : 'Dialysis ended',
                                 description:
-                                  result.alerts.length > 0
-                                    ? `Session completed. ${result.alerts.length} alert(s) recorded.`
-                                    : 'Your dialysis session is completed.',
+                                  result.session.status === 'completed'
+                                    ? 'Post K recorded — session is complete.'
+                                    : 'Session stays open until Post K is entered at your next visit.',
                               });
                               setCloseDialogOpen(false);
                             } catch (err) {
@@ -439,7 +469,7 @@ export default function SessionDetail() {
                             } finally {
                               setClosing(false);
                             }
-                          }} disabled={closing}>{closing ? 'Closing...' : 'Close Session'}</Button>
+                          }} disabled={closing}>{closing ? 'Saving...' : 'End dialysis'}</Button>
                         </div>
                       </DialogFooter>
                     </DialogContent>
@@ -460,10 +490,57 @@ export default function SessionDetail() {
 
         <SessionVitalsWorkflow
           sessionId={session.id}
-          isCompleted={isCompleted}
+          isCompleted={!isInProgress}
           initialReadings={vitalReadings}
           onAlertsUpdated={() => loadSessionDetails(session.id)}
         />
+
+        <SessionMedicationSection
+          sessionId={session.id}
+          readOnly={isCompleted}
+          initialIntakes={medicationIntakes}
+          onUpdated={() => loadSessionDetails(session.id)}
+        />
+
+        {isPostDialysis && isPatient && (
+          <Card className="border-amber-500/40">
+            <CardHeader>
+              <CardTitle className="text-lg">Post K — complete session</CardTitle>
+              <CardDescription>
+                Enter Post K when available. The session remains open until this is saved or you
+                start a new session.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col sm:flex-row gap-3">
+              <Input
+                type="number"
+                step="0.1"
+                placeholder="Post K (mmol/L)"
+                value={postKOnly}
+                onChange={(e) => setPostKOnly(e.target.value)}
+                className="max-w-xs"
+              />
+              <Button
+                disabled={!postKOnly || savingPostK}
+                onClick={async () => {
+                  setSavingPostK(true);
+                  try {
+                    await api.updatePostPotassium(session.id, Number(postKOnly));
+                    await loadSessionDetails(session.id);
+                    setPostKOnly('');
+                    toast({ title: 'Post K saved — session completed' });
+                  } catch {
+                    toast({ title: 'Failed to save Post K', variant: 'destructive' });
+                  } finally {
+                    setSavingPostK(false);
+                  }
+                }}
+              >
+                {savingPostK ? 'Saving...' : 'Save Post K'}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         <Accordion type="single" collapsible className="pt-2">
           <AccordionItem value="pre-dialysis">
@@ -509,15 +586,34 @@ export default function SessionDetail() {
                   <span className="font-semibold">{assessment?.accessCondition || '—'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">UF Goal (Pre - Dry): </span>
+                  <span className="text-muted-foreground">Target dry weight: </span>
+                  <span className="font-semibold">
+                    {assessment?.targetDryWeightKg != null
+                      ? `${assessment.targetDryWeightKg} kg`
+                      : '—'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">IDWG: </span>
+                  <span className="font-semibold">
+                    {assessment?.idwgKg != null ? `${assessment.idwgKg} kg` : '—'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">UF Goal: </span>
                   <span className="font-semibold">{assessment?.ufGoal || '—'}</span>
+                  {assessment?.ufGoalLiters != null && (
+                    <span className="text-muted-foreground text-xs ml-1">
+                      ({assessment.ufGoalLiters} L calculated)
+                    </span>
+                  )}
                 </div>
               </div>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
 
-        {isCompleted && (
+        {postAssessment && (
           <Accordion type="single" collapsible className="pt-2">
             <AccordionItem value="post-dialysis">
               <AccordionTrigger className="text-lg font-medium">
@@ -525,7 +621,7 @@ export default function SessionDetail() {
               </AccordionTrigger>
               <AccordionContent>
                 <p className="text-sm text-muted-foreground">
-                  Assessment values recorded when the session was closed.
+                  Values recorded when dialysis ended.
                 </p>
 
                 <div className="mt-3 space-y-1 text-sm">
@@ -536,6 +632,16 @@ export default function SessionDetail() {
                   <div>
                     <span className="text-muted-foreground">Post BP: </span>
                     <span className="font-semibold">{postAssessment?.postBp || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Potassium (Post K): </span>
+                    <span className="font-semibold">
+                      {postAssessment?.postPotassiumMmolL != null
+                        ? `${postAssessment.postPotassiumMmolL} mmol/L`
+                        : isPostDialysis
+                          ? 'Pending — enter before next session'
+                          : '—'}
+                    </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Total UF Removed: </span>
@@ -576,7 +682,7 @@ export default function SessionDetail() {
           {/* NOTES TAB */}
           <TabsContent value="notes" className="space-y-4">
             {/* Add Note Section – Patient Only */}
-            {isPatient && !isCompleted && (
+            {isPatient && isSessionOpen && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">
@@ -639,7 +745,7 @@ export default function SessionDetail() {
 
           {/* ALL ATTACHMENTS TAB */}
           <TabsContent value="attachments" className="space-y-4">
-            {isPatient && !isCompleted && (
+            {isPatient && isSessionOpen && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Paperclip className="h-4 w-4" />
@@ -706,7 +812,7 @@ export default function SessionDetail() {
 
           {/* PHOTOS TAB */}
           <TabsContent value="photos" className="space-y-4">
-            {isPatient && !isCompleted && (
+            {isPatient && isSessionOpen && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Image className="h-4 w-4" />
@@ -762,7 +868,7 @@ export default function SessionDetail() {
 
           {/* AUDIO TAB */}
           <TabsContent value="audio" className="space-y-4">
-            {isPatient && !isCompleted && (
+            {isPatient && isSessionOpen && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Music className="h-4 w-4" />

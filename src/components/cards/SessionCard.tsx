@@ -64,12 +64,16 @@ export function SessionCard({ session }: SessionCardProps) {
               className={
                 session.status === 'completed'
                   ? 'bg-success/10 text-success border-success/20'
-                  : 'bg-primary/10 text-primary border-primary/20'
+                  : session.status === 'post-dialysis'
+                    ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20'
+                    : 'bg-primary/10 text-primary border-primary/20'
               }
             >
               {session.status === 'completed'
                 ? 'Completed'
-                : 'In Progress'}
+                : session.status === 'post-dialysis'
+                  ? 'Awaiting Post K'
+                  : 'In Progress'}
             </Badge>
 
             <ChevronRight className="h-5 w-5 text-muted-foreground" />

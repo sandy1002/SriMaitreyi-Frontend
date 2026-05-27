@@ -4,6 +4,7 @@ export interface Patient {
   age: number | string;
   gender: 'Male' | 'Female' | 'Other' | string;
   medicalRecordNumber: string;
+  targetDryWeightKg?: number | null;
   dialysisStartDate?: string;
   dialysisSince?: string;
   createdAt?: string;
@@ -28,6 +29,13 @@ export interface PreDialysisAssessment {
   accessCondition?: string;
   ufGoal?: string;
   potassiumMmolL?: number | null;
+  targetDryWeightKg?: number | null;
+  primeRinsebackMl?: number | null;
+  ivFluidsMl?: number | null;
+  oralIntakeMl?: number | null;
+  idwgKg?: number | null;
+  fluidAddedLiters?: number | null;
+  ufGoalLiters?: number | null;
 }
 
 export interface SessionVitalReading {
@@ -69,6 +77,26 @@ export interface PostDialysisAssessment {
   technicianName?: string;
   nurseName?: string;
   doctorName?: string;
+  postPotassiumMmolL?: number | null;
+}
+
+export interface SessionMedicationIntake {
+  id: string;
+  sessionId: string;
+  medicineId?: string | null;
+  medicineName?: string | null;
+  doseText?: string;
+  route?: string;
+  takenAt?: string;
+  notes?: string;
+  createdAt?: string;
+}
+
+export interface UfGoalCalculation {
+  idwgKg: number;
+  fluidAddedLiters: number;
+  ufGoalLiters: number;
+  ufGoal: string;
 }
 
 export interface ClinicalAlert {
@@ -92,7 +120,7 @@ export interface DialysisSession {
   patientId: string;
   sessionDate: string;
   hospitalName: string;
-  status: 'in-progress' | 'completed';
+  status: 'in-progress' | 'post-dialysis' | 'completed';
   createdAt: string;
   summary?: string;
   preDialysisAssessment?: PreDialysisAssessment;
@@ -212,6 +240,33 @@ export interface NutritionMealInput {
     taken: boolean;
     dose_text?: string;
   }[];
+}
+
+export interface RenalFluidIntakeLine {
+  id?: string;
+  category: string;
+  description?: string;
+  volumeMl?: number | null;
+  recordedTime?: string;
+}
+
+export interface RenalFluidDiaryEntry {
+  id: string;
+  patientId: string;
+  diaryDate: string;
+  notes?: string;
+  totalOralMl?: number | null;
+  totalIvMl?: number | null;
+  totalPrimeRinsebackMl?: number | null;
+  totalOtherMl?: number | null;
+  intakes: RenalFluidIntakeLine[];
+}
+
+export interface RenalFluidIntakeInput {
+  category: string;
+  description?: string;
+  volume_ml?: number;
+  recorded_time?: string;
 }
 
 export interface PatientTrendsResponse {
