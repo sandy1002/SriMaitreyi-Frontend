@@ -192,13 +192,6 @@ export interface MealNutrient {
   unit: string;
 }
 
-export interface MealMedicationIntake {
-  id?: string;
-  medicineId?: string | null;
-  medicineName?: string | null;
-  taken: boolean;
-}
-
 export interface NutritionMeal {
   id?: string;
   mealType: string;
@@ -208,7 +201,6 @@ export interface NutritionMeal {
   nutritionFacts?: Record<string, unknown>;
   medicalDetails?: Record<string, unknown>;
   nutrients?: MealNutrient[];
-  medicationIntakes?: MealMedicationIntake[];
 }
 
 export interface NutritionAlert {
@@ -243,10 +235,36 @@ export interface NutritionMealInput {
   nutrition_facts?: Record<string, unknown>;
   medical_details?: Record<string, unknown>;
   nutrients: { nutrient_code: string; amount?: number; unit: string }[];
-  medication_intakes: {
-    medicine_id?: string;
-    taken: boolean;
-  }[];
+}
+
+export interface MedicationDiaryIntake {
+  id?: string;
+  medicineId?: string | null;
+  medicineName?: string;
+  doseText?: string;
+  route?: string;
+  taken: boolean;
+  takenTime?: string;
+  notes?: string;
+}
+
+export interface MedicationDiaryEntry {
+  id: string;
+  patientId: string;
+  diaryDate: string;
+  notes?: string;
+  totalDoses?: number | null;
+  intakes: MedicationDiaryIntake[];
+}
+
+export interface MedicationDiaryIntakeInput {
+  medicine_id?: string;
+  medicine_name?: string;
+  dose_text?: string;
+  route?: string;
+  taken: boolean;
+  taken_time?: string;
+  notes?: string;
 }
 
 export interface RenalFluidIntakeLine {

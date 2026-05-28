@@ -18,7 +18,7 @@ import {
 import { ArrowLeft, Utensils, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
-import type { Medicine, NutritionDiaryEntry, NutritionMealInput } from '@/types';
+import type { NutritionDiaryEntry, NutritionMealInput } from '@/types';
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: 'Breakfast' },
@@ -35,8 +35,6 @@ type MealFormState = {
   sodium: string;
   phosphorus: string;
   potassium: string;
-  binderMedicineId: string;
-  binderTaken: 'yes' | 'na';
   medicalDetails: string;
 };
 
@@ -54,8 +52,6 @@ const emptyMeal = (): MealFormState => ({
   sodium: '',
   phosphorus: '',
   potassium: '',
-  binderMedicineId: '',
-  binderTaken: 'na',
   medicalDetails: '',
 });
 
@@ -73,13 +69,11 @@ export default function NutritionDiaryPage() {
   });
   const [notes, setNotes] = useState('');
   const [medicineDiary, setMedicineDiary] = useState('');
-  const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [recentDiaries, setRecentDiaries] = useState<NutritionDiaryEntry[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!patient?.id) return;
-    api.fetchMedicines().then(setMedicines).catch(console.error);
     api.fetchNutritionDiaries(patient.id).then(setRecentDiaries).catch(console.error);
   }, [patient?.id]);
 
@@ -98,7 +92,6 @@ export default function NutritionDiaryPage() {
       const nutrients = Object.fromEntries(
         (m.nutrients ?? []).map((n) => [n.nutrientCode, String(n.amount ?? '')])
       );
-      const binder = (m.medicationIntakes ?? [])[0];
       next[key] = {
         foodName: m.foodName ?? '',
         portionSize: m.portionSize ?? '',
@@ -107,8 +100,6 @@ export default function NutritionDiaryPage() {
         sodium: nutrients.SODIUM ?? '',
         phosphorus: nutrients.PHOSPHORUS ?? '',
         potassium: nutrients.POTASSIUM ?? '',
-        binderMedicineId: binder?.medicineId ?? '',
-        binderTaken: binder?.taken ? 'yes' : 'na',
         medicalDetails:
           typeof m.medicalDetails === 'string'
             ? m.medicalDetails
@@ -126,8 +117,6 @@ export default function NutritionDiaryPage() {
   if (user?.role !== 'patient') {
     return <Navigate to="/admin" replace />;
   }
-
-  const binders = medicines.filter((m) => m.category === 'phosphate_binder');
 
   const updateMeal = (type: string, patch: Partial<MealFormState>) => {
     setMeals((prev) => ({ ...prev, [type]: { ...prev[type], ...patch } }));
@@ -157,7 +146,6 @@ export default function NutritionDiaryPage() {
     const nutrients = Object.fromEntries(
       (source.nutrients ?? []).map((n) => [n.nutrientCode, String(n.amount ?? '')])
     );
-    const binder = (source.medicationIntakes ?? [])[0];
     updateMeal(mealType, {
       foodName: source.foodName ?? '',
       portionSize: source.portionSize ?? '',
@@ -166,8 +154,6 @@ export default function NutritionDiaryPage() {
       sodium: nutrients.SODIUM ?? '',
       phosphorus: nutrients.PHOSPHORUS ?? '',
       potassium: nutrients.POTASSIUM ?? '',
-      binderMedicineId: binder?.medicineId ?? '',
-      binderTaken: binder?.taken ? 'yes' : 'na',
       medicalDetails:
         typeof source.medicalDetails === 'string'
           ? source.medicalDetails
@@ -183,19 +169,6 @@ export default function NutritionDiaryPage() {
       if (m.sodium) nutrients.push({ nutrient_code: 'SODIUM', amount: Number(m.sodium), unit: 'mg' });
       if (m.phosphorus) nutrients.push({ nutrient_code: 'PHOSPHORUS', amount: Number(m.phosphorus), unit: 'mg' });
       if (m.potassium) nutrients.push({ nutrient_code: 'POTASSIUM', amount: Number(m.potassium), unit: 'mg' });
-
-      const medication_intakes = [];
-      if (m.binderTaken === 'yes' && m.binderMedicineId) {
-        medication_intakes.push({
-          medicine_id: m.binderMedicineId,
-          taken: true,
-        });
-      } else if (m.binderMedicineId && m.binderTaken === 'na') {
-        medication_intakes.push({
-          medicine_id: m.binderMedicineId,
-          taken: false,
-        });
-      }
 
       let medicalDetails: Record<string, unknown> = {};
       if (m.medicalDetails.trim()) {
@@ -219,7 +192,6 @@ export default function NutritionDiaryPage() {
         },
         medical_details: medicalDetails,
         nutrients,
-        medication_intakes,
       };
     });
   };
@@ -369,44 +341,6 @@ export default function NutritionDiaryPage() {
                         onChange={(e) => updateMeal(key, { medicalDetails: e.target.value })}
                         placeholder='JSON or text, e.g. {"diabetic_friendly": true}'
                       />
-                    </div>
-                    <div>
-                      <Label>Phosphate binder</Label>
-                      <Select
-                        value={m.binderMedicineId || 'none'}
-                        onValueChange={(v) =>
-                          updateMeal(key, { binderMedicineId: v === 'none' ? '' : v })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select medicine" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">—</SelectItem>
-                          {binders.map((med) => (
-                            <SelectItem key={med.id} value={med.id}>
-                              {med.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Taken?</Label>
-                      <Select
-                        value={m.binderTaken}
-                        onValueChange={(v) =>
-                          updateMeal(key, { binderTaken: v as 'yes' | 'na' })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="yes">Yes</SelectItem>
-                          <SelectItem value="na">N/A</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </div>
                   </CardContent>
                 </Card>

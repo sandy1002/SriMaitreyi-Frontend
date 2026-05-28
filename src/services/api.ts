@@ -525,11 +525,6 @@ function mapNutritionDiary(raw: Record<string, unknown>) {
         amount: n.amount as number | null | undefined,
         unit: String(n.unit),
       })),
-      medicationIntakes: ((m.medication_intakes as Record<string, unknown>[]) ?? []).map((i) => ({
-        medicineId: i.medicine_id as string | undefined,
-        medicineName: i.medicine_name as string | undefined,
-        taken: Boolean(i.taken),
-      })),
     })),
     alerts: ((raw.alerts as Record<string, unknown>[]) ?? []).map((a) => ({
       id: String(a.id),
@@ -570,6 +565,47 @@ export async function saveNutritionDiary(
     diary: mapNutritionDiary(data.diary),
     checks: data.checks ?? [],
   };
+}
+
+function mapMedicationDiary(raw: Record<string, unknown>) {
+  return {
+    id: String(raw.id),
+    patientId: String(raw.patient_id),
+    diaryDate: String(raw.diary_date),
+    notes: raw.notes as string | undefined,
+    totalDoses: raw.total_doses as number | null | undefined,
+    intakes: ((raw.intakes as Record<string, unknown>[]) ?? []).map((i) => ({
+      id: String(i.id),
+      medicineId: i.medicine_id as string | undefined,
+      medicineName: i.medicine_name as string | undefined,
+      doseText: i.dose_text as string | undefined,
+      route: i.route as string | undefined,
+      taken: Boolean(i.taken),
+      takenTime: i.taken_time as string | undefined,
+      notes: i.notes as string | undefined,
+    })),
+  };
+}
+
+export async function fetchMedicationDiaries(patientId: string) {
+  const data = await apiRequest(`/patients/${patientId}/medication-diary`);
+  return (data.diaries ?? []).map((d: Record<string, unknown>) => mapMedicationDiary(d));
+}
+
+export async function saveMedicationDiary(
+  patientId: string,
+  payload: {
+    diary_date: string;
+    notes?: string;
+    intakes: import('@/types').MedicationDiaryIntakeInput[];
+  }
+) {
+  const data = await apiRequest(`/patients/${patientId}/medication-diary`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return { diary: mapMedicationDiary(data.diary) };
 }
 
 function mapFluidDiary(raw: Record<string, unknown>) {
