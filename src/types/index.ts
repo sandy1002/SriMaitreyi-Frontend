@@ -197,13 +197,16 @@ export interface MealMedicationIntake {
   medicineId?: string | null;
   medicineName?: string | null;
   taken: boolean;
-  doseText?: string;
 }
 
 export interface NutritionMeal {
   id?: string;
   mealType: string;
+  foodName?: string;
+  portionSize?: string;
   foodDescription?: string;
+  nutritionFacts?: Record<string, unknown>;
+  medicalDetails?: Record<string, unknown>;
   nutrients?: MealNutrient[];
   medicationIntakes?: MealMedicationIntake[];
 }
@@ -223,6 +226,7 @@ export interface NutritionDiaryEntry {
   patientId: string;
   diaryDate: string;
   notesEndOfDay?: string;
+  medicineDiary?: string;
   totalProteinG?: number | null;
   totalSodiumMg?: number | null;
   totalPhosphorusMg?: number | null;
@@ -233,12 +237,15 @@ export interface NutritionDiaryEntry {
 
 export interface NutritionMealInput {
   meal_type: string;
+  food_name?: string;
+  portion_size?: string;
   food_description?: string;
+  nutrition_facts?: Record<string, unknown>;
+  medical_details?: Record<string, unknown>;
   nutrients: { nutrient_code: string; amount?: number; unit: string }[];
   medication_intakes: {
     medicine_id?: string;
     taken: boolean;
-    dose_text?: string;
   }[];
 }
 

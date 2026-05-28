@@ -507,6 +507,7 @@ function mapNutritionDiary(raw: Record<string, unknown>) {
     patientId: String(raw.patient_id),
     diaryDate: String(raw.diary_date),
     notesEndOfDay: raw.notes_end_of_day as string | undefined,
+    medicineDiary: raw.medicine_diary as string | undefined,
     totalProteinG: raw.total_protein_g as number | null | undefined,
     totalSodiumMg: raw.total_sodium_mg as number | null | undefined,
     totalPhosphorusMg: raw.total_phosphorus_mg as number | null | undefined,
@@ -514,7 +515,11 @@ function mapNutritionDiary(raw: Record<string, unknown>) {
     meals: ((raw.meals as Record<string, unknown>[]) ?? []).map((m) => ({
       id: String(m.id),
       mealType: String(m.meal_type),
+      foodName: m.food_name as string | undefined,
+      portionSize: m.portion_size as string | undefined,
       foodDescription: m.food_description as string | undefined,
+      nutritionFacts: (m.nutrition_facts as Record<string, unknown>) ?? {},
+      medicalDetails: (m.medical_details as Record<string, unknown>) ?? {},
       nutrients: ((m.nutrients as Record<string, unknown>[]) ?? []).map((n) => ({
         nutrientCode: String(n.nutrient_code),
         amount: n.amount as number | null | undefined,
@@ -524,7 +529,6 @@ function mapNutritionDiary(raw: Record<string, unknown>) {
         medicineId: i.medicine_id as string | undefined,
         medicineName: i.medicine_name as string | undefined,
         taken: Boolean(i.taken),
-        doseText: i.dose_text as string | undefined,
       })),
     })),
     alerts: ((raw.alerts as Record<string, unknown>[]) ?? []).map((a) => ({
@@ -553,6 +557,7 @@ export async function saveNutritionDiary(
   payload: {
     diary_date: string;
     notes_end_of_day?: string;
+    medicine_diary?: string;
     meals: import('@/types').NutritionMealInput[];
   }
 ) {

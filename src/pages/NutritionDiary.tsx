@@ -11,6 +11,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -27,6 +28,8 @@ const MEAL_TYPES = [
 ] as const;
 
 type MealFormState = {
+  foodName: string;
+  portionSize: string;
   foodDescription: string;
   protein: string;
   sodium: string;
@@ -34,10 +37,18 @@ type MealFormState = {
   potassium: string;
   binderMedicineId: string;
   binderTaken: 'yes' | 'na';
-  binderDose: string;
+  medicalDetails: string;
+};
+
+type MealSuggestion = {
+  id: string;
+  label: string;
+  meal: NutritionDiaryEntry['meals'][number];
 };
 
 const emptyMeal = (): MealFormState => ({
+  foodName: '',
+  portionSize: '',
   foodDescription: '',
   protein: '',
   sodium: '',
@@ -45,7 +56,7 @@ const emptyMeal = (): MealFormState => ({
   potassium: '',
   binderMedicineId: '',
   binderTaken: 'na',
-  binderDose: '',
+  medicalDetails: '',
 });
 
 export default function NutritionDiaryPage() {
@@ -61,6 +72,7 @@ export default function NutritionDiaryPage() {
     snacks: emptyMeal(),
   });
   const [notes, setNotes] = useState('');
+  const [medicineDiary, setMedicineDiary] = useState('');
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [recentDiaries, setRecentDiaries] = useState<NutritionDiaryEntry[]>([]);
   const [saving, setSaving] = useState(false);
@@ -88,6 +100,8 @@ export default function NutritionDiaryPage() {
       );
       const binder = (m.medicationIntakes ?? [])[0];
       next[key] = {
+        foodName: m.foodName ?? '',
+        portionSize: m.portionSize ?? '',
         foodDescription: m.foodDescription ?? '',
         protein: nutrients.PROTEIN ?? '',
         sodium: nutrients.SODIUM ?? '',
@@ -95,11 +109,15 @@ export default function NutritionDiaryPage() {
         potassium: nutrients.POTASSIUM ?? '',
         binderMedicineId: binder?.medicineId ?? '',
         binderTaken: binder?.taken ? 'yes' : 'na',
-        binderDose: binder?.doseText ?? '',
+        medicalDetails:
+          typeof m.medicalDetails === 'string'
+            ? m.medicalDetails
+            : JSON.stringify(m.medicalDetails ?? {}),
       };
     }
     setMeals(next);
     setNotes(existing.notesEndOfDay ?? '');
+    setMedicineDiary(existing.medicineDiary ?? '');
   }, [diaryDate, recentDiaries, patient?.id]);
 
   if (!isAuthenticated || !patient) {
@@ -113,6 +131,48 @@ export default function NutritionDiaryPage() {
 
   const updateMeal = (type: string, patch: Partial<MealFormState>) => {
     setMeals((prev) => ({ ...prev, [type]: { ...prev[type], ...patch } }));
+  };
+
+  const getMealSuggestions = (mealType: string): MealSuggestion[] => {
+    const rows: MealSuggestion[] = [];
+    for (const diary of recentDiaries) {
+      if (diary.diaryDate === diaryDate) continue;
+      for (const meal of diary.meals ?? []) {
+        if ((meal.mealType ?? '').toLowerCase() !== mealType.toLowerCase()) continue;
+        const title = meal.foodName || meal.foodDescription || 'Saved meal';
+        rows.push({
+          id: `${diary.id}-${meal.id ?? title}`,
+          label: `${diary.diaryDate} - ${title}`,
+          meal,
+        });
+      }
+    }
+    return rows.slice(0, 10);
+  };
+
+  const applySuggestion = (mealType: string, suggestionId: string) => {
+    const suggestion = getMealSuggestions(mealType).find((s) => s.id === suggestionId);
+    if (!suggestion) return;
+    const source = suggestion.meal;
+    const nutrients = Object.fromEntries(
+      (source.nutrients ?? []).map((n) => [n.nutrientCode, String(n.amount ?? '')])
+    );
+    const binder = (source.medicationIntakes ?? [])[0];
+    updateMeal(mealType, {
+      foodName: source.foodName ?? '',
+      portionSize: source.portionSize ?? '',
+      foodDescription: source.foodDescription ?? '',
+      protein: nutrients.PROTEIN ?? '',
+      sodium: nutrients.SODIUM ?? '',
+      phosphorus: nutrients.PHOSPHORUS ?? '',
+      potassium: nutrients.POTASSIUM ?? '',
+      binderMedicineId: binder?.medicineId ?? '',
+      binderTaken: binder?.taken ? 'yes' : 'na',
+      medicalDetails:
+        typeof source.medicalDetails === 'string'
+          ? source.medicalDetails
+          : JSON.stringify(source.medicalDetails ?? {}),
+    });
   };
 
   const buildMealsPayload = (): NutritionMealInput[] => {
@@ -129,19 +189,35 @@ export default function NutritionDiaryPage() {
         medication_intakes.push({
           medicine_id: m.binderMedicineId,
           taken: true,
-          dose_text: m.binderDose || undefined,
         });
       } else if (m.binderMedicineId && m.binderTaken === 'na') {
         medication_intakes.push({
           medicine_id: m.binderMedicineId,
           taken: false,
-          dose_text: m.binderDose || undefined,
         });
+      }
+
+      let medicalDetails: Record<string, unknown> = {};
+      if (m.medicalDetails.trim()) {
+        try {
+          medicalDetails = JSON.parse(m.medicalDetails);
+        } catch {
+          medicalDetails = { note: m.medicalDetails.trim() };
+        }
       }
 
       return {
         meal_type: key,
+        food_name: m.foodName || undefined,
+        portion_size: m.portionSize || undefined,
         food_description: m.foodDescription || `${label} — not specified`,
+        nutrition_facts: {
+          protein_g: m.protein ? Number(m.protein) : undefined,
+          sodium_mg: m.sodium ? Number(m.sodium) : undefined,
+          phosphorus_mg: m.phosphorus ? Number(m.phosphorus) : undefined,
+          potassium_mg: m.potassium ? Number(m.potassium) : undefined,
+        },
+        medical_details: medicalDetails,
         nutrients,
         medication_intakes,
       };
@@ -154,6 +230,7 @@ export default function NutritionDiaryPage() {
       const result = await api.saveNutritionDiary(patient.id, {
         diary_date: diaryDate,
         notes_end_of_day: notes || undefined,
+        medicine_diary: medicineDiary || undefined,
         meals: buildMealsPayload(),
       });
       toast({
@@ -204,12 +281,47 @@ export default function NutritionDiaryPage() {
 
             {MEAL_TYPES.map(({ key, label }) => {
               const m = meals[key];
+              const suggestions = getMealSuggestions(key);
               return (
                 <Card key={key} className="border-dashed">
                   <CardHeader className="py-3">
                     <CardTitle className="text-base">{label}</CardTitle>
                   </CardHeader>
                   <CardContent className="grid gap-3 sm:grid-cols-2">
+                    {suggestions.length > 0 && (
+                      <div className="sm:col-span-2">
+                        <Label>Reuse from history</Label>
+                        <Select onValueChange={(value) => applySuggestion(key, value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pick a previous meal to autofill" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectLabel>Recent saved meals</SelectLabel>
+                            {suggestions.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    <div className="sm:col-span-2">
+                      <Label>Food name</Label>
+                      <Input
+                        value={m.foodName}
+                        onChange={(e) => updateMeal(key, { foodName: e.target.value })}
+                        placeholder="e.g. Oats, banana, rice"
+                      />
+                    </div>
+                    <div>
+                      <Label>Portion size</Label>
+                      <Input
+                        value={m.portionSize}
+                        onChange={(e) => updateMeal(key, { portionSize: e.target.value })}
+                        placeholder="e.g. 1 bowl / 150 g"
+                      />
+                    </div>
                     <div className="sm:col-span-2">
                       <Label>Food description / portions</Label>
                       <Input
@@ -250,6 +362,14 @@ export default function NutritionDiaryPage() {
                         onChange={(e) => updateMeal(key, { potassium: e.target.value })}
                       />
                     </div>
+                    <div className="sm:col-span-2">
+                      <Label>Medical details (for reuse)</Label>
+                      <Input
+                        value={m.medicalDetails}
+                        onChange={(e) => updateMeal(key, { medicalDetails: e.target.value })}
+                        placeholder='JSON or text, e.g. {"diabetic_friendly": true}'
+                      />
+                    </div>
                     <div>
                       <Label>Phosphate binder</Label>
                       <Select
@@ -288,19 +408,20 @@ export default function NutritionDiaryPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label>Dose</Label>
-                      <Input
-                        value={m.binderDose}
-                        onChange={(e) => updateMeal(key, { binderDose: e.target.value })}
-                        placeholder="e.g. 1 tablet"
-                      />
-                    </div>
                   </CardContent>
                 </Card>
               );
             })}
 
+            <div>
+              <Label>Medicine diary</Label>
+              <Textarea
+                value={medicineDiary}
+                onChange={(e) => setMedicineDiary(e.target.value)}
+                rows={2}
+                placeholder="Daily medicine notes, timing, symptoms"
+              />
+            </div>
             <div>
               <Label>End of day notes</Label>
               <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
