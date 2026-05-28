@@ -117,6 +117,7 @@ export default function SessionDetail() {
   const [nurseName, setNurseName] = useState('');
   const [doctorName, setDoctorName] = useState('');
   const [postPotassium, setPostPotassium] = useState('');
+  const [postBloodSugar, setPostBloodSugar] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [postKOnly, setPostKOnly] = useState('');
   const [savingPostK, setSavingPostK] = useState(false);
@@ -414,16 +415,30 @@ export default function SessionDetail() {
                           </div>
                         </div>
 
-                        <div className="space-y-2">
-                          <Label htmlFor="postK">Potassium — Post K (mmol/L)</Label>
-                          <Input
-                            id="postK"
-                            type="number"
-                            step="0.1"
-                            value={postPotassium}
-                            onChange={(e) => setPostPotassium(e.target.value)}
-                            placeholder="Optional now — required before next session"
-                          />
+                        <div className="grid sm:grid-cols-2 gap-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="postK">Potassium — Post K (mmol/L)</Label>
+                            <Input
+                              id="postK"
+                              type="number"
+                              step="0.1"
+                              value={postPotassium}
+                              onChange={(e) => setPostPotassium(e.target.value)}
+                              placeholder="Optional now — required before next session"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="postGlucose">Glucose / Sugar (mg/dL)</Label>
+                            <Input
+                              id="postGlucose"
+                              type="number"
+                              step="1"
+                              min={0}
+                              value={postBloodSugar}
+                              onChange={(e) => setPostBloodSugar(e.target.value)}
+                              placeholder="Optional — end of session"
+                            />
+                          </div>
                         </div>
                       </div>
 
@@ -449,6 +464,9 @@ export default function SessionDetail() {
                                 doctorName,
                                 postPotassiumMmolL: postPotassium
                                   ? Number(postPotassium)
+                                  : undefined,
+                                postBloodSugar: postBloodSugar
+                                  ? Number(postBloodSugar)
                                   : undefined,
                               });
 
@@ -578,7 +596,7 @@ export default function SessionDetail() {
                   <span className="font-semibold">{assessment?.temperature ?? '—'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Blood Sugar: </span>
+                  <span className="text-muted-foreground">Glucose / Sugar (mg/dL): </span>
                   <span className="font-semibold">{assessment?.bloodSugar ?? '—'}</span>
                 </div>
                 <div>
@@ -641,6 +659,12 @@ export default function SessionDetail() {
                         : isPostDialysis
                           ? 'Pending — enter before next session'
                           : '—'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Glucose / Sugar (mg/dL): </span>
+                    <span className="font-semibold">
+                      {postAssessment?.postBloodSugar ?? '—'}
                     </span>
                   </div>
                   <div>

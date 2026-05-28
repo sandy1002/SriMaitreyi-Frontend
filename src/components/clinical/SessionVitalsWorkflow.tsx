@@ -4,15 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -32,6 +24,16 @@ interface SessionVitalsWorkflowProps {
   onAlertsUpdated?: () => void;
 }
 
+function formatDateTime(value?: string | null) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+}
+
 export function SessionVitalsWorkflow({
   sessionId,
   isCompleted,
@@ -40,9 +42,9 @@ export function SessionVitalsWorkflow({
 }: SessionVitalsWorkflowProps) {
   const { toast } = useToast();
   const [workflow, setWorkflow] = useState<VitalsWorkflowState | null>(null);
-  const [intervalMinutes, setIntervalMinutes] = useState(30);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [displayTime, setDisplayTime] = useState(() => new Date().toLocaleString());
 
   const [bloodPressure, setBloodPressure] = useState('');
   const [pulse, setPulse] = useState('');
@@ -53,7 +55,6 @@ export function SessionVitalsWorkflow({
   const loadWorkflow = useCallback(async () => {
     if (isCompleted) {
       setWorkflow({
-        intervalMinutes: 30,
         readings: initialReadings,
         slots: [],
         nextDue: null,
@@ -62,30 +63,17 @@ export function SessionVitalsWorkflow({
       return;
     }
     try {
-      const data = await api.getVitalsWorkflow(sessionId, intervalMinutes);
+      const data = await api.getVitalsWorkflow(sessionId);
       setWorkflow(data);
-      if (data.nextDue) {
-        const existing = data.readings.find(
-          (r) => r.intervalMinutes === data.nextDue?.intervalMinutes
-        );
-        if (existing) {
-          setBloodPressure(existing.bloodPressure ?? '');
-          setPulse(existing.pulse != null ? String(existing.pulse) : '');
-          setPotassium(
-            existing.potassiumMmolL != null ? String(existing.potassiumMmolL) : ''
-          );
-          setUfRemoved(
-            existing.ufRemovedLiters != null ? String(existing.ufRemovedLiters) : ''
-          );
-          setNotes(existing.notes ?? '');
-        }
+      if (data.currentTime) {
+        setDisplayTime(formatDateTime(data.currentTime));
       }
     } catch {
       setWorkflow(null);
     } finally {
       setLoading(false);
     }
-  }, [sessionId, intervalMinutes, isCompleted, initialReadings]);
+  }, [sessionId, isCompleted, initialReadings]);
 
   useEffect(() => {
     setLoading(true);
@@ -93,6 +81,17 @@ export function SessionVitalsWorkflow({
     const timer = setInterval(loadWorkflow, 60_000);
     return () => clearInterval(timer);
   }, [loadWorkflow]);
+
+  useEffect(() => {
+    if (isCompleted) return;
+    const tick = setInterval(() => {
+      setDisplayTime(new Date().toLocaleString(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }));
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [isCompleted]);
 
   const handleSave = async () => {
     if (!bloodPressure && !pulse && !potassium && !notes) {
@@ -111,8 +110,6 @@ export function SessionVitalsWorkflow({
         potassium_mmol_l: potassium ? Number(potassium) : undefined,
         uf_removed_liters: ufRemoved ? Number(ufRemoved) : undefined,
         notes: notes || undefined,
-        interval_minutes: workflow?.nextDue?.intervalMinutes,
-        label: workflow?.nextDue?.label,
       });
       setWorkflow(result.workflow);
       onAlertsUpdated?.();
@@ -125,7 +122,7 @@ export function SessionVitalsWorkflow({
         title: 'Vitals recorded',
         description: result.alerts.length
           ? `${result.alerts.length} alert(s) updated.`
-          : 'Logged for this interval.',
+          : `Saved at ${formatDateTime(result.reading.recordedAt)}`,
       });
       await loadWorkflow();
     } catch {
@@ -143,7 +140,7 @@ export function SessionVitalsWorkflow({
           <CardTitle className="text-lg">Session vitals log</CardTitle>
         </CardHeader>
         <CardContent>
-          <VitalsTable readings={workflow.readings} />
+          <VitalsTable readings={readings} />
         </CardContent>
       </Card>
     ) : null;
@@ -159,66 +156,38 @@ export function SessionVitalsWorkflow({
     );
   }
 
-  const nextDue = workflow?.nextDue;
-
   return (
     <Card className="shadow-clinical border-primary/20">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <Activity className="h-5 w-5 text-primary" />
-          During-session vitals workflow
+          During-session vitals
         </CardTitle>
         <CardDescription>
-          Log BP, pulse, and potassium (Pre K) on a regular schedule — like the clinical
-          treatment-day log. Default interval: every 30 minutes.
+          Each reading is stamped with the actual date and time when you save — no fixed intervals.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <Label className="text-sm">Reminder interval</Label>
-          <Select
-            value={String(intervalMinutes)}
-            onValueChange={(v) => setIntervalMinutes(Number(v))}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="30">Every 30 min</SelectItem>
-              <SelectItem value="60">Every 60 min</SelectItem>
-            </SelectContent>
-          </Select>
-          {nextDue && (
-            <Badge variant="outline" className="gap-1">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <Label className="text-muted-foreground text-xs">Session started</Label>
+            <Input
+              readOnly
+              className="bg-muted/50"
+              value={formatDateTime(workflow?.sessionStartedAt)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-muted-foreground text-xs flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              Next: {nextDue.label}
-              {nextDue.dueAt && (
-                <span className="text-muted-foreground ml-1">
-                  (due {new Date(nextDue.dueAt).toLocaleTimeString()})
-                </span>
-              )}
-            </Badge>
-          )}
+              Recording time (auto)
+            </Label>
+            <Input readOnly className="bg-muted/50 font-medium" value={displayTime} />
+          </div>
         </div>
 
-        {workflow?.slots && workflow.slots.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {workflow.slots.map((slot) => (
-              <Badge
-                key={slot.intervalMinutes}
-                variant={slot.status === 'recorded' ? 'default' : 'secondary'}
-              >
-                {slot.label}
-                {slot.status === 'recorded' ? ' ✓' : ''}
-              </Badge>
-            ))}
-          </div>
-        )}
-
         <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
-          <p className="text-sm font-medium">
-            Record vitals{nextDue ? ` — ${nextDue.label}` : ''}
-          </p>
+          <p className="text-sm font-medium">Record vitals now</p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <Label htmlFor="wf-bp" className="flex items-center gap-1">
@@ -269,14 +238,14 @@ export function SessionVitalsWorkflow({
             <Label htmlFor="wf-notes">Clinic notes / cramps</Label>
             <Textarea
               id="wf-notes"
-              placeholder="e.g. mild cramping left calf at 60 min"
+              placeholder="e.g. mild cramping left calf"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
             />
           </div>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving…' : 'Save vitals for this interval'}
+            {saving ? 'Saving…' : 'Save vitals now'}
           </Button>
         </div>
 
@@ -297,7 +266,7 @@ function VitalsTable({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Time point</TableHead>
+          <TableHead>Date &amp; time</TableHead>
           <TableHead>BP</TableHead>
           <TableHead>Pulse</TableHead>
           <TableHead>K+ (mmol/L)</TableHead>
@@ -308,7 +277,11 @@ function VitalsTable({
       <TableBody>
         {readings.map((r) => (
           <TableRow key={r.id}>
-            <TableCell className="font-medium">{r.label ?? `${r.intervalMinutes} min`}</TableCell>
+            <TableCell className="font-medium">
+              {r.recordedAt
+                ? formatDateTime(r.recordedAt)
+                : r.label ?? '—'}
+            </TableCell>
             <TableCell>{r.bloodPressure ?? '—'}</TableCell>
             <TableCell>{r.pulse ?? '—'}</TableCell>
             <TableCell>{r.potassiumMmolL ?? '—'}</TableCell>
