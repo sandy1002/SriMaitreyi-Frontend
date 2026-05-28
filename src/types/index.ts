@@ -58,10 +58,11 @@ export interface VitalsWorkflowSlot {
 }
 
 export interface VitalsWorkflowState {
-  intervalMinutes: number;
+  intervalMinutes?: number;
   sessionStartedAt?: string;
+  currentTime?: string;
   readings: SessionVitalReading[];
-  slots: VitalsWorkflowSlot[];
+  slots?: VitalsWorkflowSlot[];
   nextDue?: {
     intervalMinutes: number;
     label: string;
@@ -78,6 +79,7 @@ export interface PostDialysisAssessment {
   nurseName?: string;
   doctorName?: string;
   postPotassiumMmolL?: number | null;
+  postBloodSugar?: number | null;
 }
 
 export interface SessionMedicationIntake {

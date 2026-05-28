@@ -164,6 +164,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       nurseName?: string;
       doctorName?: string;
       postPotassiumMmolL?: number;
+      postBloodSugar?: number;
     }
   ) => {
     const body = payload
@@ -176,6 +177,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           nurse_name: payload.nurseName,
           doctor_name: payload.doctorName,
           post_potassium_mmol_l: payload.postPotassiumMmolL,
+          post_blood_sugar: payload.postBloodSugar,
         }
       : {};
 

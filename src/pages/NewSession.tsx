@@ -13,7 +13,17 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Calendar, Building2, Play, Calculator } from 'lucide-react';
+import { ArrowLeft, Calendar, Building2, Play, Calculator, AlertTriangle, Clock } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
 import type { DialysisSession } from '@/types';
@@ -25,9 +35,13 @@ export default function NewSession() {
   const { toast } = useToast();
 
   const [sessionDate, setSessionDate] = useState(new Date().toISOString().split('T')[0]);
-  const [hospitalName, setHospitalName] = useState('City General Hospital');
+  const [hospitalName, setHospitalName] = useState('');
   const [openSession, setOpenSession] = useState<DialysisSession | null>(null);
   const [loadingOpen, setLoadingOpen] = useState(true);
+  const [inProgressWarningOpen, setInProgressWarningOpen] = useState(false);
+  const [assessmentRecordedAt, setAssessmentRecordedAt] = useState(() =>
+    new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+  );
 
   const [weightKg, setWeightKg] = useState('');
   const [dryWeightKg, setDryWeightKg] = useState('');
@@ -53,19 +67,35 @@ export default function NewSession() {
   useEffect(() => {
     if (!patient?.id) return;
     setLoadingOpen(true);
-    api
-      .fetchOpenSession(patient.id)
-      .then((s) => {
+    Promise.all([
+      api.fetchOpenSession(patient.id),
+      api.fetchSessionDefaults(patient.id),
+    ])
+      .then(([s, defaults]) => {
         setOpenSession(s);
         if (s?.status === 'in-progress') {
-          navigate(`/session/${s.id}`, { replace: true });
+          setInProgressWarningOpen(true);
+        } else {
+          setInProgressWarningOpen(false);
+        }
+        if (defaults.hospitalName) {
+          setHospitalName(defaults.hospitalName);
         }
         if (patient.targetDryWeightKg) {
           setDryWeightKg(String(patient.targetDryWeightKg));
         }
       })
       .finally(() => setLoadingOpen(false));
-  }, [patient?.id, navigate, patient?.targetDryWeightKg]);
+  }, [patient?.id, patient?.targetDryWeightKg]);
+
+  useEffect(() => {
+    const tick = setInterval(() => {
+      setAssessmentRecordedAt(
+        new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+      );
+    }, 1000);
+    return () => clearInterval(tick);
+  }, []);
 
   const runUfCalc = useCallback(async () => {
     const pre = Number(weightKg);
@@ -114,10 +144,15 @@ export default function NewSession() {
   }
 
   const needsPreviousPostK = openSession?.status === 'post-dialysis';
+  const hasInProgressSession = openSession?.status === 'in-progress';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
+    if (hasInProgressSession) {
+      setInProgressWarningOpen(true);
+      return;
+    }
     if (needsPreviousPostK && !previousPostK) {
       toast({
         title: 'Post K required',
@@ -185,7 +220,59 @@ export default function NewSession() {
           </CardHeader>
 
           <CardContent>
+            {hasInProgressSession && openSession && (
+              <Card className="mb-6 border-destructive/40 bg-destructive/5">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2 text-destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    Session already in progress
+                  </CardTitle>
+                  <CardDescription>
+                    Close your current dialysis session (End Dialysis) before starting a new one.
+                    You can open the in-progress session to continue recording vitals.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => navigate(`/session/${openSession.id}`)}
+                  >
+                    Open in-progress session
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate('/dashboard')}
+                  >
+                    Back to dashboard
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            <AlertDialog open={inProgressWarningOpen} onOpenChange={setInProgressWarningOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Close previous session first</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    A dialysis session from {openSession?.sessionDate} is still in progress at{' '}
+                    {openSession?.hospitalName}. End that session before starting a new one, or
+                    continue the open session.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Stay here</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => openSession && navigate(`/session/${openSession.id}`)}
+                  >
+                    Open in-progress session
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
             <form onSubmit={handleSubmit} className="space-y-6">
+              <fieldset disabled={hasInProgressSession} className="space-y-6 disabled:opacity-60">
               {needsPreviousPostK && openSession && (
                 <Card className="border-amber-500/40 bg-amber-500/5">
                   <CardHeader className="pb-2">
@@ -240,6 +327,19 @@ export default function NewSession() {
               </div>
 
               <CardTitle className="pt-2 text-lg">PRE-DIALYSIS ASSESSMENT</CardTitle>
+
+              <div className="space-y-2">
+                <Label htmlFor="assessmentTime" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  Assessment date &amp; time (auto)
+                </Label>
+                <Input
+                  id="assessmentTime"
+                  readOnly
+                  className="bg-muted/50"
+                  value={assessmentRecordedAt}
+                />
+              </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -301,12 +401,15 @@ export default function NewSession() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="bloodSugar">Blood Sugar</Label>
+                  <Label htmlFor="bloodSugar">Glucose / Sugar (mg/dL)</Label>
                   <Input
                     id="bloodSugar"
                     type="number"
+                    step="1"
+                    min={0}
                     value={bloodSugar}
                     onChange={(e) => setBloodSugar(e.target.value)}
+                    placeholder="e.g. 110"
                     required
                   />
                 </div>
@@ -368,13 +471,14 @@ export default function NewSession() {
               </div>
 
               <div className="pt-4 space-y-3">
-                <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || hasInProgressSession}>
                   {isSubmitting ? 'Creating...' : 'Start Session'}
                 </Button>
                 <Button type="button" variant="outline" className="w-full" onClick={() => navigate('/dashboard')}>
                   Cancel
                 </Button>
               </div>
+              </fieldset>
             </form>
           </CardContent>
         </Card>

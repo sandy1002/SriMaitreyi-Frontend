@@ -57,8 +57,9 @@ function mapVitalReading(raw: Record<string, unknown>) {
 
 function mapVitalsWorkflow(raw: Record<string, unknown>) {
   return {
-    intervalMinutes: Number(raw.interval_minutes ?? 30),
+    intervalMinutes: raw.interval_minutes != null ? Number(raw.interval_minutes) : undefined,
     sessionStartedAt: raw.session_started_at as string | undefined,
+    currentTime: raw.current_time as string | undefined,
     readings: (raw.readings ?? []).map((r: Record<string, unknown>) => mapVitalReading(r)),
     slots: (raw.slots ?? []).map((s: Record<string, unknown>) => ({
       intervalMinutes: Number(s.interval_minutes),
@@ -86,6 +87,7 @@ function mapPostAssessment(raw: Record<string, unknown> | null | undefined) {
     nurseName: raw.nurse_name as string | undefined,
     doctorName: raw.doctor_name as string | undefined,
     postPotassiumMmolL: raw.post_potassium_mmol_l as number | null | undefined,
+    postBloodSugar: raw.post_blood_sugar as number | null | undefined,
   };
 }
 
@@ -229,6 +231,13 @@ export async function fetchOpenSession(patientId: string) {
   return data.session ? mapSession(data.session) : null;
 }
 
+export async function fetchSessionDefaults(patientId: string): Promise<{
+  hospitalName: string | null;
+}> {
+  const data = await apiRequest(`/patients/${patientId}/session-defaults`);
+  return { hospitalName: (data.hospital_name as string) ?? null };
+}
+
 export async function calculateUfGoal(payload: {
   pre_weight_kg: number;
   target_dry_weight_kg: number;
@@ -329,13 +338,8 @@ export async function addSessionMedication(
   return mapSessionMedicationIntake(data);
 }
 
-export async function getVitalsWorkflow(
-  sessionId: string,
-  intervalMinutes = 30
-) {
-  const data = await apiRequest(
-    `/sessions/${sessionId}/vitals/workflow?interval_minutes=${intervalMinutes}`
-  );
+export async function getVitalsWorkflow(sessionId: string) {
+  const data = await apiRequest(`/sessions/${sessionId}/vitals/workflow`);
   return mapVitalsWorkflow(data);
 }
 
@@ -347,8 +351,6 @@ export async function recordSessionVitals(
     potassium_mmol_l?: number;
     uf_removed_liters?: number;
     notes?: string;
-    interval_minutes?: number;
-    label?: string;
   }
 ): Promise<{
   reading: import('@/types').SessionVitalReading;
