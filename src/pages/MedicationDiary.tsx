@@ -1,0 +1,286 @@
+import { useEffect, useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { Header } from '@/components/layout/Header';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ArrowLeft, Pill, Plus, Save, Trash2 } from 'lucide-react';
+import * as api from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
+import type { MedicationDiaryEntry, MedicationDiaryIntakeInput, Medicine } from '@/types';
+
+type IntakeRow = {
+  key: string;
+  medicineId: string;
+  medicineName: string;
+  doseText: string;
+  route: string;
+  taken: 'yes' | 'no';
+  takenTime: string;
+  notes: string;
+};
+
+const emptyIntake = (): IntakeRow => ({
+  key: crypto.randomUUID(),
+  medicineId: '',
+  medicineName: '',
+  doseText: '',
+  route: '',
+  taken: 'yes',
+  takenTime: '',
+  notes: '',
+});
+
+export default function MedicationDiaryPage() {
+  const { patient, isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [diaryDate, setDiaryDate] = useState(new Date().toISOString().split('T')[0]);
+  const [notes, setNotes] = useState('');
+  const [rows, setRows] = useState<IntakeRow[]>([emptyIntake()]);
+  const [recent, setRecent] = useState<MedicationDiaryEntry[]>([]);
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!patient?.id) return;
+    api.fetchMedicationDiaries(patient.id).then(setRecent).catch(console.error);
+    api.fetchMedicines().then(setMedicines).catch(console.error);
+  }, [patient?.id]);
+
+  useEffect(() => {
+    const existing = recent.find((d) => d.diaryDate === diaryDate);
+    if (!existing) {
+      setRows([emptyIntake()]);
+      setNotes('');
+      return;
+    }
+    setNotes(existing.notes ?? '');
+    setRows(
+      existing.intakes.length
+        ? existing.intakes.map((i) => ({
+            key: i.id ?? crypto.randomUUID(),
+            medicineId: i.medicineId ?? '',
+            medicineName: i.medicineName ?? '',
+            doseText: i.doseText ?? '',
+            route: i.route ?? '',
+            taken: i.taken ? 'yes' : 'no',
+            takenTime: i.takenTime ?? '',
+            notes: i.notes ?? '',
+          }))
+        : [emptyIntake()]
+    );
+  }, [diaryDate, recent]);
+
+  if (!isAuthenticated || !patient) return <Navigate to="/login" replace />;
+  if (user?.role !== 'patient') return <Navigate to="/admin" replace />;
+
+  const buildPayload = (): MedicationDiaryIntakeInput[] =>
+    rows
+      .filter((r) => r.medicineId || r.medicineName || r.doseText || r.notes)
+      .map((r) => ({
+        medicine_id: r.medicineId || undefined,
+        medicine_name: r.medicineName || undefined,
+        dose_text: r.doseText || undefined,
+        route: r.route || undefined,
+        taken: r.taken === 'yes',
+        taken_time: r.takenTime || undefined,
+        notes: r.notes || undefined,
+      }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.saveMedicationDiary(patient.id, {
+        diary_date: diaryDate,
+        notes: notes || undefined,
+        intakes: buildPayload(),
+      });
+      toast({ title: 'Medication diary saved' });
+      const list = await api.fetchMedicationDiaries(patient.id);
+      setRecent(list);
+    } catch {
+      toast({ title: 'Save failed', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main className="container py-6 max-w-4xl space-y-6">
+        <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to dashboard
+        </Button>
+
+        <Card className="shadow-clinical">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Pill className="h-5 w-5 text-primary" />
+              Medication diary
+            </CardTitle>
+            <CardDescription>
+              Daily medication intake log for overall summary and adherence review.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="max-w-xs">
+              <Label htmlFor="medDiaryDate">Date</Label>
+              <Input
+                id="medDiaryDate"
+                type="date"
+                value={diaryDate}
+                onChange={(e) => setDiaryDate(e.target.value)}
+              />
+            </div>
+
+            {rows.map((row, idx) => (
+              <Card key={row.key} className="border-dashed">
+                <CardContent className="pt-4 grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label>Medicine (catalog)</Label>
+                    <Select
+                      value={row.medicineId || 'none'}
+                      onValueChange={(v) =>
+                        setRows((prev) =>
+                          prev.map((r, i) => (i === idx ? { ...r, medicineId: v === 'none' ? '' : v } : r))
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select medicine" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">--</SelectItem>
+                        {medicines.map((m) => (
+                          <SelectItem key={m.id} value={m.id}>
+                            {m.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Or medicine name</Label>
+                    <Input
+                      value={row.medicineName}
+                      onChange={(e) =>
+                        setRows((prev) =>
+                          prev.map((r, i) => (i === idx ? { ...r, medicineName: e.target.value } : r))
+                        )
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>Dose</Label>
+                    <Input
+                      value={row.doseText}
+                      onChange={(e) =>
+                        setRows((prev) =>
+                          prev.map((r, i) => (i === idx ? { ...r, doseText: e.target.value } : r))
+                        )
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label>Route</Label>
+                    <Input
+                      value={row.route}
+                      onChange={(e) =>
+                        setRows((prev) =>
+                          prev.map((r, i) => (i === idx ? { ...r, route: e.target.value } : r))
+                        )
+                      }
+                      placeholder="oral / iv / etc"
+                    />
+                  </div>
+                  <div>
+                    <Label>Taken?</Label>
+                    <Select
+                      value={row.taken}
+                      onValueChange={(v) =>
+                        setRows((prev) =>
+                          prev.map((r, i) => (i === idx ? { ...r, taken: v as 'yes' | 'no' } : r))
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Taken time</Label>
+                    <Input
+                      value={row.takenTime}
+                      onChange={(e) =>
+                        setRows((prev) =>
+                          prev.map((r, i) => (i === idx ? { ...r, takenTime: e.target.value } : r))
+                        )
+                      }
+                      placeholder="e.g. 08:00 AM"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label>Notes</Label>
+                    <Input
+                      value={row.notes}
+                      onChange={(e) =>
+                        setRows((prev) =>
+                          prev.map((r, i) => (i === idx ? { ...r, notes: e.target.value } : r))
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="sm:col-span-2 flex justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={rows.length <= 1}
+                      onClick={() => setRows((prev) => prev.filter((_, i) => i !== idx))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            <Button type="button" variant="outline" onClick={() => setRows((p) => [...p, emptyIntake()])}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add medication intake
+            </Button>
+
+            <div>
+              <Label>End-of-day medication notes</Label>
+              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
+            </div>
+
+            <Button className="w-full" size="lg" onClick={handleSave} disabled={saving}>
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? 'Saving…' : 'Save medication diary'}
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
+}
