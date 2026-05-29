@@ -42,6 +42,7 @@ import {
   Clock,
   CheckCircle,
   Trash2,
+  Pencil,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -65,6 +66,7 @@ import { SessionAttachment } from '@/types';
 import { AlertsPanel } from '@/components/clinical/AlertsPanel';
 import { SessionVitalsWorkflow } from '@/components/clinical/SessionVitalsWorkflow';
 import { SessionMedicationSection } from '@/components/clinical/SessionMedicationSection';
+import { SessionEditDialog } from '@/components/clinical/SessionEditDialog';
 import {
   formatUfGoal,
   formatVolumeFromMl,
@@ -133,6 +135,7 @@ export default function SessionDetail() {
   );
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [deletingSession, setDeletingSession] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [interdialyticFluids, setInterdialyticFluids] =
     useState<InterdialyticFluidsSummary | null>(null);
 
@@ -342,6 +345,13 @@ export default function SessionDetail() {
                     ? 'Awaiting Post K'
                     : 'In Progress'}
               </Badge>
+
+              {isPatient && (
+                <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit session
+                </Button>
+              )}
 
               {isAdmin && (
                 <AlertDialog>
@@ -1049,6 +1059,18 @@ export default function SessionDetail() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {session && (
+        <SessionEditDialog
+          session={session}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSaved={async () => {
+            if (sessionId) await loadSessionDetails(sessionId);
+            toast({ title: 'Session updated' });
+          }}
+        />
+      )}
     </div>
   );
 }

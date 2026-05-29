@@ -16,13 +16,19 @@ interface AIAssistantProps {
   patientId: string;
 }
 
+const SUGGESTED_PROMPTS = [
+  'Summarize my latest CBP and renal lab report in simple terms',
+  'Which CBP or lab values are outside the normal range?',
+  'How do my urea, creatinine, and phosphorus look for dialysis?',
+];
+
 export function AIAssistant({ open, onOpenChange, patientId }: AIAssistantProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
       role: 'assistant',
       content:
-        "Hello! I'm your dialysis health assistant. Ask about your sessions, symptoms, or what to watch for. I'll use your session data and clinical alerts to respond.",
+        "Hello! I'm your dialysis health assistant. Ask about your sessions, symptoms, CBP/lab results, or what to watch for. I'll use your records—including reference ranges and abnormal flags—to respond.",
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -40,16 +46,20 @@ export function AIAssistant({ open, onOpenChange, patientId }: AIAssistantProps)
 
   const handleSend = async () => {
     if (!input.trim() || !patientId) return;
+    await sendQuestion(input);
+  };
+
+  const sendQuestion = async (question: string) => {
+    if (!question.trim() || !patientId) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      content: input,
+      content: question,
       timestamp: new Date().toISOString(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    const question = input;
     setInput('');
     setIsTyping(true);
 
@@ -151,17 +161,32 @@ export function AIAssistant({ open, onOpenChange, patientId }: AIAssistantProps)
           <p className="text-xs text-muted-foreground mb-3 text-center">
             This assistant provides information only. Always consult your healthcare provider for medical decisions.
           </p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {SUGGESTED_PROMPTS.map((prompt) => (
+              <Button
+                key={prompt}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs h-auto py-1.5 px-2 whitespace-normal text-left"
+                disabled={isTyping}
+                onClick={() => void sendQuestion(prompt)}
+              >
+                {prompt}
+              </Button>
+            ))}
+          </div>
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleSend();
+              void handleSend();
             }}
             className="flex gap-2"
           >
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about your sessions or symptoms..."
+              placeholder="Ask about sessions, CBP labs, or symptoms..."
               className="flex-1"
             />
             <Button type="submit" size="icon" disabled={!input.trim() || isTyping}>

@@ -5,14 +5,16 @@ import { PatientInfoCard } from '@/components/cards/PatientInfoCard';
 import { SessionCard } from '@/components/cards/SessionCard';
 import { AIAssistant } from '@/components/chat/AIAssistant';
 import { PatientTrends } from '@/components/clinical/PatientTrends';
+import { MedicalReportDownload } from '@/components/clinical/MedicalReportDownload';
+import { MedicalRecordsUpload } from '@/components/clinical/MedicalRecordsUpload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, MessageSquare, Calendar, TrendingUp, Utensils, Droplets, Pill } from 'lucide-react';
+import { Plus, MessageSquare, Calendar, TrendingUp, Utensils, Droplets, Pill, ClipboardList, TestTube2 } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
 export default function Dashboard() {
-  const { patient, user, isAuthenticated } = useAuth();
+  const { patient, user, isAuthenticated, isStaff } = useAuth();
   const { sessions, loadSessionsByPatient } = useSession();
   const navigate = useNavigate();
   const [showAssistant, setShowAssistant] = useState(false);
@@ -32,6 +34,9 @@ export default function Dashboard() {
   if (user?.role === 'admin') {
     return <Navigate to="/admin" replace />;
   }
+  if (isStaff) {
+    return <Navigate to="/staff" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -40,6 +45,16 @@ export default function Dashboard() {
       <main className="container py-6 space-y-6">
         {/* Patient Info */}
         <PatientInfoCard patient={patient} />
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <MedicalRecordsUpload patientId={patient.id} />
+          <MedicalReportDownload
+            patientId={patient.id}
+            patientName={patient.name}
+            title="Dialysis care summary"
+            description="Download a PDF of your recent vitals, sessions, nutrition, medications, and care guidance."
+          />
+        </div>
 
         {/* Quick Actions */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -56,6 +71,44 @@ export default function Dashboard() {
                   <h3 className="font-semibold text-foreground">Start New Session</h3>
                   <p className="text-sm text-muted-foreground">
                     Begin recording your dialysis session
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {isPatient && (
+            <Card
+              className="cursor-pointer shadow-clinical transition-all duration-200 hover:shadow-clinical-lg hover:-translate-y-0.5 border-primary/20"
+              onClick={() => navigate('/health-history')}
+            >
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
+                  <ClipboardList className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Health history form</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Complete your structured medical intake questionnaire
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {isPatient && (
+            <Card
+              className="cursor-pointer shadow-clinical transition-all duration-200 hover:shadow-clinical-lg hover:-translate-y-0.5 border-primary/20"
+              onClick={() => navigate('/cbp')}
+            >
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/15">
+                  <TestTube2 className="h-6 w-6 text-rose-700 dark:text-rose-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">CBP (Complete blood picture)</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Record full blood count and smear findings
                   </p>
                 </div>
               </CardContent>

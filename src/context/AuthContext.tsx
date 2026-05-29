@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { User, Patient, UserRole } from '@/types';
+import { User, Patient, UserRole, StaffRole } from '@/types';
 import { fetchPatients, loginApi } from '@/services/api';
 
 const AUTH_STORAGE_KEY = 'srimai_auth';
@@ -46,9 +46,14 @@ function normalizePatient(raw: Record<string, unknown> | null | undefined): Pati
   };
 }
 
+const STAFF_ROLES: StaffRole[] = ['technician', 'doctor', 'nutrition'];
+
 function normalizeUser(raw: Record<string, unknown>): User {
   const rawRole = String(raw.role ?? 'patient');
-  const role: UserRole = rawRole === 'admin' || rawRole === 'clinician' ? 'admin' : 'patient';
+  let role: UserRole = 'patient';
+  if (rawRole === 'admin' || rawRole === 'clinician') role = 'admin';
+  else if (STAFF_ROLES.includes(rawRole as StaffRole)) role = rawRole as StaffRole;
+  else if (rawRole === 'patient') role = 'patient';
   return {
     id: String(raw.id),
     role,
@@ -64,11 +69,13 @@ interface AuthContextType {
   patientsError: string | null;
   loginAsPatient: (patientId: string) => Promise<void>;
   loginAsAdmin: (username: string, password: string) => Promise<void>;
+  loginAsStaff: (role: StaffRole, username: string, password: string) => Promise<void>;
   refreshPatients: () => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
   isPatient: boolean;
+  isStaff: boolean;
   isLoading: boolean;
 }
 
@@ -157,6 +164,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     applyLoginResponse(response);
   };
 
+  const loginAsStaff = async (role: StaffRole, username: string, password: string) => {
+    const response = await loginApi(role, { username, password });
+    applyLoginResponse(response);
+  };
+
   const logout = () => {
     setUser(null);
     setPatient(null);
@@ -165,6 +177,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAdmin = user?.role === 'admin';
   const isPatient = user?.role === 'patient';
+  const isStaff =
+    user?.role === 'technician' || user?.role === 'doctor' || user?.role === 'nutrition';
 
   return (
     <AuthContext.Provider
@@ -175,11 +189,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         patientsError,
         loginAsPatient,
         loginAsAdmin,
+        loginAsStaff,
         refreshPatients,
         logout,
         isAuthenticated: !!user,
         isAdmin,
         isPatient,
+        isStaff,
         isLoading,
       }}
     >
@@ -196,5 +212,7 @@ export function useAuth() {
 
 /** Where to send the user after login or when already authenticated */
 export function getHomePath(role: UserRole | undefined): string {
-  return role === 'admin' ? '/admin' : '/dashboard';
+  if (role === 'admin') return '/admin';
+  if (role === 'technician' || role === 'doctor' || role === 'nutrition') return '/staff';
+  return '/dashboard';
 }

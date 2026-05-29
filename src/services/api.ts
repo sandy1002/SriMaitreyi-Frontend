@@ -158,6 +158,30 @@ function mapAlert(raw: Record<string, unknown>): ClinicalAlert {
   };
 }
 
+export async function downloadMedicalReport(
+  patientId: string,
+  days: number,
+  patientName?: string
+): Promise<void> {
+  const res = await fetch(
+    `${API_BASE}/patients/${patientId}/medical-report?days=${days}&format=pdf`
+  );
+  if (!res.ok) {
+    const message = await res.text();
+    throw new Error(`Report ${res.status}: ${message}`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  const safeName = (patientName || 'patient').replace(/\s+/g, '_');
+  anchor.href = url;
+  anchor.download = `medical_report_${safeName}_${days}d.pdf`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export async function fetchPatients() {
   const data = await apiRequest('/patients/');
   if (Array.isArray(data)) return data;
@@ -166,7 +190,7 @@ export async function fetchPatients() {
 }
 
 export async function loginApi(
-  role: 'patient' | 'admin',
+  role: 'patient' | 'admin' | 'technician' | 'doctor' | 'nutrition',
   options?: { patientId?: string; username?: string; password?: string }
 ) {
   const body: Record<string, string> = { role };
@@ -301,6 +325,26 @@ export async function getSession(sessionId: string): Promise<{
     vitalsWorkflow: data.vitals_workflow
       ? mapVitalsWorkflow(data.vitals_workflow)
       : null,
+  };
+}
+
+export async function updateSession(
+  sessionId: string,
+  payload: Record<string, unknown>
+): Promise<{
+  session: DialysisSession;
+  alerts: ClinicalAlert[];
+  checks: ClinicalCheck[];
+}> {
+  const data = await apiRequest(`/sessions/${sessionId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return {
+    session: mapSession(data.session),
+    alerts: (data.alerts ?? []).map(mapAlert),
+    checks: data.checks ?? [],
   };
 }
 
@@ -697,4 +741,68 @@ export async function getPatientAlerts(patientId: string): Promise<ClinicalAlert
     allAlerts.push(...detail.alerts);
   }
   return allAlerts;
+}
+
+export async function fetchHealthHistory(
+  patientId: string
+): Promise<import('@/types').PatientHealthHistoryRecord> {
+  return apiRequest(`/patients/${patientId}/health-history`);
+}
+
+export async function saveHealthHistory(
+  patientId: string,
+  payload: Record<string, unknown>
+): Promise<import('@/types').PatientHealthHistoryRecord> {
+  return apiRequest(`/patients/${patientId}/health-history`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function uploadHealthHistoryDocument(
+  patientId: string,
+  file: File
+): Promise<import('@/types').HealthHistoryAttachment> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(`${API_BASE}/patients/${patientId}/health-history/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) {
+    const message = await res.text();
+    throw new Error(`Upload ${res.status}: ${message}`);
+  }
+  return res.json();
+}
+
+export async function deleteHealthHistoryAttachment(
+  patientId: string,
+  attachmentId: string
+): Promise<void> {
+  await apiRequest(`/patients/${patientId}/health-history/attachments/${attachmentId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function fetchCbpReports(patientId: string): Promise<import('@/types').CbpReportsResponse> {
+  return apiRequest(`/patients/${patientId}/cbp-reports`);
+}
+
+export async function saveCbpReport(
+  patientId: string,
+  payload: Record<string, unknown>
+): Promise<import('@/types').CbpReport> {
+  return apiRequest(`/patients/${patientId}/cbp-reports`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteCbpReport(patientId: string, reportId: string): Promise<void> {
+  await apiRequest(`/patients/${patientId}/cbp-reports/${reportId}`, {
+    method: 'DELETE',
+  });
 }
