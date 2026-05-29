@@ -7,14 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { ArrowLeft, Utensils, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
@@ -36,12 +28,6 @@ type MealFormState = {
   phosphorus: string;
   potassium: string;
   medicalDetails: string;
-};
-
-type MealSuggestion = {
-  id: string;
-  label: string;
-  meal: NutritionDiaryEntry['meals'][number];
 };
 
 const emptyMeal = (): MealFormState => ({
@@ -120,45 +106,6 @@ export default function NutritionDiaryPage() {
 
   const updateMeal = (type: string, patch: Partial<MealFormState>) => {
     setMeals((prev) => ({ ...prev, [type]: { ...prev[type], ...patch } }));
-  };
-
-  const getMealSuggestions = (mealType: string): MealSuggestion[] => {
-    const rows: MealSuggestion[] = [];
-    for (const diary of recentDiaries) {
-      if (diary.diaryDate === diaryDate) continue;
-      for (const meal of diary.meals ?? []) {
-        if ((meal.mealType ?? '').toLowerCase() !== mealType.toLowerCase()) continue;
-        const title = meal.foodName || meal.foodDescription || 'Saved meal';
-        rows.push({
-          id: `${diary.id}-${meal.id ?? title}`,
-          label: `${diary.diaryDate} - ${title}`,
-          meal,
-        });
-      }
-    }
-    return rows.slice(0, 10);
-  };
-
-  const applySuggestion = (mealType: string, suggestionId: string) => {
-    const suggestion = getMealSuggestions(mealType).find((s) => s.id === suggestionId);
-    if (!suggestion) return;
-    const source = suggestion.meal;
-    const nutrients = Object.fromEntries(
-      (source.nutrients ?? []).map((n) => [n.nutrientCode, String(n.amount ?? '')])
-    );
-    updateMeal(mealType, {
-      foodName: source.foodName ?? '',
-      portionSize: source.portionSize ?? '',
-      foodDescription: source.foodDescription ?? '',
-      protein: nutrients.PROTEIN ?? '',
-      sodium: nutrients.SODIUM ?? '',
-      phosphorus: nutrients.PHOSPHORUS ?? '',
-      potassium: nutrients.POTASSIUM ?? '',
-      medicalDetails:
-        typeof source.medicalDetails === 'string'
-          ? source.medicalDetails
-          : JSON.stringify(source.medicalDetails ?? {}),
-    });
   };
 
   const buildMealsPayload = (): NutritionMealInput[] => {
@@ -253,31 +200,12 @@ export default function NutritionDiaryPage() {
 
             {MEAL_TYPES.map(({ key, label }) => {
               const m = meals[key];
-              const suggestions = getMealSuggestions(key);
               return (
                 <Card key={key} className="border-dashed">
                   <CardHeader className="py-3">
                     <CardTitle className="text-base">{label}</CardTitle>
                   </CardHeader>
                   <CardContent className="grid gap-3 sm:grid-cols-2">
-                    {suggestions.length > 0 && (
-                      <div className="sm:col-span-2">
-                        <Label>Reuse from history</Label>
-                        <Select onValueChange={(value) => applySuggestion(key, value)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pick a previous meal to autofill" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectLabel>Recent saved meals</SelectLabel>
-                            {suggestions.map((s) => (
-                              <SelectItem key={s.id} value={s.id}>
-                                {s.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
                     <div className="sm:col-span-2">
                       <Label>Food name</Label>
                       <Input
