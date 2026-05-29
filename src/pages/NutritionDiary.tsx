@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Utensils, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
+import { DiaryEntryViewDialog } from '@/components/clinical/DiaryEntryViewDialog';
 import type { NutritionDiaryEntry, NutritionMealInput } from '@/types';
 
 const MEAL_TYPES = [
@@ -56,6 +57,7 @@ export default function NutritionDiaryPage() {
   const [notes, setNotes] = useState('');
   const [medicineDiary, setMedicineDiary] = useState('');
   const [recentDiaries, setRecentDiaries] = useState<NutritionDiaryEntry[]>([]);
+  const [previewEntry, setPreviewEntry] = useState<NutritionDiaryEntry | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -301,7 +303,7 @@ export default function NutritionDiaryPage() {
             <CardHeader>
               <CardTitle className="text-base">Recent entries</CardTitle>
               <CardDescription>
-                Select a date to load that day&apos;s nutrition log into the form above.
+                Click a date to preview that day&apos;s log. Use &quot;Load into form&quot; to edit.
               </CardDescription>
             </CardHeader>
             <CardContent className="text-sm space-y-2">
@@ -315,15 +317,15 @@ export default function NutritionDiaryPage() {
                     className={`flex justify-between border-b pb-2 cursor-pointer hover:text-primary ${
                       isSelected ? 'text-primary font-medium' : ''
                     }`}
-                    onClick={() => setDiaryDate(d.diaryDate)}
+                    onClick={() => setPreviewEntry(d)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') setDiaryDate(d.diaryDate);
+                      if (e.key === 'Enter' || e.key === ' ') setPreviewEntry(d);
                     }}
                   >
                     <span>{d.diaryDate}</span>
                     <span className="text-muted-foreground">
                       K {d.totalPotassiumMg ?? '—'} mg · {d.alerts?.length ?? 0} alert(s)
-                      {isSelected ? ' · viewing' : ''}
+                      {isSelected ? ' · in form' : ''}
                     </span>
                   </div>
                 );
@@ -331,6 +333,75 @@ export default function NutritionDiaryPage() {
             </CardContent>
           </Card>
         )}
+
+        <DiaryEntryViewDialog
+          open={!!previewEntry}
+          onOpenChange={(open) => !open && setPreviewEntry(null)}
+          dateLabel={previewEntry ? `Nutrition — ${previewEntry.diaryDate}` : ''}
+          subtitle="Saved entry (read-only)"
+          onLoadIntoForm={() => previewEntry && setDiaryDate(previewEntry.diaryDate)}
+        >
+          {previewEntry && (
+            <>
+              <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-3">
+                <div>
+                  <span className="text-muted-foreground">Protein</span>
+                  <p className="font-medium">{previewEntry.totalProteinG ?? '—'} g</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Sodium</span>
+                  <p className="font-medium">{previewEntry.totalSodiumMg ?? '—'} mg</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Phosphorus</span>
+                  <p className="font-medium">{previewEntry.totalPhosphorusMg ?? '—'} mg</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Potassium</span>
+                  <p className="font-medium">{previewEntry.totalPotassiumMg ?? '—'} mg</p>
+                </div>
+              </div>
+              {previewEntry.meals.map((meal) => (
+                <div key={meal.id ?? meal.mealType} className="border rounded-lg p-3 space-y-1">
+                  <p className="font-medium capitalize">{meal.mealType}</p>
+                  <p>{meal.foodName || meal.foodDescription || '—'}</p>
+                  {meal.portionSize && (
+                    <p className="text-muted-foreground">Portion: {meal.portionSize}</p>
+                  )}
+                  {(meal.nutrients ?? []).length > 0 && (
+                    <p className="text-muted-foreground text-xs">
+                      {(meal.nutrients ?? [])
+                        .map((n) => `${n.nutrientCode}: ${n.amount ?? '—'} ${n.unit}`)
+                        .join(' · ')}
+                    </p>
+                  )}
+                </div>
+              ))}
+              {previewEntry.medicineDiary && (
+                <div>
+                  <p className="font-medium">Medicine diary</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{previewEntry.medicineDiary}</p>
+                </div>
+              )}
+              {previewEntry.notesEndOfDay && (
+                <div>
+                  <p className="font-medium">End of day notes</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{previewEntry.notesEndOfDay}</p>
+                </div>
+              )}
+              {(previewEntry.alerts ?? []).length > 0 && (
+                <div>
+                  <p className="font-medium">Alerts ({previewEntry.alerts!.length})</p>
+                  <ul className="list-disc pl-5 text-muted-foreground">
+                    {previewEntry.alerts!.map((a) => (
+                      <li key={a.id}>{a.message}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+        </DiaryEntryViewDialog>
       </main>
     </div>
   );

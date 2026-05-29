@@ -17,6 +17,7 @@ import {
 import { ArrowLeft, Droplets, Plus, Save, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
+import { DiaryEntryViewDialog } from '@/components/clinical/DiaryEntryViewDialog';
 import type { RenalFluidDiaryEntry, RenalFluidIntakeInput } from '@/types';
 
 const CATEGORIES = [
@@ -51,7 +52,11 @@ export default function RenalFluidDiaryPage() {
   const [rows, setRows] = useState<IntakeRow[]>([emptyRow()]);
   const [notes, setNotes] = useState('');
   const [recent, setRecent] = useState<RenalFluidDiaryEntry[]>([]);
+  const [previewEntry, setPreviewEntry] = useState<RenalFluidDiaryEntry | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const categoryLabel = (value: string) =>
+    CATEGORIES.find((c) => c.value === value)?.label ?? value;
 
   useEffect(() => {
     if (!patient?.id) return;
@@ -239,7 +244,7 @@ export default function RenalFluidDiaryPage() {
             <CardHeader>
               <CardTitle className="text-base">Recent entries</CardTitle>
               <CardDescription>
-                Select a date to load that day&apos;s fluid log into the form above.
+                Click a date to preview that day&apos;s log. Use &quot;Load into form&quot; to edit.
               </CardDescription>
             </CardHeader>
             <CardContent className="text-sm space-y-2">
@@ -258,15 +263,15 @@ export default function RenalFluidDiaryPage() {
                     className={`flex justify-between border-b pb-2 cursor-pointer hover:text-primary ${
                       isSelected ? 'text-primary font-medium' : ''
                     }`}
-                    onClick={() => setDiaryDate(d.diaryDate)}
+                    onClick={() => setPreviewEntry(d)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') setDiaryDate(d.diaryDate);
+                      if (e.key === 'Enter' || e.key === ' ') setPreviewEntry(d);
                     }}
                   >
                     <span>{d.diaryDate}</span>
                     <span className="text-muted-foreground">
                       {totalMl} ml total · {d.intakes.length} line(s)
-                      {isSelected ? ' · viewing' : ''}
+                      {isSelected ? ' · in form' : ''}
                     </span>
                   </div>
                 );
@@ -274,6 +279,49 @@ export default function RenalFluidDiaryPage() {
             </CardContent>
           </Card>
         )}
+
+        <DiaryEntryViewDialog
+          open={!!previewEntry}
+          onOpenChange={(open) => !open && setPreviewEntry(null)}
+          dateLabel={previewEntry ? `Fluid — ${previewEntry.diaryDate}` : ''}
+          subtitle="Saved entry (read-only)"
+          onLoadIntoForm={() => previewEntry && setDiaryDate(previewEntry.diaryDate)}
+        >
+          {previewEntry && (
+            <>
+              <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-3 text-xs sm:text-sm">
+                <div>Oral: <strong>{previewEntry.totalOralMl ?? 0} ml</strong></div>
+                <div>IV: <strong>{previewEntry.totalIvMl ?? 0} ml</strong></div>
+                <div>Prime/rinseback: <strong>{previewEntry.totalPrimeRinsebackMl ?? 0} ml</strong></div>
+                <div>Other: <strong>{previewEntry.totalOtherMl ?? 0} ml</strong></div>
+              </div>
+              {previewEntry.intakes.length === 0 ? (
+                <p className="text-muted-foreground">No intake lines recorded.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {previewEntry.intakes.map((line) => (
+                    <li key={line.id} className="border rounded-lg p-3">
+                      <p className="font-medium">{categoryLabel(line.category)}</p>
+                      <p>
+                        {line.volumeMl != null ? `${line.volumeMl} ml` : '—'}
+                        {line.recordedTime ? ` · ${line.recordedTime}` : ''}
+                      </p>
+                      {line.description && (
+                        <p className="text-muted-foreground">{line.description}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {previewEntry.notes && (
+                <div>
+                  <p className="font-medium">Notes</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{previewEntry.notes}</p>
+                </div>
+              )}
+            </>
+          )}
+        </DiaryEntryViewDialog>
       </main>
     </div>
   );

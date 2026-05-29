@@ -17,6 +17,7 @@ import {
 import { ArrowLeft, Pill, Plus, Save, Trash2 } from 'lucide-react';
 import * as api from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
+import { DiaryEntryViewDialog } from '@/components/clinical/DiaryEntryViewDialog';
 import type { MedicationDiaryEntry, MedicationDiaryIntakeInput, Medicine } from '@/types';
 
 type IntakeRow = {
@@ -50,6 +51,7 @@ export default function MedicationDiaryPage() {
   const [notes, setNotes] = useState('');
   const [rows, setRows] = useState<IntakeRow[]>([emptyIntake()]);
   const [recent, setRecent] = useState<MedicationDiaryEntry[]>([]);
+  const [previewEntry, setPreviewEntry] = useState<MedicationDiaryEntry | null>(null);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -286,7 +288,7 @@ export default function MedicationDiaryPage() {
             <CardHeader>
               <CardTitle className="text-base">Recent entries</CardTitle>
               <CardDescription>
-                Select a date to load that day&apos;s medication log into the form above.
+                Click a date to preview that day&apos;s log. Use &quot;Load into form&quot; to edit.
               </CardDescription>
             </CardHeader>
             <CardContent className="text-sm space-y-2">
@@ -301,16 +303,16 @@ export default function MedicationDiaryPage() {
                     className={`flex justify-between border-b pb-2 cursor-pointer hover:text-primary ${
                       isSelected ? 'text-primary font-medium' : ''
                     }`}
-                    onClick={() => setDiaryDate(d.diaryDate)}
+                    onClick={() => setPreviewEntry(d)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') setDiaryDate(d.diaryDate);
+                      if (e.key === 'Enter' || e.key === ' ') setPreviewEntry(d);
                     }}
                   >
                     <span>{d.diaryDate}</span>
                     <span className="text-muted-foreground">
                       {takenCount}/{d.intakes.length} taken
                       {d.totalDoses != null ? ` · ${d.totalDoses} dose(s)` : ''}
-                      {isSelected ? ' · viewing' : ''}
+                      {isSelected ? ' · in form' : ''}
                     </span>
                   </div>
                 );
@@ -318,6 +320,48 @@ export default function MedicationDiaryPage() {
             </CardContent>
           </Card>
         )}
+
+        <DiaryEntryViewDialog
+          open={!!previewEntry}
+          onOpenChange={(open) => !open && setPreviewEntry(null)}
+          dateLabel={previewEntry ? `Medication — ${previewEntry.diaryDate}` : ''}
+          subtitle="Saved entry (read-only)"
+          onLoadIntoForm={() => previewEntry && setDiaryDate(previewEntry.diaryDate)}
+        >
+          {previewEntry && (
+            <>
+              <p className="text-muted-foreground">
+                {previewEntry.intakes.filter((i) => i.taken).length} of {previewEntry.intakes.length}{' '}
+                marked taken
+                {previewEntry.totalDoses != null ? ` · ${previewEntry.totalDoses} total dose(s)` : ''}
+              </p>
+              {previewEntry.intakes.length === 0 ? (
+                <p className="text-muted-foreground">No medication lines recorded.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {previewEntry.intakes.map((line) => (
+                    <li key={line.id} className="border rounded-lg p-3">
+                      <p className="font-medium">{line.medicineName || 'Medicine'}</p>
+                      <p className="text-muted-foreground">
+                        {line.doseText || '—'}
+                        {line.route ? ` · ${line.route}` : ''}
+                        {line.takenTime ? ` · ${line.takenTime}` : ''}
+                      </p>
+                      <p>{line.taken ? 'Taken' : 'Not taken'}</p>
+                      {line.notes && <p className="text-muted-foreground">{line.notes}</p>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {previewEntry.notes && (
+                <div>
+                  <p className="font-medium">End-of-day notes</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{previewEntry.notes}</p>
+                </div>
+              )}
+            </>
+          )}
+        </DiaryEntryViewDialog>
       </main>
     </div>
   );
