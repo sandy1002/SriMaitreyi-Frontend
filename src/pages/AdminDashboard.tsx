@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { fetchPatientsOverview, deleteSession, createPatient, deletePatient } from '@/services/api';
+import { MedicalReportDownload } from '@/components/clinical/MedicalReportDownload';
 import type { PatientOverview } from '@/types';
 import {
   Users,
@@ -33,6 +34,7 @@ import {
   ExternalLink,
   RefreshCw,
   UserPlus,
+  ClipboardList,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -67,12 +69,16 @@ export default function AdminDashboard() {
   const [newAge, setNewAge] = useState('');
   const [newGender, setNewGender] = useState<string>('');
   const [addingPatient, setAddingPatient] = useState(false);
+  const [reportPatientId, setReportPatientId] = useState('');
 
   const load = async () => {
     setLoading(true);
     try {
       const data = await fetchPatientsOverview();
       setOverview(data.patients);
+      if (!reportPatientId && data.patients[0]) {
+        setReportPatientId(data.patients[0].id);
+      }
     } catch (e) {
       console.error(e);
       toast({ title: 'Failed to load patients', variant: 'destructive' });
@@ -238,6 +244,20 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        <MedicalReportDownload
+          patientId={reportPatientId}
+          patients={overview.map((p) => ({
+            id: p.id,
+            name: p.name,
+            age: p.age,
+            gender: p.gender,
+            medicalRecordNumber: p.medicalRecordNumber,
+          }))}
+          allowPatientSelect
+          title="Patient medical report"
+          description="Download PDF summaries for any patient (last 5, 7, 15, or 30 days)."
+        />
+
         <div className="grid gap-4 sm:grid-cols-4">
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
@@ -329,6 +349,12 @@ export default function AdminDashboard() {
                         {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'}
                       </p>
                     </div>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to={`/health-history/${p.id}`}>
+                        <ClipboardList className="h-3 w-3 mr-1" />
+                        Health history
+                      </Link>
+                    </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button

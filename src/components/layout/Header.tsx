@@ -1,11 +1,12 @@
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, User, Activity, BookOpen, ShieldCheck, LayoutDashboard } from 'lucide-react';
+import { LogOut, User, BookOpen, ShieldCheck, LayoutDashboard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import { AppLogo } from '@/components/layout/AppLogo';
 
 export function Header() {
-  const { user, patient, logout, isAdmin } = useAuth();
+  const { user, patient, logout, isAdmin, isStaff } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -16,17 +17,15 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-glow">
-            <Activity className="h-5 w-5 text-primary-foreground" />
-          </div>
+        <Link to={isAdmin ? '/admin' : isStaff ? '/staff' : user ? '/dashboard' : '/login'} className="flex items-center gap-3">
+          <AppLogo size="md" />
           <div>
             <h1 className="text-lg font-bold text-foreground">Srimai</h1>
             <p className="text-xs text-muted-foreground">
-              {isAdmin ? 'Admin Console' : 'Patient Journal'}
+              {isAdmin ? 'Admin Console' : isStaff ? 'Staff Workspace' : 'Patient Journal'}
             </p>
           </div>
-        </div>
+        </Link>
 
         <div className="flex items-center gap-2">
           {isAdmin && (
@@ -37,7 +36,15 @@ export function Header() {
               </Link>
             </Button>
           )}
-          {!isAdmin && user && (
+          {isStaff && !isAdmin && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/staff">
+                <LayoutDashboard className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Staff</span>
+              </Link>
+            </Button>
+          )}
+          {!isAdmin && !isStaff && user && (
             <Button variant="ghost" size="sm" asChild>
               <Link to="/dashboard">
                 <LayoutDashboard className="h-4 w-4 sm:mr-2" />
@@ -60,7 +67,7 @@ export function Header() {
               <User className="h-4 w-4 text-primary" />
               <div className="text-sm">
                 <span className="font-medium text-foreground">
-                  {isAdmin ? user.name : patient?.name}
+                  {isAdmin || isStaff ? user.name : patient?.name}
                 </span>
                 <span className="mx-2 text-muted-foreground">•</span>
                 <span className="text-muted-foreground capitalize">{user.role}</span>

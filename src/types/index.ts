@@ -18,7 +18,12 @@ export interface PatientOverview extends Patient {
   sessions: DialysisSession[];
 }
 
-export type UserRole = 'patient' | 'admin';
+export type UserRole = 'patient' | 'admin' | 'technician' | 'doctor' | 'nutrition';
+
+export type StaffRole = 'technician' | 'doctor' | 'nutrition';
+
+export const REPORT_DAY_OPTIONS = [5, 7, 15, 30] as const;
+export type ReportDayRange = (typeof REPORT_DAY_OPTIONS)[number];
 
 export interface PreDialysisAssessment {
   weightKg?: number | null;
@@ -326,4 +331,145 @@ export interface PatientTrendsResponse {
   weightTrend: WeightTrendPoint[];
   recentAlerts: ClinicalAlert[];
   propertyGraph: PropertyGraphTrends;
+}
+
+export interface HealthHistoryOption {
+  code: string;
+  label: string;
+}
+
+export interface HealthHistorySurgery {
+  id?: string;
+  approx_date?: string;
+  reason?: string;
+  complications_notes?: string;
+}
+
+export interface HealthHistoryFamilyRow {
+  id?: string;
+  condition: string;
+  affected_relatives?: string;
+  notes_age_at_diagnosis?: string;
+}
+
+export interface HealthHistoryMedicationRow {
+  id?: string;
+  medication_name: string;
+  dosage?: string;
+  frequency?: string;
+}
+
+export interface HealthHistoryAttachment {
+  id: string;
+  patient_id: string;
+  file_name: string;
+  file_type?: string;
+  file_url: string;
+  uploaded_at?: string;
+}
+
+export interface PatientHealthHistoryRecord {
+  exists: boolean;
+  id?: string;
+  patient_id?: string;
+  full_name?: string;
+  date_of_birth?: string;
+  gender?: string;
+  phone?: string;
+  email?: string;
+  emergency_contact_name?: string;
+  emergency_contact_relationship_phone?: string;
+  chief_complaint?: string;
+  chronic_conditions?: string[];
+  chronic_condition_labels?: string[];
+  other_diagnoses?: string;
+  drug_allergies_none?: boolean;
+  drug_allergies_list?: string;
+  food_env_allergies_none?: boolean;
+  food_env_allergies_list?: string;
+  latex_contrast_reaction?: string;
+  latex_contrast_details?: string;
+  tobacco_status?: string;
+  tobacco_quit_date?: string;
+  tobacco_packs_per_day?: string;
+  alcohol_status?: string;
+  alcohol_drinks_per_week?: string;
+  recreational_drugs_never?: boolean;
+  recreational_drugs_yes?: boolean;
+  recreational_drugs_details?: string;
+  occupation?: string;
+  completed_at?: string;
+  surgeries?: HealthHistorySurgery[];
+  family_rows?: HealthHistoryFamilyRow[];
+  medications?: HealthHistoryMedicationRow[];
+  form_options?: {
+    chronic_conditions: HealthHistoryOption[];
+    family_conditions: HealthHistoryOption[];
+  };
+  attachments?: HealthHistoryAttachment[];
+}
+
+export type CbpFieldStatus = 'normal' | 'low' | 'high' | 'unknown' | null;
+
+export interface CbpFieldFlag {
+  value?: number | null;
+  unit: string;
+  label: string;
+  reference_range: string;
+  status: CbpFieldStatus;
+}
+
+export interface CbpReport {
+  id: string;
+  patient_id: string;
+  report_date: string;
+  lab_name?: string;
+  notes?: string;
+  hemoglobin?: number | null;
+  pcv_hematocrit?: number | null;
+  total_rbc_count?: number | null;
+  mcv?: number | null;
+  mch?: number | null;
+  mchc?: number | null;
+  rdw_cv?: number | null;
+  total_wbc_count?: number | null;
+  neutrophils_pct?: number | null;
+  lymphocytes_pct?: number | null;
+  eosinophils_pct?: number | null;
+  monocytes_pct?: number | null;
+  basophils_pct?: number | null;
+  total_platelet_count?: number | null;
+  mpv?: number | null;
+  rbc_morphology?: string;
+  wbc_morphology?: string;
+  platelets_on_smear?: string;
+  parasites_seen?: boolean;
+  parasites_details?: string;
+  pre_urea?: number | null;
+  post_urea?: number | null;
+  parathyroid_hormone?: number | null;
+  creatinine?: number | null;
+  phosphorus?: number | null;
+  serum_calcium?: number | null;
+  serum_potassium?: number | null;
+  albumin?: number | null;
+  field_flags?: Record<string, CbpFieldFlag>;
+  abnormal_count?: number;
+  abnormal_fields?: string[];
+  created_at?: string;
+}
+
+export interface CbpReportsResponse {
+  reference: {
+    sections: { id: string; title: string }[];
+    fields: {
+      key: string;
+      label: string;
+      unit: string;
+      section: string;
+      reference_range?: string;
+    }[];
+  };
+  patient_gender?: string;
+  reports: CbpReport[];
 }

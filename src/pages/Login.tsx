@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { getHomePath } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -12,20 +13,53 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Activity, User, ShieldCheck, ArrowLeft } from 'lucide-react';
+import {
+  User,
+  ShieldCheck,
+  ArrowLeft,
+  Wrench,
+  Stethoscope,
+  Utensils,
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import type { StaffRole } from '@/types';
+import { AppLogo } from '@/components/layout/AppLogo';
 
-type Persona = 'patient' | 'admin' | null;
+type Persona = 'patient' | 'admin' | StaffRole | null;
+
+const STAFF_PERSONAS: { id: StaffRole; label: string; description: string; icon: typeof Wrench }[] = [
+  {
+    id: 'technician',
+    label: 'Technician',
+    description: 'Sessions, vitals, and patient reports',
+    icon: Wrench,
+  },
+  {
+    id: 'doctor',
+    label: 'Doctor',
+    description: 'Clinical review, trends, and reports',
+    icon: Stethoscope,
+  },
+  {
+    id: 'nutrition',
+    label: 'Nutrition',
+    description: 'Diet diaries, alerts, and patient reports',
+    icon: Utensils,
+  },
+];
 
 export default function Login() {
   const [persona, setPersona] = useState<Persona>(null);
   const [selectedPatient, setSelectedPatient] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [adminUsername, setAdminUsername] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
-  const { loginAsPatient, loginAsAdmin, patients, patientsError } = useAuth();
+  const [staffUsername, setStaffUsername] = useState('');
+  const [staffPassword, setStaffPassword] = useState('');
+  const { loginAsPatient, loginAsAdmin, loginAsStaff, patients, patientsError } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const isStaffPersona =
+    persona === 'technician' || persona === 'doctor' || persona === 'nutrition';
 
   const handlePatientLogin = async () => {
     if (!selectedPatient) return;
@@ -40,14 +74,36 @@ export default function Login() {
     }
   };
 
-  const handleAdminLogin = async () => {
-    if (!adminUsername.trim() || !adminPassword) {
+  const handleStaffLogin = async () => {
+    if (!isStaffPersona) return;
+    if (!staffUsername.trim() || !staffPassword) {
       toast({ title: 'Enter username and password', variant: 'destructive' });
       return;
     }
     setIsSubmitting(true);
     try {
-      await loginAsAdmin(adminUsername.trim(), adminPassword);
+      await loginAsStaff(persona, staffUsername.trim(), staffPassword);
+      navigate(getHomePath(persona));
+    } catch (err) {
+      console.error('Staff login failed', err);
+      toast({
+        title: 'Login failed',
+        description: 'Invalid credentials.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAdminLogin = async () => {
+    if (!staffUsername.trim() || !staffPassword) {
+      toast({ title: 'Enter username and password', variant: 'destructive' });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await loginAsAdmin(staffUsername.trim(), staffPassword);
       navigate('/admin');
     } catch (err) {
       console.error('Admin login failed', err);
@@ -61,44 +117,64 @@ export default function Login() {
     }
   };
 
+  const staffMeta = STAFF_PERSONAS.find((p) => p.id === persona);
+
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
-      <div className="w-full max-w-lg space-y-6 animate-fade-in">
+      <div className="w-full max-w-2xl space-y-6 animate-fade-in">
         <div className="text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-glow">
-            <Activity className="h-8 w-8 text-primary-foreground" />
-          </div>
-          <h1 className="mt-4 text-3xl font-bold text-foreground">SriMaiTreyi</h1>
-          <p className="mt-2 text-muted-foreground">Dialysis Monitoring — choose how you sign in</p>
+          <AppLogo size="lg" className="mx-auto" />
+          <h1 className="mt-4 text-3xl font-bold text-foreground">SriMai</h1>
+          <p className="mt-3 text-muted-foreground">Dialysis App</p>
         </div>
 
         {persona === null && (
           <Card className="shadow-clinical-lg">
             <CardHeader className="text-center">
               <CardTitle>Select your role</CardTitle>
-              <CardDescription>Patients access their own journal. Admins manage all patients.</CardDescription>
+              <CardDescription>
+                Patients, clinical staff, and administrators each have a dedicated workspace.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
+            <CardContent className="grid gap-3 sm:grid-cols-2">
               <Button
                 type="button"
                 variant="outline"
-                className="h-auto py-8 flex-col gap-3 border-2 hover:border-primary hover:bg-primary/5"
+                className="h-auto py-6 flex-col gap-2 border-2 hover:border-primary hover:bg-primary/5"
                 onClick={() => setPersona('patient')}
               >
-                <User className="h-8 w-8 text-primary" />
-                <span className="font-semibold text-base">Patient</span>
+                <User className="h-7 w-7 text-primary" />
+                <span className="font-semibold">Patient</span>
                 <span className="text-xs text-muted-foreground font-normal text-center">
-                  View and record your dialysis sessions
+                  Your sessions, diaries, and reports
                 </span>
               </Button>
+              {STAFF_PERSONAS.map((sp) => {
+                const Icon = sp.icon;
+                return (
+                  <Button
+                    key={sp.id}
+                    type="button"
+                    variant="outline"
+                    className="h-auto py-6 flex-col gap-2 border-2 hover:border-primary hover:bg-primary/5"
+                    onClick={() => setPersona(sp.id)}
+                  >
+                    <Icon className="h-7 w-7 text-primary" />
+                    <span className="font-semibold">{sp.label}</span>
+                    <span className="text-xs text-muted-foreground font-normal text-center">
+                      {sp.description}
+                    </span>
+                  </Button>
+                );
+              })}
               <Button
                 type="button"
                 variant="outline"
-                className="h-auto py-8 flex-col gap-3 border-2 hover:border-primary hover:bg-primary/5"
+                className="h-auto py-6 flex-col gap-2 border-2 hover:border-primary hover:bg-primary/5 sm:col-span-2"
                 onClick={() => setPersona('admin')}
               >
-                <ShieldCheck className="h-8 w-8 text-primary" />
-                <span className="font-semibold text-base">Admin</span>
+                <ShieldCheck className="h-7 w-7 text-primary" />
+                <span className="font-semibold">Admin</span>
                 <span className="text-xs text-muted-foreground font-normal text-center">
                   All patients, sessions, and management
                 </span>
@@ -139,9 +215,6 @@ export default function Login() {
                   </SelectContent>
                 </Select>
                 {patientsError && <p className="text-sm text-destructive">{patientsError}</p>}
-                {!patientsError && patients.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No patient accounts in the system yet.</p>
-                )}
               </div>
               <Button
                 onClick={handlePatientLogin}
@@ -155,10 +228,74 @@ export default function Login() {
           </Card>
         )}
 
+        {isStaffPersona && staffMeta && (
+          <Card className="shadow-clinical-lg">
+            <CardHeader>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-fit -ml-2 mb-2"
+                onClick={() => {
+                  setPersona(null);
+                  setStaffUsername('');
+                  setStaffPassword('');
+                }}
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back
+              </Button>
+              <CardTitle className="flex items-center gap-2">
+                <staffMeta.icon className="h-5 w-5 text-primary" />
+                {staffMeta.label} sign-in
+              </CardTitle>
+              <CardDescription>{staffMeta.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="staffUser">Username</Label>
+                <Input
+                  id="staffUser"
+                  value={staffUsername}
+                  onChange={(e) => setStaffUsername(e.target.value)}
+                  placeholder="Admin"
+                  autoComplete="username"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="staffPass">Password</Label>
+                <Input
+                  id="staffPass"
+                  type="password"
+                  value={staffPassword}
+                  onChange={(e) => setStaffPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+              </div>
+              <Button
+                onClick={handleStaffLogin}
+                disabled={isSubmitting || !staffUsername.trim() || !staffPassword}
+                className="w-full"
+                size="lg"
+              >
+                {isSubmitting ? 'Signing in...' : `Enter ${staffMeta.label} workspace`}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {persona === 'admin' && (
           <Card className="shadow-clinical-lg">
             <CardHeader>
-              <Button variant="ghost" size="sm" className="w-fit -ml-2 mb-2" onClick={() => setPersona(null)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-fit -ml-2 mb-2"
+                onClick={() => {
+                  setPersona(null);
+                  setStaffUsername('');
+                  setStaffPassword('');
+                }}
+              >
                 <ArrowLeft className="h-4 w-4 mr-1" />
                 Back
               </Button>
@@ -166,19 +303,15 @@ export default function Login() {
                 <ShieldCheck className="h-5 w-5 text-primary" />
                 Admin sign-in
               </CardTitle>
-              <CardDescription>
-                Access the admin console: all patients, session details, and delete sessions.
-              </CardDescription>
+              <CardDescription>Full admin console for all patients and sessions.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="adminUser">Username</Label>
                 <Input
                   id="adminUser"
-                  type="text"
-                  autoComplete="username"
-                  value={adminUsername}
-                  onChange={(e) => setAdminUsername(e.target.value)}
+                  value={staffUsername}
+                  onChange={(e) => setStaffUsername(e.target.value)}
                   placeholder="Admin"
                 />
               </div>
@@ -187,15 +320,13 @@ export default function Login() {
                 <Input
                   id="adminPass"
                   type="password"
-                  autoComplete="current-password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  placeholder="Enter password"
+                  value={staffPassword}
+                  onChange={(e) => setStaffPassword(e.target.value)}
                 />
               </div>
               <Button
                 onClick={handleAdminLogin}
-                disabled={isSubmitting || !adminUsername.trim() || !adminPassword}
+                disabled={isSubmitting || !staffUsername.trim() || !staffPassword}
                 className="w-full"
                 size="lg"
               >
@@ -204,7 +335,6 @@ export default function Login() {
             </CardContent>
           </Card>
         )}
-
       </div>
     </div>
   );

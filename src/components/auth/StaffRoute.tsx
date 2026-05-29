@@ -1,8 +1,8 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
-export function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isAdmin, isStaff, isLoading } = useAuth();
+export function StaffRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isStaff, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -16,8 +16,8 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!isAdmin) {
-    return <Navigate to={isStaff ? '/staff' : '/dashboard'} replace />;
+  if (!isStaff) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

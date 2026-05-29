@@ -12,6 +12,9 @@ import NewSession from "./pages/NewSession";
 import SessionDetail from "./pages/SessionDetail";
 import Architecture from "./pages/Architecture";
 import AdminDashboard from "./pages/AdminDashboard";
+import StaffDashboard from "./pages/StaffDashboard";
+import HealthHistory from "./pages/HealthHistory";
+import CbpDiary from "./pages/CbpDiary";
 import NutritionDiary from "./pages/NutritionDiary";
 import RenalFluidDiary from "./pages/RenalFluidDiary";
 import MedicationDiary from "./pages/MedicationDiary";
@@ -20,6 +23,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { PatientRoute } from "@/components/auth/PatientRoute";
+import { StaffRoute } from "@/components/auth/StaffRoute";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +59,46 @@ const App = () => (
                   <AdminRoute>
                     <AdminDashboard />
                   </AdminRoute>
+                }
+              />
+              <Route
+                path="/health-history"
+                element={
+                  <ProtectedRoute>
+                    <HealthHistory />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/health-history/:patientId"
+                element={
+                  <ProtectedRoute>
+                    <HealthHistory />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cbp"
+                element={
+                  <PatientRoute>
+                    <CbpDiary />
+                  </PatientRoute>
+                }
+              />
+              <Route
+                path="/cbp/:patientId"
+                element={
+                  <ProtectedRoute>
+                    <CbpDiary />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/staff"
+                element={
+                  <StaffRoute>
+                    <StaffDashboard />
+                  </StaffRoute>
                 }
               />
               <Route
