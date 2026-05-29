@@ -328,6 +328,26 @@ export async function getSession(sessionId: string): Promise<{
   };
 }
 
+export async function updateSession(
+  sessionId: string,
+  payload: Record<string, unknown>
+): Promise<{
+  session: DialysisSession;
+  alerts: ClinicalAlert[];
+  checks: ClinicalCheck[];
+}> {
+  const data = await apiRequest(`/sessions/${sessionId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return {
+    session: mapSession(data.session),
+    alerts: (data.alerts ?? []).map(mapAlert),
+    checks: data.checks ?? [],
+  };
+}
+
 export async function updatePostPotassium(
   sessionId: string,
   postPotassiumMmolL: number

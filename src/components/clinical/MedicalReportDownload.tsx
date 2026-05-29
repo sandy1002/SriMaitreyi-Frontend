@@ -30,7 +30,7 @@ export function MedicalReportDownload({
   patients = [],
   allowPatientSelect = false,
   title = 'Medical report summary',
-  description = 'Download a PDF with vitals, nutrition, fluid, medication, alerts, and care guidance for the selected period.',
+  description = 'Download a PDF with letterhead, AI executive summary, CBP labs, session history, nutrition, fluid, and care guidance for the selected period.',
 }: MedicalReportDownloadProps) {
   const { toast } = useToast();
   const [days, setDays] = useState<ReportDayRange>(7);
