@@ -65,6 +65,11 @@ import { SessionAttachment } from '@/types';
 import { AlertsPanel } from '@/components/clinical/AlertsPanel';
 import { SessionVitalsWorkflow } from '@/components/clinical/SessionVitalsWorkflow';
 import { SessionMedicationSection } from '@/components/clinical/SessionMedicationSection';
+import {
+  formatUfGoal,
+  formatVolumeFromMl,
+} from '@/lib/clinicalUnits';
+import type { InterdialyticFluidsSummary } from '@/types';
 
 /* ---------------------------------------
    Safe Date Formatter (CRITICAL)
@@ -128,6 +133,8 @@ export default function SessionDetail() {
   );
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [deletingSession, setDeletingSession] = useState(false);
+  const [interdialyticFluids, setInterdialyticFluids] =
+    useState<InterdialyticFluidsSummary | null>(null);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -138,6 +145,15 @@ export default function SessionDetail() {
       loadSessionDetails(sessionId);
     }
   }, [sessionId]);
+
+  useEffect(() => {
+    const s = currentSession;
+    if (!s?.patientId || !s?.sessionDate) return;
+    api
+      .fetchInterdialyticFluids(s.patientId, s.sessionDate)
+      .then(setInterdialyticFluids)
+      .catch(() => setInterdialyticFluids(null));
+  }, [currentSession?.patientId, currentSession?.sessionDate]);
 
   // Keep local attachments in sync with context when session details reload
   useEffect(() => {
@@ -309,6 +325,12 @@ export default function SessionDetail() {
                   <Building2 className="h-4 w-4" />
                   {(session as any).hospitalName ?? (session as any).hospital_name}
                 </div>
+                {assessment && (
+                  <p className="text-sm mt-2">
+                    <span className="text-muted-foreground">UF goal: </span>
+                    <span className="font-semibold text-foreground">{formatUfGoal(assessment)}</span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -618,17 +640,82 @@ export default function SessionDetail() {
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">UF Goal: </span>
-                  <span className="font-semibold">{assessment?.ufGoal || '—'}</span>
-                  {assessment?.ufGoalLiters != null && (
-                    <span className="text-muted-foreground text-xs ml-1">
-                      ({assessment.ufGoalLiters} L calculated)
-                    </span>
-                  )}
+                  <span className="text-muted-foreground">UF goal: </span>
+                  <span className="font-semibold">{formatUfGoal(assessment)}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Fluids during treatment: </span>
+                  <span className="font-semibold">
+                    {assessment?.fluidAddedLiters != null
+                      ? `${assessment.fluidAddedLiters} L`
+                      : '—'}
+                  </span>
                 </div>
               </div>
+
+              <p className="mt-4 text-sm font-medium">Treatment fluids (per entry)</p>
+              <ul className="mt-2 space-y-1 text-sm border rounded-lg divide-y">
+                <li className="flex justify-between px-3 py-2">
+                  <span className="text-muted-foreground">Prime / rinseback</span>
+                  <span className="font-medium">
+                    {assessment?.primeRinsebackMl != null
+                      ? `${assessment.primeRinsebackMl} ml`
+                      : '—'}
+                  </span>
+                </li>
+                <li className="flex justify-between px-3 py-2">
+                  <span className="text-muted-foreground">IV fluids</span>
+                  <span className="font-medium">
+                    {assessment?.ivFluidsMl != null ? `${assessment.ivFluidsMl} ml` : '—'}
+                  </span>
+                </li>
+                <li className="flex justify-between px-3 py-2">
+                  <span className="text-muted-foreground">Oral during session</span>
+                  <span className="font-medium">
+                    {assessment?.oralIntakeMl != null ? `${assessment.oralIntakeMl} ml` : '—'}
+                  </span>
+                </li>
+              </ul>
             </AccordionContent>
           </AccordionItem>
+
+          {interdialyticFluids && interdialyticFluids.dailyEntries.length > 0 && (
+            <AccordionItem value="interdialytic-fluids">
+              <AccordionTrigger className="text-lg font-medium">
+                Interdialytic fluids (since last session)
+              </AccordionTrigger>
+              <AccordionContent>
+                <p className="text-sm text-muted-foreground mb-2">
+                  From renal fluid diary after session on{' '}
+                  {interdialyticFluids.lastSessionDate ?? '—'} through{' '}
+                  {interdialyticFluids.untilDate} (exclusive).
+                </p>
+                <p className="text-sm font-medium mb-3">
+                  Total: {interdialyticFluids.totalLiters} L ({interdialyticFluids.totalMl} ml)
+                  {' · '}oral {interdialyticFluids.totalOralMl} ml · IV{' '}
+                  {interdialyticFluids.totalIvMl} ml
+                </p>
+                {interdialyticFluids.dailyEntries.map((day) => (
+                  <div key={day.diaryDate} className="mb-4 border rounded-lg p-3">
+                    <p className="font-medium text-sm mb-2">{day.diaryDate}</p>
+                    <ul className="space-y-1 text-sm">
+                      {day.intakes.map((line) => (
+                        <li key={line.id} className="flex justify-between gap-2">
+                          <span className="text-muted-foreground capitalize">
+                            {line.category.replace('_', ' ')}
+                            {line.description ? ` — ${line.description}` : ''}
+                          </span>
+                          <span className="font-medium shrink-0">
+                            {formatVolumeFromMl(line.volumeMl, line.volumeUnit)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </AccordionContent>
+            </AccordionItem>
+          )}
         </Accordion>
 
         {postAssessment && (
@@ -668,8 +755,12 @@ export default function SessionDetail() {
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Total UF Removed: </span>
-                    <span className="font-semibold">{postAssessment?.totalUfRemoved ?? '—'}</span>
+                    <span className="text-muted-foreground">Total UF removed: </span>
+                    <span className="font-semibold">
+                      {postAssessment?.totalUfRemoved != null
+                        ? `${postAssessment.totalUfRemoved} L`
+                        : '—'}
+                    </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Condition: </span>
