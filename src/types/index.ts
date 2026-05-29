@@ -88,6 +88,7 @@ export interface SessionMedicationIntake {
   medicineId?: string | null;
   medicineName?: string | null;
   doseText?: string;
+  doseUnit?: string;
   route?: string;
   takenAt?: string;
   notes?: string;
@@ -244,6 +245,7 @@ export interface MedicationDiaryIntake {
   medicineId?: string | null;
   medicineName?: string;
   doseText?: string;
+  doseUnit?: string;
   route?: string;
   taken: boolean;
   takenTime?: string;
@@ -263,6 +265,7 @@ export interface MedicationDiaryIntakeInput {
   medicine_id?: string;
   medicine_name?: string;
   dose_text?: string;
+  dose_unit?: string;
   route?: string;
   taken: boolean;
   taken_time?: string;
@@ -274,6 +277,8 @@ export interface RenalFluidIntakeLine {
   category: string;
   description?: string;
   volumeMl?: number | null;
+  volumeUnit?: string;
+  displayVolume?: number | null;
   recordedTime?: string;
 }
 
@@ -293,7 +298,26 @@ export interface RenalFluidIntakeInput {
   category: string;
   description?: string;
   volume_ml?: number;
+  volume_unit?: string;
   recorded_time?: string;
+}
+
+export interface InterdialyticFluidsSummary {
+  lastSessionId?: string | null;
+  lastSessionDate?: string | null;
+  fromDate?: string | null;
+  untilDate: string;
+  totalOralMl: number;
+  totalIvMl: number;
+  totalPrimeRinsebackMl: number;
+  totalOtherMl: number;
+  totalMl: number;
+  totalLiters: number;
+  dailyEntries: {
+    diaryDate: string;
+    notes?: string;
+    intakes: RenalFluidIntakeLine[];
+  }[];
 }
 
 export interface PatientTrendsResponse {

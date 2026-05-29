@@ -18,6 +18,7 @@ import { ArrowLeft, Pill, Plus, Save, Trash2 } from 'lucide-react';
 import * as api from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { DiaryEntryViewDialog } from '@/components/clinical/DiaryEntryViewDialog';
+import { DOSE_UNITS, formatDose } from '@/lib/clinicalUnits';
 import type { MedicationDiaryEntry, MedicationDiaryIntakeInput, Medicine } from '@/types';
 
 type IntakeRow = {
@@ -25,6 +26,7 @@ type IntakeRow = {
   medicineId: string;
   medicineName: string;
   doseText: string;
+  doseUnit: string;
   route: string;
   taken: 'yes' | 'no';
   takenTime: string;
@@ -36,6 +38,7 @@ const emptyIntake = (): IntakeRow => ({
   medicineId: '',
   medicineName: '',
   doseText: '',
+  doseUnit: '',
   route: '',
   taken: 'yes',
   takenTime: '',
@@ -76,6 +79,7 @@ export default function MedicationDiaryPage() {
             medicineId: i.medicineId ?? '',
             medicineName: i.medicineName ?? '',
             doseText: i.doseText ?? '',
+            doseUnit: i.doseUnit ?? '',
             route: i.route ?? '',
             taken: i.taken ? 'yes' : 'no',
             takenTime: i.takenTime ?? '',
@@ -95,6 +99,7 @@ export default function MedicationDiaryPage() {
         medicine_id: r.medicineId || undefined,
         medicine_name: r.medicineName || undefined,
         dose_text: r.doseText || undefined,
+        dose_unit: r.doseUnit || undefined,
         route: r.route || undefined,
         taken: r.taken === 'yes',
         taken_time: r.takenTime || undefined,
@@ -156,11 +161,20 @@ export default function MedicationDiaryPage() {
                     <Label>Medicine (catalog)</Label>
                     <Select
                       value={row.medicineId || 'none'}
-                      onValueChange={(v) =>
+                      onValueChange={(v) => {
+                        const med = medicines.find((m) => m.id === v);
                         setRows((prev) =>
-                          prev.map((r, i) => (i === idx ? { ...r, medicineId: v === 'none' ? '' : v } : r))
-                        )
-                      }
+                          prev.map((r, i) =>
+                            i === idx
+                              ? {
+                                  ...r,
+                                  medicineId: v === 'none' ? '' : v,
+                                  doseUnit: med?.unit ?? r.doseUnit,
+                                }
+                              : r
+                          )
+                        );
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select medicine" />
@@ -195,7 +209,33 @@ export default function MedicationDiaryPage() {
                           prev.map((r, i) => (i === idx ? { ...r, doseText: e.target.value } : r))
                         )
                       }
+                      placeholder="e.g. 100"
                     />
+                  </div>
+                  <div>
+                    <Label>Unit</Label>
+                    <Select
+                      value={row.doseUnit || 'none'}
+                      onValueChange={(v) =>
+                        setRows((prev) =>
+                          prev.map((r, i) =>
+                            i === idx ? { ...r, doseUnit: v === 'none' ? '' : v } : r
+                          )
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        {DOSE_UNITS.map((u) => (
+                          <SelectItem key={u} value={u}>
+                            {u}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label>Route</Label>
@@ -343,7 +383,7 @@ export default function MedicationDiaryPage() {
                     <li key={line.id} className="border rounded-lg p-3">
                       <p className="font-medium">{line.medicineName || 'Medicine'}</p>
                       <p className="text-muted-foreground">
-                        {line.doseText || '—'}
+                        {formatDose(line.doseText, line.doseUnit)}
                         {line.route ? ` · ${line.route}` : ''}
                         {line.takenTime ? ` · ${line.takenTime}` : ''}
                       </p>

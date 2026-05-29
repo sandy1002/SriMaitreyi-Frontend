@@ -26,7 +26,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
-import type { DialysisSession } from '@/types';
+import { formatVolumeFromMl, formatUfGoal } from '@/lib/clinicalUnits';
+import type { DialysisSession, InterdialyticFluidsSummary } from '@/types';
 
 export default function NewSession() {
   const { patient, isAuthenticated, user } = useAuth();
@@ -62,6 +63,8 @@ export default function NewSession() {
   } | null>(null);
 
   const [previousPostK, setPreviousPostK] = useState('');
+  const [interdialyticFluids, setInterdialyticFluids] =
+    useState<InterdialyticFluidsSummary | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -127,6 +130,14 @@ export default function NewSession() {
     const t = setTimeout(runUfCalc, 400);
     return () => clearTimeout(t);
   }, [runUfCalc]);
+
+  useEffect(() => {
+    if (!patient?.id || !sessionDate) return;
+    api
+      .fetchInterdialyticFluids(patient.id, sessionDate)
+      .then(setInterdialyticFluids)
+      .catch(() => setInterdialyticFluids(null));
+  }, [patient?.id, sessionDate]);
 
   if (!isAuthenticated || !patient) {
     return <Navigate to="/login" replace />;
@@ -326,6 +337,48 @@ export default function NewSession() {
                 />
               </div>
 
+              {interdialyticFluids && (
+                <Card className="border-sky-500/30 bg-sky-500/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Interdialytic fluid intake</CardTitle>
+                    <CardDescription>
+                      From renal fluid diary since last session (
+                      {interdialyticFluids.lastSessionDate ?? '—'}) until this visit (
+                      {sessionDate}).
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="text-sm space-y-3">
+                    {interdialyticFluids.dailyEntries.length === 0 ? (
+                      <p className="text-muted-foreground">No fluid diary entries in this period.</p>
+                    ) : (
+                      <>
+                        <p className="font-medium">
+                          Total: {interdialyticFluids.totalLiters} L (
+                          {interdialyticFluids.totalMl} ml) · oral{' '}
+                          {interdialyticFluids.totalOralMl} ml
+                        </p>
+                        {interdialyticFluids.dailyEntries.map((day) => (
+                          <div key={day.diaryDate} className="border rounded-md p-2 space-y-1">
+                            <p className="font-medium">{day.diaryDate}</p>
+                            {day.intakes.map((line) => (
+                              <div key={line.id} className="flex justify-between gap-2 text-muted-foreground">
+                                <span className="capitalize">
+                                  {line.category.replace('_', ' ')}
+                                  {line.description ? ` — ${line.description}` : ''}
+                                </span>
+                                <span className="text-foreground font-medium shrink-0">
+                                  {formatVolumeFromMl(line.volumeMl, line.volumeUnit)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
               <CardTitle className="pt-2 text-lg">PRE-DIALYSIS ASSESSMENT</CardTitle>
 
               <div className="space-y-2">
@@ -467,7 +520,22 @@ export default function NewSession() {
               )}
               <div className="space-y-2">
                 <Label htmlFor="ufGoal">UF goal (saved)</Label>
-                <Input id="ufGoal" value={ufGoal} onChange={(e) => setUfGoal(e.target.value)} required />
+                <Input
+                  id="ufGoal"
+                  value={ufGoal}
+                  onChange={(e) => setUfGoal(e.target.value)}
+                  placeholder={ufCalc ? `${ufCalc.ufGoalLiters} L` : 'e.g. 2.50 L'}
+                  required
+                />
+                {ufCalc && (
+                  <p className="text-xs text-muted-foreground">
+                    Calculated: {formatUfGoal({
+                      ufGoalLiters: ufCalc.ufGoalLiters,
+                      idwgKg: ufCalc.idwgKg,
+                      fluidAddedLiters: ufCalc.fluidAddedLiters,
+                    })}
+                  </p>
+                )}
               </div>
 
               <div className="pt-4 space-y-3">

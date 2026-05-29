@@ -18,6 +18,13 @@ import { ArrowLeft, Droplets, Plus, Save, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
 import { DiaryEntryViewDialog } from '@/components/clinical/DiaryEntryViewDialog';
+import {
+  FLUID_VOLUME_UNITS,
+  formatVolumeFromMl,
+  volumeInputFromMl,
+  volumeToMl,
+  type FluidVolumeUnit,
+} from '@/lib/clinicalUnits';
 import type { RenalFluidDiaryEntry, RenalFluidIntakeInput } from '@/types';
 
 const CATEGORIES = [
@@ -31,7 +38,8 @@ type IntakeRow = {
   key: string;
   category: string;
   description: string;
-  volumeMl: string;
+  volume: string;
+  volumeUnit: FluidVolumeUnit;
   recordedTime: string;
 };
 
@@ -39,7 +47,8 @@ const emptyRow = (): IntakeRow => ({
   key: crypto.randomUUID(),
   category: 'oral',
   description: '',
-  volumeMl: '',
+  volume: '',
+  volumeUnit: 'ml',
   recordedTime: '',
 });
 
@@ -77,7 +86,8 @@ export default function RenalFluidDiaryPage() {
             key: i.id ?? crypto.randomUUID(),
             category: i.category,
             description: i.description ?? '',
-            volumeMl: i.volumeMl != null ? String(i.volumeMl) : '',
+            volume: volumeInputFromMl(i.volumeMl, i.volumeUnit),
+            volumeUnit: (i.volumeUnit === 'L' ? 'L' : 'ml') as FluidVolumeUnit,
             recordedTime: i.recordedTime ?? '',
           }))
         : [emptyRow()]
@@ -89,11 +99,12 @@ export default function RenalFluidDiaryPage() {
 
   const buildPayload = (): RenalFluidIntakeInput[] =>
     rows
-      .filter((r) => r.volumeMl || r.description)
+      .filter((r) => r.volume || r.description)
       .map((r) => ({
         category: r.category,
         description: r.description || undefined,
-        volume_ml: r.volumeMl ? Number(r.volumeMl) : undefined,
+        volume_ml: r.volume ? volumeToMl(Number(r.volume), r.volumeUnit) : undefined,
+        volume_unit: r.volumeUnit,
         recorded_time: r.recordedTime || undefined,
       }));
 
@@ -182,16 +193,41 @@ export default function RenalFluidDiaryPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Input
-                    type="number"
-                    placeholder="Volume (ml)"
-                    value={row.volumeMl}
-                    onChange={(e) =>
-                      setRows((prev) =>
-                        prev.map((r, i) => (i === idx ? { ...r, volumeMl: e.target.value } : r))
-                      )
-                    }
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      step="any"
+                      placeholder="Volume"
+                      className="flex-1"
+                      value={row.volume}
+                      onChange={(e) =>
+                        setRows((prev) =>
+                          prev.map((r, i) => (i === idx ? { ...r, volume: e.target.value } : r))
+                        )
+                      }
+                    />
+                    <Select
+                      value={row.volumeUnit}
+                      onValueChange={(v) =>
+                        setRows((prev) =>
+                          prev.map((r, i) =>
+                            i === idx ? { ...r, volumeUnit: v as FluidVolumeUnit } : r
+                          )
+                        )
+                      }
+                    >
+                      <SelectTrigger className="w-[72px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FLUID_VOLUME_UNITS.map((u) => (
+                          <SelectItem key={u} value={u}>
+                            {u}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Input
                     className="sm:col-span-2"
                     placeholder="Description (optional)"
@@ -303,7 +339,7 @@ export default function RenalFluidDiaryPage() {
                     <li key={line.id} className="border rounded-lg p-3">
                       <p className="font-medium">{categoryLabel(line.category)}</p>
                       <p>
-                        {line.volumeMl != null ? `${line.volumeMl} ml` : '—'}
+                        {formatVolumeFromMl(line.volumeMl, line.volumeUnit)}
                         {line.recordedTime ? ` · ${line.recordedTime}` : ''}
                       </p>
                       {line.description && (

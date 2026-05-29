@@ -98,6 +98,7 @@ function mapSessionMedicationIntake(raw: Record<string, unknown>) {
     medicineId: raw.medicine_id as string | undefined,
     medicineName: raw.medicine_name as string | undefined,
     doseText: raw.dose_text as string | undefined,
+    doseUnit: raw.dose_unit as string | undefined,
     route: raw.route as string | undefined,
     takenAt: raw.taken_at as string | undefined,
     notes: raw.notes as string | undefined,
@@ -581,6 +582,7 @@ function mapMedicationDiary(raw: Record<string, unknown>) {
       medicineId: i.medicine_id as string | undefined,
       medicineName: i.medicine_name as string | undefined,
       doseText: i.dose_text as string | undefined,
+      doseUnit: i.dose_unit as string | undefined,
       route: i.route as string | undefined,
       taken: Boolean(i.taken),
       takenTime: i.taken_time as string | undefined,
@@ -625,7 +627,43 @@ function mapFluidDiary(raw: Record<string, unknown>) {
       category: String(i.category),
       description: i.description as string | undefined,
       volumeMl: i.volume_ml as number | null | undefined,
+      volumeUnit: (i.volume_unit as string) || 'ml',
+      displayVolume: i.display_volume as number | null | undefined,
       recordedTime: i.recorded_time as string | undefined,
+    })),
+  };
+}
+
+export async function fetchInterdialyticFluids(
+  patientId: string,
+  untilDate: string
+): Promise<import('@/types').InterdialyticFluidsSummary> {
+  const data = await apiRequest(
+    `/patients/${patientId}/interdialytic-fluids?until_date=${encodeURIComponent(untilDate)}`
+  );
+  return {
+    lastSessionId: data.last_session_id as string | null | undefined,
+    lastSessionDate: data.last_session_date as string | null | undefined,
+    fromDate: data.from_date as string | null | undefined,
+    untilDate: String(data.until_date),
+    totalOralMl: Number(data.total_oral_ml ?? 0),
+    totalIvMl: Number(data.total_iv_ml ?? 0),
+    totalPrimeRinsebackMl: Number(data.total_prime_rinseback_ml ?? 0),
+    totalOtherMl: Number(data.total_other_ml ?? 0),
+    totalMl: Number(data.total_ml ?? 0),
+    totalLiters: Number(data.total_liters ?? 0),
+    dailyEntries: ((data.daily_entries as Record<string, unknown>[]) ?? []).map((day) => ({
+      diaryDate: String(day.diary_date),
+      notes: day.notes as string | undefined,
+      intakes: ((day.intakes as Record<string, unknown>[]) ?? []).map((i) => ({
+        id: String(i.id),
+        category: String(i.category),
+        description: i.description as string | undefined,
+        volumeMl: i.volume_ml as number | null | undefined,
+        volumeUnit: (i.volume_unit as string) || 'ml',
+        displayVolume: i.display_volume as number | null | undefined,
+        recordedTime: i.recorded_time as string | undefined,
+      })),
     })),
   };
 }

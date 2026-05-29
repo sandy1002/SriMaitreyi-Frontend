@@ -13,6 +13,7 @@ import {
 import { Pill, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
+import { DOSE_UNITS, formatDose } from '@/lib/clinicalUnits';
 import type { Medicine, SessionMedicationIntake } from '@/types';
 
 interface Props {
@@ -34,6 +35,7 @@ export function SessionMedicationSection({
   const [medicineId, setMedicineId] = useState('');
   const [medicineName, setMedicineName] = useState('');
   const [doseText, setDoseText] = useState('');
+  const [doseUnit, setDoseUnit] = useState('');
   const [route, setRoute] = useState('oral');
   const [saving, setSaving] = useState(false);
 
@@ -56,12 +58,14 @@ export function SessionMedicationSection({
         medicine_id: medicineId || undefined,
         medicine_name: medicineName || undefined,
         dose_text: doseText || undefined,
+        dose_unit: doseUnit || undefined,
         route,
       });
       setIntakes((prev) => [...prev, row]);
       setMedicineId('');
       setMedicineName('');
       setDoseText('');
+      setDoseUnit('');
       onUpdated?.();
       toast({ title: 'Medication logged' });
     } catch {
@@ -89,7 +93,12 @@ export function SessionMedicationSection({
               <li key={i.id} className="flex justify-between gap-2 border rounded-md p-2">
                 <span>
                   <span className="font-medium">{i.medicineName ?? 'Medication'}</span>
-                  {i.doseText && <span className="text-muted-foreground"> — {i.doseText}</span>}
+                  {(i.doseText || i.doseUnit) && (
+                    <span className="text-muted-foreground">
+                      {' '}
+                      — {formatDose(i.doseText, i.doseUnit)}
+                    </span>
+                  )}
                   {i.route && (
                     <span className="text-muted-foreground text-xs ml-1">({i.route})</span>
                   )}
@@ -105,7 +114,14 @@ export function SessionMedicationSection({
           <div className="grid gap-3 sm:grid-cols-2 border-t pt-4">
             <div className="space-y-2 sm:col-span-2">
               <Label>From catalog</Label>
-              <Select value={medicineId} onValueChange={setMedicineId}>
+              <Select
+                value={medicineId}
+                onValueChange={(v) => {
+                  setMedicineId(v);
+                  const med = medicines.find((m) => m.id === v);
+                  if (med?.unit) setDoseUnit(med.unit);
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select medicine (optional)" />
                 </SelectTrigger>
@@ -131,8 +147,24 @@ export function SessionMedicationSection({
               <Input
                 value={doseText}
                 onChange={(e) => setDoseText(e.target.value)}
-                placeholder="e.g. 100 mg IV"
+                placeholder="e.g. 100"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Unit</Label>
+              <Select value={doseUnit || 'none'} onValueChange={(v) => setDoseUnit(v === 'none' ? '' : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">—</SelectItem>
+                  {DOSE_UNITS.map((u) => (
+                    <SelectItem key={u} value={u}>
+                      {u}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Route</Label>
