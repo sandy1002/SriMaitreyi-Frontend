@@ -280,6 +280,44 @@ export default function MedicationDiaryPage() {
             </Button>
           </CardContent>
         </Card>
+
+        {recent.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Recent entries</CardTitle>
+              <CardDescription>
+                Select a date to load that day&apos;s medication log into the form above.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm space-y-2">
+              {recent.slice(0, 7).map((d) => {
+                const takenCount = d.intakes.filter((i) => i.taken).length;
+                const isSelected = d.diaryDate === diaryDate;
+                return (
+                  <div
+                    key={d.id}
+                    role="button"
+                    tabIndex={0}
+                    className={`flex justify-between border-b pb-2 cursor-pointer hover:text-primary ${
+                      isSelected ? 'text-primary font-medium' : ''
+                    }`}
+                    onClick={() => setDiaryDate(d.diaryDate)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') setDiaryDate(d.diaryDate);
+                    }}
+                  >
+                    <span>{d.diaryDate}</span>
+                    <span className="text-muted-foreground">
+                      {takenCount}/{d.intakes.length} taken
+                      {d.totalDoses != null ? ` · ${d.totalDoses} dose(s)` : ''}
+                      {isSelected ? ' · viewing' : ''}
+                    </span>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );

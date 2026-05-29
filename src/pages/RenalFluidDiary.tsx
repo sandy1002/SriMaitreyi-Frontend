@@ -233,6 +233,47 @@ export default function RenalFluidDiaryPage() {
             </Button>
           </CardContent>
         </Card>
+
+        {recent.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Recent entries</CardTitle>
+              <CardDescription>
+                Select a date to load that day&apos;s fluid log into the form above.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm space-y-2">
+              {recent.slice(0, 7).map((d) => {
+                const totalMl =
+                  (d.totalOralMl ?? 0) +
+                  (d.totalIvMl ?? 0) +
+                  (d.totalPrimeRinsebackMl ?? 0) +
+                  (d.totalOtherMl ?? 0);
+                const isSelected = d.diaryDate === diaryDate;
+                return (
+                  <div
+                    key={d.id}
+                    role="button"
+                    tabIndex={0}
+                    className={`flex justify-between border-b pb-2 cursor-pointer hover:text-primary ${
+                      isSelected ? 'text-primary font-medium' : ''
+                    }`}
+                    onClick={() => setDiaryDate(d.diaryDate)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') setDiaryDate(d.diaryDate);
+                    }}
+                  >
+                    <span>{d.diaryDate}</span>
+                    <span className="text-muted-foreground">
+                      {totalMl} ml total · {d.intakes.length} line(s)
+                      {isSelected ? ' · viewing' : ''}
+                    </span>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );

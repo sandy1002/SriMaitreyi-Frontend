@@ -300,20 +300,34 @@ export default function NutritionDiaryPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Recent entries</CardTitle>
+              <CardDescription>
+                Select a date to load that day&apos;s nutrition log into the form above.
+              </CardDescription>
             </CardHeader>
             <CardContent className="text-sm space-y-2">
-              {recentDiaries.slice(0, 7).map((d) => (
-                <div
-                  key={d.id}
-                  className="flex justify-between border-b pb-2 cursor-pointer hover:text-primary"
-                  onClick={() => setDiaryDate(d.diaryDate)}
-                >
-                  <span>{d.diaryDate}</span>
-                  <span className="text-muted-foreground">
-                    K {d.totalPotassiumMg ?? '—'} mg · {d.alerts?.length ?? 0} alert(s)
-                  </span>
-                </div>
-              ))}
+              {recentDiaries.slice(0, 7).map((d) => {
+                const isSelected = d.diaryDate === diaryDate;
+                return (
+                  <div
+                    key={d.id}
+                    role="button"
+                    tabIndex={0}
+                    className={`flex justify-between border-b pb-2 cursor-pointer hover:text-primary ${
+                      isSelected ? 'text-primary font-medium' : ''
+                    }`}
+                    onClick={() => setDiaryDate(d.diaryDate)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') setDiaryDate(d.diaryDate);
+                    }}
+                  >
+                    <span>{d.diaryDate}</span>
+                    <span className="text-muted-foreground">
+                      K {d.totalPotassiumMg ?? '—'} mg · {d.alerts?.length ?? 0} alert(s)
+                      {isSelected ? ' · viewing' : ''}
+                    </span>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         )}
