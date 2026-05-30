@@ -453,6 +453,10 @@ export interface CbpReport {
   serum_calcium?: number | null;
   serum_potassium?: number | null;
   albumin?: number | null;
+  urr_pct?: number | null;
+  urr_status?: 'adequate' | 'suboptimal' | string;
+  urr_target_pct?: number | null;
+  urr_interpretation?: string;
   field_flags?: Record<string, CbpFieldFlag>;
   abnormal_count?: number;
   abnormal_fields?: string[];
