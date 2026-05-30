@@ -145,6 +145,40 @@ export function CbpReportPreviewDialog({
                         );
                       })}
                     </div>
+                    {section.id === 'renal_chemistry' &&
+                      report.urr_pct != null &&
+                      report.pre_urea != null &&
+                      report.post_urea != null && (
+                        <div
+                          className={cn(
+                            'rounded-md border px-3 py-3 sm:col-span-2',
+                            report.urr_status === 'suboptimal'
+                              ? 'border-amber-500/60 bg-amber-50/50 dark:bg-amber-950/20'
+                              : 'border-emerald-500/40 bg-emerald-50/40 dark:bg-emerald-950/20'
+                          )}
+                        >
+                          <p className="text-xs text-muted-foreground">URR (Urea Reduction Ratio)</p>
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <span className="text-lg font-semibold">{report.urr_pct}%</span>
+                            <Badge
+                              variant={report.urr_status === 'adequate' ? 'secondary' : 'outline'}
+                              className={cn(
+                                'text-[10px] capitalize',
+                                report.urr_status === 'suboptimal' && 'text-amber-700 border-amber-500'
+                              )}
+                            >
+                              {report.urr_status ?? 'calculated'}
+                            </Badge>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-2">
+                            Pre urea {report.pre_urea} mg/dL → Post urea {report.post_urea} mg/dL
+                            {report.urr_target_pct != null && ` · Target ≥ ${report.urr_target_pct}%`}
+                          </p>
+                          {report.urr_interpretation && (
+                            <p className="text-xs mt-2">{report.urr_interpretation}</p>
+                          )}
+                        </div>
+                      )}
                   </div>
                 );
               })}

@@ -132,14 +132,25 @@ export function CbpReportCapture({ patientId, patientGender, showCardHeader = tr
     return map;
   }, [data]);
 
-  const setField = (key: string, value: string | boolean) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
-
   const parseNum = (v: string) => {
     if (v === '' || v == null) return undefined;
     const n = Number(v);
     return Number.isFinite(n) ? n : undefined;
+  };
+
+  const liveUrr = useMemo(() => {
+    const pre = parseNum(String(form.pre_urea));
+    const post = parseNum(String(form.post_urea));
+    if (pre == null || post == null || pre <= 0) return null;
+    const pct = Math.round((1 - post / pre) * 1000) / 10;
+    return {
+      pct,
+      adequate: pct >= 65,
+    };
+  }, [form.pre_urea, form.post_urea]);
+
+  const setField = (key: string, value: string | boolean) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const buildPayload = () => ({
@@ -331,6 +342,16 @@ export function CbpReportCapture({ patientId, patientGender, showCardHeader = tr
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 pt-2">
                   {fieldsForSection('renal_chemistry')}
                 </div>
+                {liveUrr && (
+                  <div className="mt-3 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm">
+                    <span className="text-muted-foreground">URR (preview): </span>
+                    <strong>{liveUrr.pct}%</strong>
+                    <span className="text-muted-foreground">
+                      {' '}
+                      — {liveUrr.adequate ? 'adequate' : 'below 65% target'} (from pre/post urea)
+                    </span>
+                  </div>
+                )}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="smear">
@@ -440,16 +461,26 @@ export function CbpReportCapture({ patientId, patientGender, showCardHeader = tr
                     {r.lab_name && (
                       <span className="text-muted-foreground"> · {r.lab_name}</span>
                     )}
+                    {r.urr_pct != null && (
+                      <span className="text-muted-foreground"> · URR {r.urr_pct}%</span>
+                    )}
                   </span>
-                  {r.abnormal_count ? (
-                    <Badge variant="destructive" className="text-[10px]">
-                      {r.abnormal_count} abnormal
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="text-[10px]">
-                      Normal range
-                    </Badge>
-                  )}
+                  <div className="flex flex-wrap gap-1">
+                    {r.urr_status === 'suboptimal' && (
+                      <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-500">
+                        URR low
+                      </Badge>
+                    )}
+                    {r.abnormal_count ? (
+                      <Badge variant="destructive" className="text-[10px]">
+                        {r.abnormal_count} abnormal
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-[10px]">
+                        Normal range
+                      </Badge>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
