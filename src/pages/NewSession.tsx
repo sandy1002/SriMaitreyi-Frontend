@@ -27,6 +27,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
 import { formatVolumeFromMl, formatUfGoal } from '@/lib/clinicalUnits';
+import { UfGoalFormulaHint } from '@/components/clinical/UfGoalFormulaHint';
 import { nowISTClock } from '@/lib/datetime';
 import type {
   DialysisSession,
@@ -625,9 +626,10 @@ export default function NewSession() {
               <CardTitle className="text-base flex items-center gap-2">
                 <Calculator className="h-4 w-4" />
                 UF goal (automated)
+                <UfGoalFormulaHint />
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                Step 1: IDWG = pre weight − dry weight. Step 2: add prime/IV/oral fluids. Step 3: total UF goal.
+                Values update as you enter weight and fluids. Use the help icon for the formula.
               </p>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-2">
