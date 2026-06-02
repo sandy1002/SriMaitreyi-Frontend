@@ -41,6 +41,9 @@ export interface PreDialysisAssessment {
   idwgKg?: number | null;
   fluidAddedLiters?: number | null;
   ufGoalLiters?: number | null;
+  technicianName?: string;
+  nurseName?: string;
+  doctorName?: string;
 }
 
 export interface SessionVitalReading {
@@ -323,6 +326,41 @@ export interface InterdialyticFluidsSummary {
     notes?: string;
     intakes: RenalFluidIntakeLine[];
   }[];
+}
+
+export interface SessionStartDefaults {
+  hospitalName: string | null;
+  suggestedPrimeRinsebackMl: number;
+  suggestedIvFluidsMl: number;
+  suggestedOralIntakeMl: number;
+  interdialyticFluids: InterdialyticFluidsSummary | null;
+  interdialyticNutritionPotassium: {
+    fromDate: string | null;
+    untilDate: string;
+    totalPotassiumMg: number;
+    dayCount: number;
+    dailyEntries: { diaryDate: string; totalPotassiumMg: number }[];
+  } | null;
+  latestSerumPotassium: {
+    reportDate: string;
+    serumPotassiumMmolL: number;
+  } | null;
+  patientMedications: {
+    id: string;
+    medicineId: string;
+    doseSchedule?: string;
+    medicine?: Record<string, unknown>;
+  }[];
+}
+
+export interface FoodPotassiumItem {
+  id: string;
+  name: string;
+  category: 'fruit' | 'vegetable' | 'other';
+  servingDescription: string;
+  servingGrams?: number;
+  potassiumMgPerServing: number;
+  aliases?: string;
 }
 
 export interface PatientTrendsResponse {

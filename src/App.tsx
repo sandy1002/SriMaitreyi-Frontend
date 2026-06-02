@@ -142,6 +142,14 @@ const App = () => (
                 }
               />
               <Route
+                path="/session/new/:patientId"
+                element={
+                  <StaffRoute>
+                    <NewSession />
+                  </StaffRoute>
+                }
+              />
+              <Route
                 path="/session/:sessionId"
                 element={
                   <ProtectedRoute>
