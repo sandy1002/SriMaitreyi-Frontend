@@ -11,6 +11,8 @@ import { ArrowLeft, Utensils, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
 import { DiaryEntryViewDialog } from '@/components/clinical/DiaryEntryViewDialog';
+import { FoodPotassiumInput } from '@/components/clinical/FoodPotassiumInput';
+import { nowISTClock } from '@/lib/datetime';
 import type { NutritionDiaryEntry, NutritionMealInput } from '@/types';
 
 const MEAL_TYPES = [
@@ -186,8 +188,9 @@ export default function NutritionDiaryPage() {
               Renal nutrition diary
             </CardTitle>
             <CardDescription>
-              Primary storage: PostgreSQL. Copies sync to Fuseki (KG) and Neo4j (property graph).
+              Select fruits/vegetables to auto-calculate potassium (mg). Times shown in IST.
             </CardDescription>
+            <p className="text-xs text-muted-foreground">Current time (IST): {nowISTClock()}</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="max-w-xs">
@@ -208,22 +211,14 @@ export default function NutritionDiaryPage() {
                     <CardTitle className="text-base">{label}</CardTitle>
                   </CardHeader>
                   <CardContent className="grid gap-3 sm:grid-cols-2">
-                    <div className="sm:col-span-2">
-                      <Label>Food name</Label>
-                      <Input
-                        value={m.foodName}
-                        onChange={(e) => updateMeal(key, { foodName: e.target.value })}
-                        placeholder="e.g. Oats, banana, rice"
-                      />
-                    </div>
-                    <div>
-                      <Label>Portion size</Label>
-                      <Input
-                        value={m.portionSize}
-                        onChange={(e) => updateMeal(key, { portionSize: e.target.value })}
-                        placeholder="e.g. 1 bowl / 150 g"
-                      />
-                    </div>
+                    <FoodPotassiumInput
+                      foodName={m.foodName}
+                      portionSize={m.portionSize}
+                      potassium={m.potassium}
+                      onFoodNameChange={(v) => updateMeal(key, { foodName: v })}
+                      onPortionSizeChange={(v) => updateMeal(key, { portionSize: v })}
+                      onPotassiumChange={(v) => updateMeal(key, { potassium: v })}
+                    />
                     <div className="sm:col-span-2">
                       <Label>Food description / portions</Label>
                       <Input
@@ -254,14 +249,6 @@ export default function NutritionDiaryPage() {
                         type="number"
                         value={m.phosphorus}
                         onChange={(e) => updateMeal(key, { phosphorus: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label>Potassium (mg)</Label>
-                      <Input
-                        type="number"
-                        value={m.potassium}
-                        onChange={(e) => updateMeal(key, { potassium: e.target.value })}
                       />
                     </div>
                     <div className="sm:col-span-2">

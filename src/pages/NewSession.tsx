@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useNavigate, Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useSession } from '@/context/SessionContext';
 import { Header } from '@/components/layout/Header';
@@ -27,22 +27,40 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
 import { formatVolumeFromMl, formatUfGoal } from '@/lib/clinicalUnits';
-import type { DialysisSession, InterdialyticFluidsSummary } from '@/types';
+import { nowISTClock } from '@/lib/datetime';
+import type {
+  DialysisSession,
+  InterdialyticFluidsSummary,
+  Patient,
+  SessionStartDefaults,
+} from '@/types';
 
 export default function NewSession() {
-  const { patient, isAuthenticated, user } = useAuth();
+  const { patient: authPatient, patients, isAuthenticated, user, isStaff } = useAuth();
+  const staffDisplayName = user?.name?.trim() || '';
+  const { patientId: routePatientId } = useParams<{ patientId?: string }>();
   const { createSession } = useSession();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const isTechnicianStart = user?.role === 'technician' && !!routePatientId;
+  const isPatientStart = user?.role === 'patient';
+
+  const activePatient: Patient | null = useMemo(() => {
+    if (isPatientStart && authPatient) return authPatient;
+    if (isTechnicianStart && routePatientId) {
+      return patients.find((p) => p.id === routePatientId) ?? null;
+    }
+    return null;
+  }, [isPatientStart, isTechnicianStart, authPatient, routePatientId, patients]);
 
   const [sessionDate, setSessionDate] = useState(new Date().toISOString().split('T')[0]);
   const [hospitalName, setHospitalName] = useState('');
   const [openSession, setOpenSession] = useState<DialysisSession | null>(null);
   const [loadingOpen, setLoadingOpen] = useState(true);
   const [inProgressWarningOpen, setInProgressWarningOpen] = useState(false);
-  const [assessmentRecordedAt, setAssessmentRecordedAt] = useState(() =>
-    new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
-  );
+  const [assessmentRecordedAt, setAssessmentRecordedAt] = useState(() => nowISTClock());
+  const [sessionDefaults, setSessionDefaults] = useState<SessionStartDefaults | null>(null);
 
   const [weightKg, setWeightKg] = useState('');
   const [dryWeightKg, setDryWeightKg] = useState('');
@@ -56,6 +74,9 @@ export default function NewSession() {
   const [primeMl, setPrimeMl] = useState('250');
   const [ivFluidsMl, setIvFluidsMl] = useState('0');
   const [oralIntakeMl, setOralIntakeMl] = useState('0');
+  const [technicianName, setTechnicianName] = useState('');
+  const [nurseName, setNurseName] = useState('');
+  const [doctorName, setDoctorName] = useState('');
   const [ufCalc, setUfCalc] = useState<{
     idwgKg: number;
     fluidAddedLiters: number;
@@ -67,38 +88,48 @@ export default function NewSession() {
     useState<InterdialyticFluidsSummary | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const applySessionDefaults = useCallback((defaults: SessionStartDefaults) => {
+    setSessionDefaults(defaults);
+    if (defaults.hospitalName) setHospitalName(defaults.hospitalName);
+    setPrimeMl(String(defaults.suggestedPrimeRinsebackMl ?? 250));
+    setIvFluidsMl(String(defaults.suggestedIvFluidsMl ?? 0));
+    setOralIntakeMl(String(defaults.suggestedOralIntakeMl ?? 0));
+    if (defaults.interdialyticFluids) {
+      setInterdialyticFluids(defaults.interdialyticFluids);
+    }
+    if (defaults.latestSerumPotassium?.serumPotassiumMmolL != null) {
+      setPotassiumMmolL(String(defaults.latestSerumPotassium.serumPotassiumMmolL));
+    }
+  }, []);
+
   useEffect(() => {
-    if (!patient?.id) return;
+    if (!activePatient?.id) return;
     setLoadingOpen(true);
     Promise.all([
-      api.fetchOpenSession(patient.id),
-      api.fetchSessionDefaults(patient.id),
+      api.fetchOpenSession(activePatient.id),
+      api.fetchSessionDefaults(activePatient.id, sessionDate),
     ])
       .then(([s, defaults]) => {
         setOpenSession(s);
-        if (s?.status === 'in-progress') {
-          setInProgressWarningOpen(true);
-        } else {
-          setInProgressWarningOpen(false);
-        }
-        if (defaults.hospitalName) {
-          setHospitalName(defaults.hospitalName);
-        }
-        if (patient.targetDryWeightKg) {
-          setDryWeightKg(String(patient.targetDryWeightKg));
+        setInProgressWarningOpen(s?.status === 'in-progress');
+        applySessionDefaults(defaults);
+        if (activePatient.targetDryWeightKg) {
+          setDryWeightKg(String(activePatient.targetDryWeightKg));
         }
       })
       .finally(() => setLoadingOpen(false));
-  }, [patient?.id, patient?.targetDryWeightKg]);
+  }, [activePatient?.id, activePatient?.targetDryWeightKg, sessionDate, applySessionDefaults]);
 
   useEffect(() => {
-    const tick = setInterval(() => {
-      setAssessmentRecordedAt(
-        new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
-      );
-    }, 1000);
+    const tick = setInterval(() => setAssessmentRecordedAt(nowISTClock()), 1000);
     return () => clearInterval(tick);
   }, []);
+
+  useEffect(() => {
+    if (isTechnicianStart && staffDisplayName && !technicianName) {
+      setTechnicianName(staffDisplayName);
+    }
+  }, [isTechnicianStart, staffDisplayName, technicianName]);
 
   const runUfCalc = useCallback(async () => {
     const pre = Number(weightKg);
@@ -132,19 +163,38 @@ export default function NewSession() {
   }, [runUfCalc]);
 
   useEffect(() => {
-    if (!patient?.id || !sessionDate) return;
+    if (!activePatient?.id || !sessionDate) return;
     api
-      .fetchInterdialyticFluids(patient.id, sessionDate)
-      .then(setInterdialyticFluids)
+      .fetchSessionDefaults(activePatient.id, sessionDate)
+      .then((defaults) => {
+        if (defaults.interdialyticFluids) setInterdialyticFluids(defaults.interdialyticFluids);
+        setSessionDefaults((prev) => ({ ...defaults, hospitalName: prev?.hospitalName ?? defaults.hospitalName }));
+      })
       .catch(() => setInterdialyticFluids(null));
-  }, [patient?.id, sessionDate]);
+  }, [activePatient?.id, sessionDate]);
 
-  if (!isAuthenticated || !patient) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  if (user?.role !== 'patient') {
-    return <Navigate to="/dashboard" replace />;
+  if (!isPatientStart && !isTechnicianStart) {
+    return <Navigate to={isStaff ? '/staff' : '/dashboard'} replace />;
   }
+  if (!activePatient) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container py-6 text-center text-muted-foreground">
+          Patient not found. Return to the staff dashboard and select a valid patient.
+          <Button className="mt-4" variant="outline" onClick={() => navigate('/staff')}>
+            Staff dashboard
+          </Button>
+        </main>
+      </div>
+    );
+  }
+
+  const patient = activePatient;
+  const backPath = isTechnicianStart ? '/staff' : '/dashboard';
   if (loadingOpen) {
     return (
       <div className="min-h-screen bg-background">
@@ -193,6 +243,9 @@ export default function NewSession() {
           ivFluidsMl: Number(ivFluidsMl) || 0,
           oralIntakeMl: Number(oralIntakeMl) || 0,
           previousSessionPostK: needsPreviousPostK ? Number(previousPostK) : undefined,
+          technicianName: technicianName.trim() || undefined,
+          nurseName: nurseName.trim() || undefined,
+          doctorName: doctorName.trim() || undefined,
         }
       );
 
@@ -203,7 +256,7 @@ export default function NewSession() {
             ? `Session created. ${alerts.length} alert(s) flagged for review.`
             : 'Your dialysis session has been created successfully.',
       });
-      navigate(`/session/${session.id}`);
+      navigate(`/session/${session.id}`, { replace: true });
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Failed to create session.';
       toast({ title: 'Error', description: msg, variant: 'destructive' });
@@ -216,9 +269,9 @@ export default function NewSession() {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container py-6 max-w-xl">
-        <Button variant="ghost" className="mb-4" onClick={() => navigate('/dashboard')}>
+        <Button variant="ghost" className="mb-4" onClick={() => navigate(backPath)}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
+          {isTechnicianStart ? 'Back to staff workspace' : 'Back to Dashboard'}
         </Button>
 
         <Card className="shadow-clinical-lg animate-fade-in">
@@ -226,8 +279,14 @@ export default function NewSession() {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-glow mb-4">
               <Play className="h-7 w-7 text-primary-foreground" />
             </div>
-            <CardTitle className="text-2xl">Start New Session</CardTitle>
-            <CardDescription>Begin recording your dialysis session</CardDescription>
+            <CardTitle className="text-2xl">
+              {isTechnicianStart ? `Start session — ${patient.name}` : 'Start New Session'}
+            </CardTitle>
+            <CardDescription>
+              {isTechnicianStart
+                ? 'Record pre-dialysis assessment on behalf of the patient (IST timestamps).'
+                : 'Begin recording your dialysis session'}
+            </CardDescription>
           </CardHeader>
 
           <CardContent>
@@ -253,9 +312,9 @@ export default function NewSession() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() => navigate(backPath)}
                   >
-                    Back to dashboard
+                    Back
                   </Button>
                 </CardContent>
               </Card>
@@ -337,6 +396,32 @@ export default function NewSession() {
                 />
               </div>
 
+              {sessionDefaults?.interdialyticNutritionPotassium &&
+                sessionDefaults.interdialyticNutritionPotassium.dayCount > 0 && (
+                  <Card className="border-amber-500/30 bg-amber-500/5">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Dietary potassium since last session</CardTitle>
+                      <CardDescription>
+                        From nutrition diary ({sessionDefaults.interdialyticNutritionPotassium.fromDate ?? '—'}{' '}
+                        to {sessionDate}). Use with clinical Pre K below.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-sm space-y-2">
+                      <p className="font-medium text-lg">
+                        Total K intake: {sessionDefaults.interdialyticNutritionPotassium.totalPotassiumMg} mg
+                        {' '}
+                        over {sessionDefaults.interdialyticNutritionPotassium.dayCount} day(s)
+                      </p>
+                      {sessionDefaults.latestSerumPotassium && (
+                        <p className="text-muted-foreground">
+                          Latest lab serum K: {sessionDefaults.latestSerumPotassium.serumPotassiumMmolL} mmol/L
+                          ({sessionDefaults.latestSerumPotassium.reportDate})
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
               {interdialyticFluids && (
                 <Card className="border-sky-500/30 bg-sky-500/5">
                   <CardHeader className="pb-2">
@@ -344,7 +429,7 @@ export default function NewSession() {
                     <CardDescription>
                       From renal fluid diary since last session (
                       {interdialyticFluids.lastSessionDate ?? '—'}) until this visit (
-                      {sessionDate}).
+                      {sessionDate}). Values are applied to UF calculation at session start.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="text-sm space-y-3">
@@ -355,8 +440,19 @@ export default function NewSession() {
                         <p className="font-medium">
                           Total: {interdialyticFluids.totalLiters} L (
                           {interdialyticFluids.totalMl} ml) · oral{' '}
-                          {interdialyticFluids.totalOralMl} ml
+                          {interdialyticFluids.totalOralMl} ml · IV {interdialyticFluids.totalIvMl} ml
                         </p>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            setOralIntakeMl(String(interdialyticFluids.totalOralMl));
+                            setIvFluidsMl(String(interdialyticFluids.totalIvMl));
+                          }}
+                        >
+                          Apply totals to UF fluid fields
+                        </Button>
                         {interdialyticFluids.dailyEntries.map((day) => (
                           <div key={day.diaryDate} className="border rounded-md p-2 space-y-1">
                             <p className="font-medium">{day.diaryDate}</p>
@@ -384,7 +480,7 @@ export default function NewSession() {
               <div className="space-y-2">
                 <Label htmlFor="assessmentTime" className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-primary" />
-                  Assessment date &amp; time (auto)
+                  Assessment date &amp; time (IST, auto)
                 </Label>
                 <Input
                   id="assessmentTime"
@@ -393,6 +489,20 @@ export default function NewSession() {
                   value={assessmentRecordedAt}
                 />
               </div>
+
+              {sessionDefaults?.interdialyticNutritionPotassium?.totalPotassiumMg != null &&
+                sessionDefaults.interdialyticNutritionPotassium.totalPotassiumMg > 0 && (
+                  <p className="text-sm rounded-md bg-amber-500/10 border border-amber-500/20 px-3 py-2">
+                    Interdialytic dietary potassium:{' '}
+                    <strong>{sessionDefaults.interdialyticNutritionPotassium.totalPotassiumMg} mg</strong>
+                    {sessionDefaults.latestSerumPotassium && (
+                      <>
+                        {' '}
+                        · Last serum K: {sessionDefaults.latestSerumPotassium.serumPotassiumMmolL} mmol/L
+                      </>
+                    )}
+                  </p>
+                )}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -481,6 +591,37 @@ export default function NewSession() {
                 </div>
               </div>
 
+              <CardTitle className="text-base pt-2">Care team</CardTitle>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="technicianName">Technician name</Label>
+                  <Input
+                    id="technicianName"
+                    value={technicianName}
+                    onChange={(e) => setTechnicianName(e.target.value)}
+                    placeholder="Technician on duty"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nurseName">Nurse name</Label>
+                  <Input
+                    id="nurseName"
+                    value={nurseName}
+                    onChange={(e) => setNurseName(e.target.value)}
+                    placeholder="Nurse on duty"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="doctorName">Doctor name</Label>
+                  <Input
+                    id="doctorName"
+                    value={doctorName}
+                    onChange={(e) => setDoctorName(e.target.value)}
+                    placeholder="Nephrologist / doctor"
+                  />
+                </div>
+              </div>
+
               <CardTitle className="text-base flex items-center gap-2">
                 <Calculator className="h-4 w-4" />
                 UF goal (automated)
@@ -542,7 +683,7 @@ export default function NewSession() {
                 <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || hasInProgressSession}>
                   {isSubmitting ? 'Creating...' : 'Start Session'}
                 </Button>
-                <Button type="button" variant="outline" className="w-full" onClick={() => navigate('/dashboard')}>
+                <Button type="button" variant="outline" className="w-full" onClick={() => navigate(backPath)}>
                   Cancel
                 </Button>
               </div>

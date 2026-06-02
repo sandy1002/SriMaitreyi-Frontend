@@ -66,9 +66,11 @@ export function SessionEditDialog({
   const [condition, setCondition] = useState<'Stable' | 'Unstable'>(
     post?.condition === 'Unstable' ? 'Unstable' : 'Stable'
   );
-  const [technicianName, setTechnicianName] = useState(post?.technicianName ?? '');
-  const [nurseName, setNurseName] = useState(post?.nurseName ?? '');
-  const [doctorName, setDoctorName] = useState(post?.doctorName ?? '');
+  const [technicianName, setTechnicianName] = useState(
+    post?.technicianName ?? pre?.technicianName ?? ''
+  );
+  const [nurseName, setNurseName] = useState(post?.nurseName ?? pre?.nurseName ?? '');
+  const [doctorName, setDoctorName] = useState(post?.doctorName ?? pre?.doctorName ?? '');
 
   useEffect(() => {
     if (!open) return;
@@ -91,9 +93,9 @@ export function SessionEditDialog({
     setPostBloodSugar(str(post?.postBloodSugar));
     setTotalUf(str(post?.totalUfRemoved));
     setCondition(post?.condition === 'Unstable' ? 'Unstable' : 'Stable');
-    setTechnicianName(post?.technicianName ?? '');
-    setNurseName(post?.nurseName ?? '');
-    setDoctorName(post?.doctorName ?? '');
+    setTechnicianName(post?.technicianName ?? pre?.technicianName ?? '');
+    setNurseName(post?.nurseName ?? pre?.nurseName ?? '');
+    setDoctorName(post?.doctorName ?? pre?.doctorName ?? '');
     setError(null);
   }, [open, session, pre, post]);
 
@@ -121,6 +123,9 @@ export function SessionEditDialog({
         prime_rinseback_ml: parseNum(primeRinsebackMl),
         iv_fluids_ml: parseNum(ivFluidsMl),
         oral_intake_ml: parseNum(oralIntakeMl),
+        technician_name: technicianName.trim() || undefined,
+        nurse_name: nurseName.trim() || undefined,
+        doctor_name: doctorName.trim() || undefined,
       };
 
       const hasPost =
@@ -142,9 +147,6 @@ export function SessionEditDialog({
           post_blood_sugar: parseNum(postBloodSugar),
           total_uf_removed: parseNum(totalUf),
           condition,
-          technician_name: technicianName.trim() || undefined,
-          nurse_name: nurseName.trim() || undefined,
-          doctor_name: doctorName.trim() || undefined,
         });
       }
 
@@ -240,6 +242,21 @@ export function SessionEditDialog({
             <div className="space-y-1">
               <Label>Oral intake (ml)</Label>
               <Input type="number" value={oralIntakeMl} onChange={(e) => setOralIntakeMl(e.target.value)} />
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <Label className="text-muted-foreground">Care team</Label>
+            </div>
+            <div className="space-y-1">
+              <Label>Technician name</Label>
+              <Input value={technicianName} onChange={(e) => setTechnicianName(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label>Nurse name</Label>
+              <Input value={nurseName} onChange={(e) => setNurseName(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label>Doctor name</Label>
+              <Input value={doctorName} onChange={(e) => setDoctorName(e.target.value)} />
             </div>
           </TabsContent>
 

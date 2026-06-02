@@ -33,6 +33,9 @@ interface SessionContextType {
       ivFluidsMl?: number;
       oralIntakeMl?: number;
       previousSessionPostK?: number;
+      technicianName?: string;
+      nurseName?: string;
+      doctorName?: string;
     }
   ) => Promise<{ session: DialysisSession; alerts: ClinicalAlert[]; checks: ClinicalCheck[] }>;
 
@@ -113,6 +116,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       ivFluidsMl?: number;
       oralIntakeMl?: number;
       previousSessionPostK?: number;
+      technicianName?: string;
+      nurseName?: string;
+      doctorName?: string;
     }
   ) => {
     const result = await api.createSession({
@@ -132,6 +138,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       iv_fluids_ml: assessment.ivFluidsMl,
       oral_intake_ml: assessment.oralIntakeMl,
       previous_session_post_k: assessment.previousSessionPostK,
+      technician_name: assessment.technicianName,
+      nurse_name: assessment.nurseName,
+      doctor_name: assessment.doctorName,
     });
 
     setSessions((prev) => [result.session, ...prev]);

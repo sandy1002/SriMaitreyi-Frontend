@@ -60,7 +60,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { formatIST } from '@/lib/datetime';
 import * as api from '@/services/api';
 import { SessionAttachment } from '@/types';
 import { AlertsPanel } from '@/components/clinical/AlertsPanel';
@@ -76,14 +76,10 @@ import type { InterdialyticFluidsSummary } from '@/types';
 /* ---------------------------------------
    Safe Date Formatter (CRITICAL)
 --------------------------------------- */
-function safeFormat(
-  value?: string | Date | null,
-  fmt = 'EEEE, MMMM d, yyyy'
-) {
+function safeFormat(value?: string | Date | null, mode: 'date' | 'datetime' = 'date') {
   if (!value) return '—';
-  const date = value instanceof Date ? value : new Date(value);
-  if (isNaN(date.getTime())) return '—';
-  return format(date, fmt);
+  if (mode === 'datetime') return formatIST(value);
+  return formatIST(value, { timeZone: 'Asia/Kolkata', dateStyle: 'full' });
 }
 
 export default function SessionDetail() {
@@ -150,6 +146,15 @@ export default function SessionDetail() {
   }, [sessionId]);
 
   useEffect(() => {
+    const pre = currentSession?.preDialysisAssessment;
+    const post = currentSession?.postDialysisAssessment;
+    if (!pre && !post) return;
+    if (!post?.technicianName && pre?.technicianName) setTechnicianName(pre.technicianName);
+    if (!post?.nurseName && pre?.nurseName) setNurseName(pre.nurseName);
+    if (!post?.doctorName && pre?.doctorName) setDoctorName(pre.doctorName);
+  }, [currentSession?.id, currentSession?.preDialysisAssessment, currentSession?.postDialysisAssessment]);
+
+  useEffect(() => {
     const s = currentSession;
     if (!s?.patientId || !s?.sessionDate) return;
     api
@@ -192,7 +197,9 @@ export default function SessionDetail() {
   }
 
   const isPatient = user?.role === 'patient';
+  const isTechnician = user?.role === 'technician';
   const isCompleted = session.status === 'completed';
+  const canManageSession = (isPatient || isTechnician) && !isCompleted;
   const isPostDialysis = session.status === 'post-dialysis';
   const isInProgress = session.status === 'in-progress';
   const isSessionOpen = !isCompleted;
@@ -203,7 +210,7 @@ export default function SessionDetail() {
     try {
       await api.deleteSession(session.id);
       toast({ title: 'Session deleted' });
-      navigate(isAdmin ? '/admin' : '/dashboard');
+      navigate(isAdmin ? '/admin' : isTechnician ? '/staff' : '/dashboard');
     } catch {
       toast({ title: 'Delete failed', variant: 'destructive' });
     } finally {
@@ -304,7 +311,7 @@ export default function SessionDetail() {
       <main className="container py-6 space-y-6">
         <Button
           variant="ghost"
-          onClick={() => navigate(isAdmin ? '/admin' : '/dashboard')}
+          onClick={() => navigate(isAdmin ? '/admin' : isTechnician ? '/staff' : '/dashboard')}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           {isAdmin ? 'Back to Admin' : 'Back to Dashboard'}
@@ -346,7 +353,7 @@ export default function SessionDetail() {
                     : 'In Progress'}
               </Badge>
 
-              {isPatient && (
+              {canManageSession && (
                 <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
                   <Pencil className="h-4 w-4 mr-2" />
                   Edit session
@@ -381,7 +388,7 @@ export default function SessionDetail() {
                 </AlertDialog>
               )}
 
-              {isInProgress && isPatient && (
+              {isInProgress && canManageSession && (
                 <>
                   <Button
                     disabled={closing}
@@ -552,7 +559,7 @@ export default function SessionDetail() {
           onUpdated={() => loadSessionDetails(session.id)}
         />
 
-        {isPostDialysis && isPatient && (
+        {isPostDialysis && canManageSession && (
           <Card className="border-amber-500/40">
             <CardHeader>
               <CardTitle className="text-lg">Post K — complete session</CardTitle>
@@ -634,6 +641,24 @@ export default function SessionDetail() {
                 <div>
                   <span className="text-muted-foreground">Access Condition: </span>
                   <span className="font-semibold">{assessment?.accessCondition || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Technician: </span>
+                  <span className="font-semibold">
+                    {assessment?.technicianName || postAssessment?.technicianName || '—'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Nurse: </span>
+                  <span className="font-semibold">
+                    {assessment?.nurseName || postAssessment?.nurseName || '—'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Doctor: </span>
+                  <span className="font-semibold">
+                    {assessment?.doctorName || postAssessment?.doctorName || '—'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Target dry weight: </span>
@@ -807,7 +832,7 @@ export default function SessionDetail() {
           {/* NOTES TAB */}
           <TabsContent value="notes" className="space-y-4">
             {/* Add Note Section – Patient Only */}
-            {isPatient && isSessionOpen && (
+            {canManageSession && isSessionOpen && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">
@@ -854,7 +879,7 @@ export default function SessionDetail() {
                         <p>{note.noteText}</p>
                         <div className="text-xs text-muted-foreground mt-2">
                           <Clock className="inline h-3 w-3 mr-1" />
-                          {safeFormat(note.createdAt, 'MMM d, yyyy h:mm a')}
+                          {safeFormat(note.createdAt, 'datetime')}
                         </div>
                       </div>
                     ))}
@@ -870,7 +895,7 @@ export default function SessionDetail() {
 
           {/* ALL ATTACHMENTS TAB */}
           <TabsContent value="attachments" className="space-y-4">
-            {isPatient && isSessionOpen && (
+            {canManageSession && isSessionOpen && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Paperclip className="h-4 w-4" />
@@ -937,7 +962,7 @@ export default function SessionDetail() {
 
           {/* PHOTOS TAB */}
           <TabsContent value="photos" className="space-y-4">
-            {isPatient && isSessionOpen && (
+            {canManageSession && isSessionOpen && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Image className="h-4 w-4" />
@@ -993,7 +1018,7 @@ export default function SessionDetail() {
 
           {/* AUDIO TAB */}
           <TabsContent value="audio" className="space-y-4">
-            {isPatient && isSessionOpen && (
+            {canManageSession && isSessionOpen && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Music className="h-4 w-4" />

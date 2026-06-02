@@ -37,6 +37,9 @@ function mapPreAssessment(raw: Record<string, unknown> | null | undefined) {
     idwgKg: raw.idwg_kg as number | null | undefined,
     fluidAddedLiters: raw.fluid_added_liters as number | null | undefined,
     ufGoalLiters: raw.uf_goal_liters as number | null | undefined,
+    technicianName: raw.technician_name as string | undefined,
+    nurseName: raw.nurse_name as string | undefined,
+    doctorName: raw.doctor_name as string | undefined,
   };
 }
 
@@ -158,6 +161,14 @@ function mapAlert(raw: Record<string, unknown>): ClinicalAlert {
   };
 }
 
+function parseContentDispositionFilename(header: string | null, fallback: string): string {
+  if (!header) return fallback;
+  const utfMatch = header.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utfMatch) return decodeURIComponent(utfMatch[1]);
+  const plain = header.match(/filename="?([^";]+)"?/i);
+  return plain ? plain[1] : fallback;
+}
+
 export async function downloadMedicalReport(
   patientId: string,
   days: number,
@@ -174,8 +185,12 @@ export async function downloadMedicalReport(
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   const safeName = (patientName || 'patient').replace(/\s+/g, '_');
+  const fallback = `${safeName}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.pdf`;
   anchor.href = url;
-  anchor.download = `medical_report_${safeName}_${days}d.pdf`;
+  anchor.download = parseContentDispositionFilename(
+    res.headers.get('Content-Disposition'),
+    fallback
+  );
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
@@ -256,11 +271,99 @@ export async function fetchOpenSession(patientId: string) {
   return data.session ? mapSession(data.session) : null;
 }
 
-export async function fetchSessionDefaults(patientId: string): Promise<{
-  hospitalName: string | null;
-}> {
-  const data = await apiRequest(`/patients/${patientId}/session-defaults`);
-  return { hospitalName: (data.hospital_name as string) ?? null };
+export async function fetchSessionDefaults(
+  patientId: string,
+  sessionDate?: string
+): Promise<import('@/types').SessionStartDefaults> {
+  const qs = sessionDate ? `?session_date=${encodeURIComponent(sessionDate)}` : '';
+  const data = await apiRequest(`/patients/${patientId}/session-defaults${qs}`);
+  const fluids = data.interdialytic_fluids as Record<string, unknown> | undefined;
+  const nutritionK = data.interdialytic_nutrition_potassium as Record<string, unknown> | undefined;
+  return {
+    hospitalName: (data.hospital_name as string) ?? null,
+    suggestedPrimeRinsebackMl: Number(data.suggested_prime_rinseback_ml ?? 250),
+    suggestedIvFluidsMl: Number(data.suggested_iv_fluids_ml ?? 0),
+    suggestedOralIntakeMl: Number(data.suggested_oral_intake_ml ?? 0),
+    interdialyticFluids: fluids
+      ? {
+          lastSessionId: fluids.last_session_id as string | null,
+          lastSessionDate: fluids.last_session_date as string | null,
+          fromDate: fluids.from_date as string | null,
+          untilDate: fluids.until_date as string,
+          totalOralMl: Number(fluids.total_oral_ml ?? 0),
+          totalIvMl: Number(fluids.total_iv_ml ?? 0),
+          totalPrimeRinsebackMl: Number(fluids.total_prime_rinseback_ml ?? 0),
+          totalOtherMl: Number(fluids.total_other_ml ?? 0),
+          totalMl: Number(fluids.total_ml ?? 0),
+          totalLiters: Number(fluids.total_liters ?? 0),
+          dailyEntries: (fluids.daily_entries ?? []) as import('@/types').InterdialyticFluidsSummary['dailyEntries'],
+        }
+      : null,
+    interdialyticNutritionPotassium: nutritionK
+      ? {
+          fromDate: nutritionK.from_date as string | null,
+          untilDate: nutritionK.until_date as string,
+          totalPotassiumMg: Number(nutritionK.total_potassium_mg ?? 0),
+          dayCount: Number(nutritionK.day_count ?? 0),
+          dailyEntries: (nutritionK.daily_entries ?? []) as { diaryDate: string; totalPotassiumMg: number }[],
+        }
+      : null,
+    latestSerumPotassium: data.latest_serum_potassium
+      ? {
+          reportDate: (data.latest_serum_potassium as Record<string, unknown>).report_date as string,
+          serumPotassiumMmolL: Number(
+            (data.latest_serum_potassium as Record<string, unknown>).serum_potassium_mmol_l
+          ),
+        }
+      : null,
+    patientMedications: (data.patient_medications ?? []).map((m: Record<string, unknown>) => ({
+      id: String(m.id),
+      medicineId: String(m.medicine_id),
+      doseSchedule: m.dose_schedule as string | undefined,
+      medicine: m.medicine as Record<string, unknown> | undefined,
+    })),
+  };
+}
+
+export async function searchFoodPotassiumItems(
+  query: string,
+  category?: 'fruit' | 'vegetable'
+): Promise<import('@/types').FoodPotassiumItem[]> {
+  const params = new URLSearchParams();
+  if (query) params.set('q', query);
+  if (category) params.set('category', category);
+  const data = await apiRequest(`/food-items?${params.toString()}`);
+  return (data.items ?? []).map((item: Record<string, unknown>) => ({
+    id: String(item.id),
+    name: String(item.name),
+    category: String(item.category) as 'fruit' | 'vegetable' | 'other',
+    servingDescription: String(item.serving_description ?? ''),
+    servingGrams: item.serving_grams as number | undefined,
+    potassiumMgPerServing: Number(item.potassium_mg_per_serving),
+    aliases: item.aliases as string | undefined,
+  }));
+}
+
+export async function calculateFoodPotassium(payload: {
+  foodItemId?: string;
+  foodName?: string;
+  portionSize?: string;
+  servings?: number;
+}): Promise<{ potassiumMg: number; servingDescription: string }> {
+  const data = await apiRequest('/food-items/calculate-potassium', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      food_item_id: payload.foodItemId,
+      food_name: payload.foodName,
+      portion_size: payload.portionSize,
+      servings: payload.servings ?? 1,
+    }),
+  });
+  return {
+    potassiumMg: Number(data.potassium_mg),
+    servingDescription: String(data.serving_description ?? ''),
+  };
 }
 
 export async function calculateUfGoal(payload: {

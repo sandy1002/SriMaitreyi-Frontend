@@ -17,6 +17,7 @@ import {
   RefreshCw,
   ClipboardList,
   TestTube2,
+  Play,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -178,6 +179,14 @@ export default function StaffDashboard() {
                       CBP
                     </Link>
                   </Button>
+                  {role === 'technician' && (
+                    <Button size="sm" variant="default" asChild>
+                      <Link to={`/session/new/${p.id}`}>
+                        <Play className="h-4 w-4 mr-1" />
+                        Start session
+                      </Link>
+                    </Button>
+                  )}
                   {p.sessions[0] && (
                     <Button size="sm" asChild>
                       <Link to={`/session/${p.sessions[0].id}`}>
