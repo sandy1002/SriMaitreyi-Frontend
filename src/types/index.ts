@@ -328,8 +328,16 @@ export interface InterdialyticFluidsSummary {
   }[];
 }
 
+export interface PreviousSessionPostWeight {
+  sessionId: string;
+  sessionDate: string;
+  hospitalName?: string | null;
+  postWeightKg: number;
+}
+
 export interface SessionStartDefaults {
   hospitalName: string | null;
+  previousSessionPostWeight: PreviousSessionPostWeight | null;
   suggestedPrimeRinsebackMl: number;
   suggestedIvFluidsMl: number;
   suggestedOralIntakeMl: number;

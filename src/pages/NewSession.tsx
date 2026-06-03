@@ -423,14 +423,36 @@ export default function NewSession() {
                   </Card>
                 )}
 
+              <CardTitle className="pt-2 text-lg">PRE-DIALYSIS ASSESSMENT</CardTitle>
+
+              {sessionDefaults?.previousSessionPostWeight && (
+                <Card className="border-primary/30 bg-primary/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Previous session — Post-dialysis weight</CardTitle>
+                    <CardDescription>
+                      From session on {sessionDefaults.previousSessionPostWeight.sessionDate}
+                      {sessionDefaults.previousSessionPostWeight.hospitalName
+                        ? ` at ${sessionDefaults.previousSessionPostWeight.hospitalName}`
+                        : ''}
+                      . Use when comparing today&apos;s pre weight.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-semibold tabular-nums">
+                      {sessionDefaults.previousSessionPostWeight.postWeightKg} kg
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
               {interdialyticFluids && (
                 <Card className="border-sky-500/30 bg-sky-500/5">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base">Interdialytic fluid intake</CardTitle>
                     <CardDescription>
-                      From renal fluid diary since last session (
-                      {interdialyticFluids.lastSessionDate ?? '—'}) until this visit (
-                      {sessionDate}). Values are applied to UF calculation at session start.
+                      Renal fluid diary since last session (
+                      {interdialyticFluids.lastSessionDate ?? '—'}) until this visit ({sessionDate}).
+                      Remove values are applied to UF calculation at session start.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="text-sm space-y-3">
@@ -475,8 +497,6 @@ export default function NewSession() {
                   </CardContent>
                 </Card>
               )}
-
-              <CardTitle className="pt-2 text-lg">PRE-DIALYSIS ASSESSMENT</CardTitle>
 
               <div className="space-y-2">
                 <Label htmlFor="assessmentTime" className="flex items-center gap-2">

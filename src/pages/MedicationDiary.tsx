@@ -18,6 +18,14 @@ import { ArrowLeft, Pill, Plus, Save, Trash2 } from 'lucide-react';
 import * as api from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { DiaryEntryViewDialog } from '@/components/clinical/DiaryEntryViewDialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { DOSE_UNITS, formatDose } from '@/lib/clinicalUnits';
 import type { MedicationDiaryEntry, MedicationDiaryIntakeInput, Medicine } from '@/types';
 
@@ -378,20 +386,42 @@ export default function MedicationDiaryPage() {
               {previewEntry.intakes.length === 0 ? (
                 <p className="text-muted-foreground">No medication lines recorded.</p>
               ) : (
-                <ul className="space-y-2">
-                  {previewEntry.intakes.map((line) => (
-                    <li key={line.id} className="border rounded-lg p-3">
-                      <p className="font-medium">{line.medicineName || 'Medicine'}</p>
-                      <p className="text-muted-foreground">
-                        {formatDose(line.doseText, line.doseUnit)}
-                        {line.route ? ` · ${line.route}` : ''}
-                        {line.takenTime ? ` · ${line.takenTime}` : ''}
-                      </p>
-                      <p>{line.taken ? 'Taken' : 'Not taken'}</p>
-                      {line.notes && <p className="text-muted-foreground">{line.notes}</p>}
-                    </li>
-                  ))}
-                </ul>
+                <div className="rounded-md border overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Medicine</TableHead>
+                        <TableHead>Dose</TableHead>
+                        <TableHead>Route</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Notes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {previewEntry.intakes.map((line) => (
+                        <TableRow key={line.id}>
+                          <TableCell className="font-medium">
+                            {line.medicineName || 'Medicine'}
+                          </TableCell>
+                          <TableCell>{formatDose(line.doseText, line.doseUnit) || '—'}</TableCell>
+                          <TableCell className="capitalize">{line.route || '—'}</TableCell>
+                          <TableCell>{line.takenTime || '—'}</TableCell>
+                          <TableCell
+                            className={
+                              line.taken ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700'
+                            }
+                          >
+                            {line.taken ? 'Taken' : 'Missed'}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground max-w-[140px] truncate">
+                            {line.notes || '—'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
               {previewEntry.notes && (
                 <div>
