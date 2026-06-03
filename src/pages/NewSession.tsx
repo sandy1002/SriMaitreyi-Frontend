@@ -93,8 +93,9 @@ export default function NewSession() {
     setSessionDefaults(defaults);
     if (defaults.hospitalName) setHospitalName(defaults.hospitalName);
     setPrimeMl(String(defaults.suggestedPrimeRinsebackMl ?? 250));
-    setIvFluidsMl(String(defaults.suggestedIvFluidsMl ?? 0));
-    setOralIntakeMl(String(defaults.suggestedOralIntakeMl ?? 0));
+    // Oral/IV during session default to 0 — interdialytic diary totals are between sessions (IDWG).
+    setIvFluidsMl('0');
+    setOralIntakeMl('0');
     if (defaults.interdialyticFluids) {
       setInterdialyticFluids(defaults.interdialyticFluids);
     }
@@ -452,7 +453,8 @@ export default function NewSession() {
                     <CardDescription>
                       Renal fluid diary since last session (
                       {interdialyticFluids.lastSessionDate ?? '—'}) until this visit ({sessionDate}).
-                      Remove values are applied to UF calculation at session start.
+                      Fluid between sessions (reflected in pre weight / IDWG). Not the same as
+                      oral or IV during this dialysis run.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="text-sm space-y-3">
@@ -465,17 +467,6 @@ export default function NewSession() {
                           {interdialyticFluids.totalMl} ml) · oral{' '}
                           {interdialyticFluids.totalOralMl} ml · IV {interdialyticFluids.totalIvMl} ml
                         </p>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => {
-                            setOralIntakeMl(String(interdialyticFluids.totalOralMl));
-                            setIvFluidsMl(String(interdialyticFluids.totalIvMl));
-                          }}
-                        >
-                          Apply totals to UF fluid fields
-                        </Button>
                         {interdialyticFluids.dailyEntries.map((day) => (
                           <div key={day.diaryDate} className="border rounded-md p-2 space-y-1">
                             <p className="font-medium">{day.diaryDate}</p>
@@ -649,7 +640,9 @@ export default function NewSession() {
                 <UfGoalFormulaHint />
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                Values update as you enter weight and fluids. Use the help icon for the formula.
+                Values update as you enter weight and fluids. Oral and IV are fluids given during
+                this dialysis run only (not interdialytic diary totals). Use the help icon for the
+                formula.
               </p>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-2">

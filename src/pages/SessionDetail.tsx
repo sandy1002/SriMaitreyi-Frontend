@@ -66,6 +66,7 @@ import { SessionAttachment } from '@/types';
 import { AlertsPanel } from '@/components/clinical/AlertsPanel';
 import { SessionVitalsWorkflow } from '@/components/clinical/SessionVitalsWorkflow';
 import { SessionMedicationSection } from '@/components/clinical/SessionMedicationSection';
+import { PatientDiaryLinks } from '@/components/clinical/PatientDiaryLinks';
 import { SessionEditDialog } from '@/components/clinical/SessionEditDialog';
 import {
   formatUfGoal,
@@ -314,8 +315,20 @@ export default function SessionDetail() {
           onClick={() => navigate(isAdmin ? '/admin' : isTechnician ? '/staff' : '/dashboard')}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          {isAdmin ? 'Back to Admin' : 'Back to Dashboard'}
+          {isAdmin ? 'Back to Admin' : isTechnician ? 'Back to staff workspace' : 'Back to Dashboard'}
         </Button>
+
+        {isTechnician && session.patientId && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                Log fluid, nutrition, and home medications for this patient (supports interdialytic
+                and report data).
+              </p>
+              <PatientDiaryLinks patientId={session.patientId} compact />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Session Header */}
         <Card>
@@ -724,8 +737,8 @@ export default function SessionDetail() {
                 <p className="text-sm text-muted-foreground mb-2">
                   From renal fluid diary after session on{' '}
                   {interdialyticFluids.lastSessionDate ?? '—'} through{' '}
-                  {interdialyticFluids.untilDate} (exclusive). Remove values are applied to UF
-                  calculation at session start.
+                  {interdialyticFluids.untilDate} (exclusive). Between-session fluid (IDWG via pre
+                  weight), not oral/IV during the run.
                 </p>
                 <p className="text-sm font-medium mb-3">
                   Total: {interdialyticFluids.totalLiters} L ({interdialyticFluids.totalMl} ml)

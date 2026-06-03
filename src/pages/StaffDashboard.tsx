@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { fetchPatientsOverview } from '@/services/api';
 import type { PatientOverview, StaffRole, UserRole } from '@/types';
+import { PatientDiaryLinks } from '@/components/clinical/PatientDiaryLinks';
 import {
   Stethoscope,
   Wrench,
@@ -180,12 +181,15 @@ export default function StaffDashboard() {
                     </Link>
                   </Button>
                   {role === 'technician' && (
-                    <Button size="sm" variant="default" asChild>
-                      <Link to={`/session/new/${p.id}`}>
-                        <Play className="h-4 w-4 mr-1" />
-                        Start session
-                      </Link>
-                    </Button>
+                    <>
+                      <Button size="sm" variant="default" asChild>
+                        <Link to={`/session/new/${p.id}`}>
+                          <Play className="h-4 w-4 mr-1" />
+                          Start session
+                        </Link>
+                      </Button>
+                      <PatientDiaryLinks patientId={p.id} compact />
+                    </>
                   )}
                   {p.sessions[0] && (
                     <Button size="sm" asChild>
