@@ -1,24 +1,28 @@
 import { Patient } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { User, Calendar, Hash } from 'lucide-react';
+import { formatIST, parseApiDateTime } from '@/lib/datetime';
 
 interface PatientInfoCardProps {
   patient: Patient;
 }
 
 export function PatientInfoCard({ patient }: PatientInfoCardProps) {
-  const dialysisStartDate = patient.dialysisSince
-    ? new Date(patient.dialysisSince)
-    : null;
+  const dialysisStartDate = parseApiDateTime(patient.dialysisSince);
 
-  const isValidDate =
-    dialysisStartDate && !isNaN(dialysisStartDate.getTime());
-
-  const yearsOnDialysis = isValidDate
+  const yearsOnDialysis = dialysisStartDate
     ? Math.floor(
         (Date.now() - dialysisStartDate.getTime()) /
           (365.25 * 24 * 60 * 60 * 1000)
       )
+    : null;
+
+  const dialysisSinceLabel = dialysisStartDate
+    ? formatIST(dialysisStartDate, {
+        timeZone: 'Asia/Kolkata',
+        month: 'long',
+        year: 'numeric',
+      })
     : null;
 
   return (
@@ -55,15 +59,10 @@ export function PatientInfoCard({ patient }: PatientInfoCardProps) {
               <span className="text-muted-foreground">
                 On dialysis since{' '}
                 <span className="font-medium text-foreground">
-                  {isValidDate
-                    ? dialysisStartDate!.toLocaleDateString('en-US', {
-                        month: 'long',
-                        year: 'numeric',
-                      })
-                    : 'Not available'}
+                  {dialysisSinceLabel ?? 'Not available'}
                 </span>
 
-                {isValidDate && yearsOnDialysis && yearsOnDialysis > 0 && (
+                {dialysisStartDate && yearsOnDialysis && yearsOnDialysis > 0 && (
                   <span className="text-primary">
                     {' '}
                     ({yearsOnDialysis}+ years)

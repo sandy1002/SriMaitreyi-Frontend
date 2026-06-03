@@ -60,7 +60,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 import { useToast } from '@/hooks/use-toast';
-import { formatIST } from '@/lib/datetime';
+import { formatIST, formatISTDateTime } from '@/lib/datetime';
 import * as api from '@/services/api';
 import { SessionAttachment } from '@/types';
 import { AlertsPanel } from '@/components/clinical/AlertsPanel';
@@ -79,7 +79,7 @@ import type { InterdialyticFluidsSummary } from '@/types';
 --------------------------------------- */
 function safeFormat(value?: string | Date | null, mode: 'date' | 'datetime' = 'date') {
   if (!value) return '—';
-  if (mode === 'datetime') return formatIST(value);
+  if (mode === 'datetime') return formatISTDateTime(value);
   return formatIST(value, { timeZone: 'Asia/Kolkata', dateStyle: 'full' });
 }
 

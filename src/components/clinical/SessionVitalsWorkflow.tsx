@@ -16,22 +16,13 @@ import {
 import * as api from '@/services/api';
 import type { ClinicalAlert, ClinicalCheck, VitalsWorkflowState } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { formatISTDateTime, nowISTClock } from '@/lib/datetime';
 
 interface SessionVitalsWorkflowProps {
   sessionId: string;
   isCompleted: boolean;
   initialReadings?: VitalsWorkflowState['readings'];
   onAlertsUpdated?: () => void;
-}
-
-function formatDateTime(value?: string | null) {
-  if (!value) return '—';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleString(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
 }
 
 export function SessionVitalsWorkflow({
@@ -44,7 +35,7 @@ export function SessionVitalsWorkflow({
   const [workflow, setWorkflow] = useState<VitalsWorkflowState | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [displayTime, setDisplayTime] = useState(() => new Date().toLocaleString());
+  const [displayTime, setDisplayTime] = useState(() => nowISTClock());
 
   const [bloodPressure, setBloodPressure] = useState('');
   const [pulse, setPulse] = useState('');
@@ -85,10 +76,7 @@ export function SessionVitalsWorkflow({
   useEffect(() => {
     if (isCompleted) return;
     const tick = setInterval(() => {
-      setDisplayTime(new Date().toLocaleString(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      }));
+      setDisplayTime(nowISTClock());
     }, 1000);
     return () => clearInterval(tick);
   }, [isCompleted]);
@@ -122,7 +110,7 @@ export function SessionVitalsWorkflow({
         title: 'Vitals recorded',
         description: result.alerts.length
           ? `${result.alerts.length} alert(s) updated.`
-          : `Saved at ${formatDateTime(result.reading.recordedAt)}`,
+          : `Saved at ${formatISTDateTime(result.reading.recordedAt)}`,
       });
       await loadWorkflow();
     } catch {
@@ -174,7 +162,7 @@ export function SessionVitalsWorkflow({
             <Input
               readOnly
               className="bg-muted/50"
-              value={formatDateTime(workflow?.sessionStartedAt)}
+              value={formatISTDateTime(workflow?.sessionStartedAt)}
             />
           </div>
           <div className="space-y-1">
@@ -279,7 +267,7 @@ function VitalsTable({
           <TableRow key={r.id}>
             <TableCell className="font-medium">
               {r.recordedAt
-                ? formatDateTime(r.recordedAt)
+                ? formatISTDateTime(r.recordedAt)
                 : r.label ?? '—'}
             </TableCell>
             <TableCell>{r.bloodPressure ?? '—'}</TableCell>
