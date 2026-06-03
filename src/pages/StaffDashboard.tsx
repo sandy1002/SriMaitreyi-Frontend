@@ -9,12 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { fetchPatientsOverview } from '@/services/api';
 import type { PatientOverview, StaffRole, UserRole } from '@/types';
 import { PatientDiaryLinks } from '@/components/clinical/PatientDiaryLinks';
+import { PatientSessionsList } from '@/components/clinical/PatientSessionsList';
 import {
   Stethoscope,
   Wrench,
   Utensils,
   Users,
-  ExternalLink,
   RefreshCw,
   ClipboardList,
   TestTube2,
@@ -150,56 +150,50 @@ export default function StaffDashboard() {
               <p className="text-muted-foreground">No patients registered.</p>
             )}
             {overview.map((p) => (
-              <div
-                key={p.id}
-                className="flex flex-col gap-2 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <p className="font-semibold">{p.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {p.medicalRecordNumber} · {p.sessionCount} sessions · {p.alertCount} alerts
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setReportPatientId(p.id)}
-                  >
-                    Select for report
-                  </Button>
-                  <Button size="sm" variant="outline" asChild>
-                    <Link to={`/health-history/${p.id}`}>
-                      <ClipboardList className="h-4 w-4 mr-1" />
-                      Health history
-                    </Link>
-                  </Button>
-                  <Button size="sm" variant="outline" asChild>
-                    <Link to={`/cbp/${p.id}`}>
-                      <TestTube2 className="h-4 w-4 mr-1" />
-                      CBP
-                    </Link>
-                  </Button>
-                  {role === 'technician' && (
-                    <>
-                      <Button size="sm" variant="default" asChild>
-                        <Link to={`/session/new/${p.id}`}>
-                          <Play className="h-4 w-4 mr-1" />
-                          Start session
-                        </Link>
-                      </Button>
-                      <PatientDiaryLinks patientId={p.id} compact />
-                    </>
-                  )}
-                  {p.sessions[0] && (
-                    <Button size="sm" asChild>
-                      <Link to={`/session/${p.sessions[0].id}`}>
-                        <ExternalLink className="h-4 w-4 mr-1" />
-                        Latest session
+              <div key={p.id} className="rounded-lg border p-4 space-y-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="font-semibold">{p.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {p.medicalRecordNumber} · {p.sessionCount} sessions · {p.alertCount} alerts
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setReportPatientId(p.id)}
+                    >
+                      Select for report
+                    </Button>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to={`/health-history/${p.id}`}>
+                        <ClipboardList className="h-4 w-4 mr-1" />
+                        Health history
                       </Link>
                     </Button>
-                  )}
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to={`/cbp/${p.id}`}>
+                        <TestTube2 className="h-4 w-4 mr-1" />
+                        CBP
+                      </Link>
+                    </Button>
+                    {role === 'technician' && (
+                      <>
+                        <Button size="sm" variant="default" asChild>
+                          <Link to={`/session/new/${p.id}`}>
+                            <Play className="h-4 w-4 mr-1" />
+                            Start session
+                          </Link>
+                        </Button>
+                        <PatientDiaryLinks patientId={p.id} compact />
+                      </>
+                    )}
+                  </div>
                 </div>
+                {(role === 'technician' || role === 'doctor') && (
+                  <PatientSessionsList sessions={p.sessions} patientName={p.name} />
+                )}
               </div>
             ))}
           </CardContent>
