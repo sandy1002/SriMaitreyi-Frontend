@@ -257,7 +257,13 @@ export default function Login() {
                   id="staffUser"
                   value={staffUsername}
                   onChange={(e) => setStaffUsername(e.target.value)}
-                  placeholder={persona === 'technician' ? 'tech_admin' : 'Admin'}
+                  placeholder={
+                    persona === 'technician'
+                      ? 'techadmin'
+                      : persona === 'doctor'
+                        ? 'docadmin'
+                        : 'Admin'
+                  }
                   autoComplete="username"
                 />
               </div>
