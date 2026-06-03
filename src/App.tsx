@@ -24,6 +24,7 @@ import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { PatientRoute } from "@/components/auth/PatientRoute";
 import { StaffRoute } from "@/components/auth/StaffRoute";
+import { TechnicianRoute } from "@/components/auth/TechnicianRoute";
 
 const queryClient = new QueryClient();
 
@@ -118,6 +119,14 @@ const App = () => (
                 }
               />
               <Route
+                path="/nutrition-diary/:patientId"
+                element={
+                  <ProtectedRoute>
+                    <NutritionDiary />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/fluid-diary"
                 element={
                   <PatientRoute>
@@ -126,11 +135,27 @@ const App = () => (
                 }
               />
               <Route
+                path="/fluid-diary/:patientId"
+                element={
+                  <ProtectedRoute>
+                    <RenalFluidDiary />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/medication-diary"
                 element={
                   <PatientRoute>
                     <MedicationDiary />
                   </PatientRoute>
+                }
+              />
+              <Route
+                path="/medication-diary/:patientId"
+                element={
+                  <ProtectedRoute>
+                    <MedicationDiary />
+                  </ProtectedRoute>
                 }
               />
               <Route
@@ -144,9 +169,9 @@ const App = () => (
               <Route
                 path="/session/new/:patientId"
                 element={
-                  <StaffRoute>
+                  <TechnicianRoute>
                     <NewSession />
-                  </StaffRoute>
+                  </TechnicianRoute>
                 }
               />
               <Route

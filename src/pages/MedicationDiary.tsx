@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { usePatientDiaryPage } from '@/hooks/usePatientDiaryPage';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,7 +54,15 @@ const emptyIntake = (): IntakeRow => ({
 });
 
 export default function MedicationDiaryPage() {
-  const { patient, isAuthenticated, user } = useAuth();
+  const {
+    activePatient,
+    backPath,
+    isAuthenticated,
+    staffMissingRoute,
+    staffPatientNotFound,
+    patientMismatch,
+    isTechnician,
+  } = usePatientDiaryPage();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -67,10 +75,10 @@ export default function MedicationDiaryPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!patient?.id) return;
-    api.fetchMedicationDiaries(patient.id).then(setRecent).catch(console.error);
+    if (!activePatient?.id) return;
+    api.fetchMedicationDiaries(activePatient.id).then(setRecent).catch(console.error);
     api.fetchMedicines().then(setMedicines).catch(console.error);
-  }, [patient?.id]);
+  }, [activePatient?.id]);
 
   useEffect(() => {
     const existing = recent.find((d) => d.diaryDate === diaryDate);
@@ -97,8 +105,20 @@ export default function MedicationDiaryPage() {
     );
   }, [diaryDate, recent]);
 
-  if (!isAuthenticated || !patient) return <Navigate to="/login" replace />;
-  if (user?.role !== 'patient') return <Navigate to="/admin" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (staffMissingRoute) return <Navigate to="/staff" replace />;
+  if (patientMismatch) return <Navigate to="/dashboard" replace />;
+  if (!activePatient) {
+    return (
+      <div className="min-h-screen bg-background">
+        <main className="container py-12 text-center text-muted-foreground">
+          {staffPatientNotFound ? 'Patient not found.' : 'Select a patient from the staff workspace.'}
+        </main>
+      </div>
+    );
+  }
+
+  const patient = activePatient;
 
   const buildPayload = (): MedicationDiaryIntakeInput[] =>
     rows
@@ -136,9 +156,9 @@ export default function MedicationDiaryPage() {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container py-6 max-w-4xl space-y-6">
-        <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+        <Button variant="ghost" onClick={() => navigate(backPath)}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to dashboard
+          {isTechnician ? 'Back to staff workspace' : 'Back to dashboard'}
         </Button>
 
         <Card className="shadow-clinical">
@@ -146,6 +166,9 @@ export default function MedicationDiaryPage() {
             <CardTitle className="flex items-center gap-2">
               <Pill className="h-5 w-5 text-primary" />
               Medication diary
+              {isTechnician && (
+                <span className="text-sm font-normal text-muted-foreground">— {patient.name}</span>
+              )}
             </CardTitle>
             <CardDescription>
               Daily medication intake log for overall summary and adherence review.

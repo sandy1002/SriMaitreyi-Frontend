@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { usePatientDiaryPage } from '@/hooks/usePatientDiaryPage';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -53,7 +53,15 @@ const emptyRow = (): IntakeRow => ({
 });
 
 export default function RenalFluidDiaryPage() {
-  const { patient, isAuthenticated, user } = useAuth();
+  const {
+    activePatient,
+    backPath,
+    isAuthenticated,
+    staffMissingRoute,
+    staffPatientNotFound,
+    patientMismatch,
+    isTechnician,
+  } = usePatientDiaryPage();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -68,9 +76,9 @@ export default function RenalFluidDiaryPage() {
     CATEGORIES.find((c) => c.value === value)?.label ?? value;
 
   useEffect(() => {
-    if (!patient?.id) return;
-    api.fetchFluidDiaries(patient.id).then(setRecent).catch(console.error);
-  }, [patient?.id]);
+    if (!activePatient?.id) return;
+    api.fetchFluidDiaries(activePatient.id).then(setRecent).catch(console.error);
+  }, [activePatient?.id]);
 
   useEffect(() => {
     const existing = recent.find((d) => d.diaryDate === diaryDate);
@@ -94,8 +102,20 @@ export default function RenalFluidDiaryPage() {
     );
   }, [diaryDate, recent]);
 
-  if (!isAuthenticated || !patient) return <Navigate to="/login" replace />;
-  if (user?.role !== 'patient') return <Navigate to="/admin" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (staffMissingRoute) return <Navigate to="/staff" replace />;
+  if (patientMismatch) return <Navigate to="/dashboard" replace />;
+  if (!activePatient) {
+    return (
+      <div className="min-h-screen bg-background">
+        <main className="container py-12 text-center text-muted-foreground">
+          {staffPatientNotFound ? 'Patient not found.' : 'Select a patient from the staff workspace.'}
+        </main>
+      </div>
+    );
+  }
+
+  const patient = activePatient;
 
   const buildPayload = (): RenalFluidIntakeInput[] =>
     rows
@@ -132,9 +152,9 @@ export default function RenalFluidDiaryPage() {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container py-6 max-w-2xl space-y-6">
-        <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+        <Button variant="ghost" onClick={() => navigate(backPath)}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
+          {isTechnician ? 'Back to staff workspace' : 'Back to Dashboard'}
         </Button>
 
         <Card>
@@ -146,7 +166,13 @@ export default function RenalFluidDiaryPage() {
               <div>
                 <CardTitle>Renal fluid diary</CardTitle>
                 <CardDescription>
-                  Log oral intake, IV fluids, prime/rinseback, and other volumes (ml).
+                  {isTechnician && (
+                    <span className="block font-medium text-foreground mb-1">
+                      Patient: {patient.name}
+                    </span>
+                  )}
+                  Log oral intake, IV fluids, prime/rinseback, and other volumes (ml). Between-session
+                  totals support interdialytic review at session start (not oral during session).
                 </CardDescription>
               </div>
             </div>

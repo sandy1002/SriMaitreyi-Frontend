@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { usePatientDiaryPage } from '@/hooks/usePatientDiaryPage';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -45,7 +45,15 @@ const emptyMeal = (): MealFormState => ({
 });
 
 export default function NutritionDiaryPage() {
-  const { patient, isAuthenticated, user } = useAuth();
+  const {
+    activePatient,
+    backPath,
+    isAuthenticated,
+    staffMissingRoute,
+    staffPatientNotFound,
+    patientMismatch,
+    isTechnician,
+  } = usePatientDiaryPage();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -63,9 +71,9 @@ export default function NutritionDiaryPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!patient?.id) return;
-    api.fetchNutritionDiaries(patient.id).then(setRecentDiaries).catch(console.error);
-  }, [patient?.id]);
+    if (!activePatient?.id) return;
+    api.fetchNutritionDiaries(activePatient.id).then(setRecentDiaries).catch(console.error);
+  }, [activePatient?.id]);
 
   useEffect(() => {
     if (!patient?.id) return;
@@ -99,14 +107,22 @@ export default function NutritionDiaryPage() {
     setMeals(next);
     setNotes(existing.notesEndOfDay ?? '');
     setMedicineDiary(existing.medicineDiary ?? '');
-  }, [diaryDate, recentDiaries, patient?.id]);
+  }, [diaryDate, recentDiaries, activePatient?.id]);
 
-  if (!isAuthenticated || !patient) {
-    return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (staffMissingRoute) return <Navigate to="/staff" replace />;
+  if (patientMismatch) return <Navigate to="/dashboard" replace />;
+  if (!activePatient) {
+    return (
+      <div className="min-h-screen bg-background">
+        <main className="container py-12 text-center text-muted-foreground">
+          {staffPatientNotFound ? 'Patient not found.' : 'Select a patient from the staff workspace.'}
+        </main>
+      </div>
+    );
   }
-  if (user?.role !== 'patient') {
-    return <Navigate to="/admin" replace />;
-  }
+
+  const patient = activePatient;
 
   const updateMeal = (type: string, patch: Partial<MealFormState>) => {
     setMeals((prev) => ({ ...prev, [type]: { ...prev[type], ...patch } }));
@@ -176,9 +192,9 @@ export default function NutritionDiaryPage() {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container py-6 max-w-4xl space-y-6">
-        <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+        <Button variant="ghost" onClick={() => navigate(backPath)}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to dashboard
+          {isTechnician ? 'Back to staff workspace' : 'Back to dashboard'}
         </Button>
 
         <Card className="shadow-clinical">
@@ -186,6 +202,9 @@ export default function NutritionDiaryPage() {
             <CardTitle className="flex items-center gap-2">
               <Utensils className="h-5 w-5 text-primary" />
               Renal nutrition diary
+              {isTechnician && (
+                <span className="text-sm font-normal text-muted-foreground">— {patient.name}</span>
+              )}
             </CardTitle>
             <CardDescription>
               Select fruits/vegetables to auto-calculate potassium (mg). Times shown in IST.
