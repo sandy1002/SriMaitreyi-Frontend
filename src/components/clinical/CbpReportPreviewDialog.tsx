@@ -22,6 +22,7 @@ import {
 import type { CbpReport, CbpReportsResponse } from '@/types';
 import { Loader2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatISTDateTime } from '@/lib/datetime';
 
 type CbpReportPreviewDialogProps = {
   report: CbpReport | null;
@@ -233,7 +234,7 @@ export function CbpReportPreviewDialog({
 
               {report.created_at && (
                 <p className="text-xs text-muted-foreground">
-                  Saved {new Date(report.created_at).toLocaleString()}
+                  Saved {formatISTDateTime(report.created_at)}
                 </p>
               )}
             </div>

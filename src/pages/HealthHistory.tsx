@@ -33,6 +33,7 @@ import type {
 } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, ClipboardList, Loader2, Plus, Save } from 'lucide-react';
+import { formatISTDateTime } from '@/lib/datetime';
 
 const EMPTY_SURGERY = (): HealthHistorySurgery => ({
   approx_date: '',
@@ -260,7 +261,7 @@ export default function HealthHistory() {
             </p>
             {record?.completed_at && (
               <p className="text-xs text-emerald-600 mt-1">
-                Completed: {new Date(record.completed_at).toLocaleString()}
+                Completed: {formatISTDateTime(record.completed_at)}
               </p>
             )}
           </div>

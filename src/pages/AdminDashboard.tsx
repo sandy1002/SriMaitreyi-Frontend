@@ -37,6 +37,7 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { formatISTDate } from '@/lib/datetime';
 import {
   Dialog,
   DialogContent,
@@ -346,7 +347,7 @@ export default function AdminDashboard() {
                       </p>
                       <p>
                         <span className="font-medium text-foreground">Registered:</span>{' '}
-                        {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'}
+                        {p.createdAt ? formatISTDate(p.createdAt) : '—'}
                       </p>
                     </div>
                     <Button variant="outline" size="sm" asChild>

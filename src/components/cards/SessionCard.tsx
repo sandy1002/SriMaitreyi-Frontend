@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Building2, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { formatIST } from '@/lib/datetime';
 
 interface SessionCardProps {
   session: DialysisSession;
@@ -11,15 +12,14 @@ interface SessionCardProps {
 export function SessionCard({ session }: SessionCardProps) {
   const navigate = useNavigate();
 
-  // Safe date handling
-  const rawSessionDate = session.sessionDate ?? null;
-
-  const sessionDate = rawSessionDate
-    ? new Date(rawSessionDate)
+  const sessionDateLabel = session.sessionDate
+    ? formatIST(session.sessionDate, {
+        timeZone: 'Asia/Kolkata',
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+      })
     : null;
-
-  const isValidDate =
-    sessionDate && !isNaN(sessionDate.getTime());
 
   return (
     <Card
@@ -36,13 +36,7 @@ export function SessionCard({ session }: SessionCardProps) {
 
               <div>
                 <p className="font-semibold text-foreground">
-                  {isValidDate
-                    ? sessionDate!.toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        month: 'short',
-                        day: 'numeric',
-                      })
-                    : 'Date not available'}
+                  {sessionDateLabel ?? 'Date not available'}
                 </p>
 
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
