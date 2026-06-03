@@ -18,6 +18,7 @@ import type { Medicine, SessionMedicationIntake } from '@/types';
 
 interface Props {
   sessionId: string;
+  sessionDate?: string;
   readOnly: boolean;
   initialIntakes?: SessionMedicationIntake[];
   onUpdated?: () => void;
@@ -25,6 +26,7 @@ interface Props {
 
 export function SessionMedicationSection({
   sessionId,
+  sessionDate,
   readOnly,
   initialIntakes = [],
   onUpdated,
@@ -80,10 +82,17 @@ export function SessionMedicationSection({
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <Pill className="h-5 w-5 text-primary" />
-          Medicine intake (session)
+          Medication during dialysis session
         </CardTitle>
         <CardDescription>
-          IV antibiotics, iron, saline flushes, and oral medicines given during dialysis.
+          {sessionDate ? (
+            <>
+              Dialysis session date: <strong>{sessionDate}</strong>. IV antibiotics, iron, saline
+              flushes, and oral medicines given during this run.
+            </>
+          ) : (
+            'IV antibiotics, iron, saline flushes, and oral medicines given during dialysis.'
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

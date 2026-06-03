@@ -554,6 +554,7 @@ export default function SessionDetail() {
 
         <SessionMedicationSection
           sessionId={session.id}
+          sessionDate={session.sessionDate}
           readOnly={isCompleted}
           initialIntakes={medicationIntakes}
           onUpdated={() => loadSessionDetails(session.id)}
@@ -723,7 +724,8 @@ export default function SessionDetail() {
                 <p className="text-sm text-muted-foreground mb-2">
                   From renal fluid diary after session on{' '}
                   {interdialyticFluids.lastSessionDate ?? '—'} through{' '}
-                  {interdialyticFluids.untilDate} (exclusive).
+                  {interdialyticFluids.untilDate} (exclusive). Remove values are applied to UF
+                  calculation at session start.
                 </p>
                 <p className="text-sm font-medium mb-3">
                   Total: {interdialyticFluids.totalLiters} L ({interdialyticFluids.totalMl} ml)

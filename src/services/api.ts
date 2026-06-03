@@ -279,8 +279,17 @@ export async function fetchSessionDefaults(
   const data = await apiRequest(`/patients/${patientId}/session-defaults${qs}`);
   const fluids = data.interdialytic_fluids as Record<string, unknown> | undefined;
   const nutritionK = data.interdialytic_nutrition_potassium as Record<string, unknown> | undefined;
+  const prevPost = data.previous_session_post_weight as Record<string, unknown> | undefined;
   return {
     hospitalName: (data.hospital_name as string) ?? null,
+    previousSessionPostWeight: prevPost?.post_weight_kg != null
+      ? {
+          sessionId: String(prevPost.session_id ?? ''),
+          sessionDate: String(prevPost.session_date ?? ''),
+          hospitalName: (prevPost.hospital_name as string) ?? null,
+          postWeightKg: Number(prevPost.post_weight_kg),
+        }
+      : null,
     suggestedPrimeRinsebackMl: Number(data.suggested_prime_rinseback_ml ?? 250),
     suggestedIvFluidsMl: Number(data.suggested_iv_fluids_ml ?? 0),
     suggestedOralIntakeMl: Number(data.suggested_oral_intake_ml ?? 0),
