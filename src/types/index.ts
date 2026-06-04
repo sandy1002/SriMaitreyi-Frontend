@@ -206,6 +206,7 @@ export interface MealNutrient {
 export interface NutritionMeal {
   id?: string;
   mealType: string;
+  mealTakenAt?: string;
   foodName?: string;
   portionSize?: string;
   foodDescription?: string;
@@ -242,6 +243,7 @@ export interface NutritionMealInput {
   meal_type: string;
   food_name?: string;
   portion_size?: string;
+  meal_taken_at?: string;
   food_description?: string;
   nutrition_facts?: Record<string, unknown>;
   medical_details?: Record<string, unknown>;
@@ -270,6 +272,7 @@ export interface MedicationDiaryEntry {
 }
 
 export interface MedicationDiaryIntakeInput {
+  id?: string;
   medicine_id?: string;
   medicine_name?: string;
   dose_text?: string;
@@ -278,6 +281,63 @@ export interface MedicationDiaryIntakeInput {
   taken: boolean;
   taken_time?: string;
   notes?: string;
+}
+
+export interface VaccineDiaryIntake {
+  id?: string;
+  vaccineName: string;
+  doseText?: string;
+  doseUnit?: string;
+  site?: string;
+  batchNumber?: string;
+  administered: boolean;
+  administeredAt?: string;
+  notes?: string;
+}
+
+export interface VaccineDiaryEntry {
+  id: string;
+  patientId: string;
+  diaryDate: string;
+  notes?: string;
+  intakes: VaccineDiaryIntake[];
+}
+
+export interface VaccineDiaryIntakeInput {
+  id?: string;
+  vaccine_name: string;
+  dose_text?: string;
+  dose_unit?: string;
+  site?: string;
+  batch_number?: string;
+  administered: boolean;
+  administered_at?: string;
+  notes?: string;
+}
+
+export interface LabInvestigationField {
+  key: string;
+  label: string;
+  unit: string;
+}
+
+export interface LabInvestigationType {
+  id: string;
+  label: string;
+  description?: string;
+  fields?: LabInvestigationField[];
+  route: string;
+}
+
+export interface LabInvestigationReport {
+  id: string;
+  patientId: string;
+  investigationType: string;
+  investigationLabel: string;
+  reportDate: string;
+  labName?: string;
+  notes?: string;
+  results: Record<string, number | string>;
 }
 
 export interface RenalFluidIntakeLine {
@@ -345,9 +405,18 @@ export interface SessionStartDefaults {
   interdialyticNutritionPotassium: {
     fromDate: string | null;
     untilDate: string;
+    lastSessionCompletedAt?: string | null;
+    newSessionDate?: string;
     totalPotassiumMg: number;
     dayCount: number;
     dailyEntries: { diaryDate: string; totalPotassiumMg: number }[];
+    mealsInWindow?: {
+      diaryDate: string;
+      mealType: string;
+      foodName?: string;
+      mealTakenAt?: string;
+      potassiumMg: number;
+    }[];
   } | null;
   latestSerumPotassium: {
     reportDate: string;

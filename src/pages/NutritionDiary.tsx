@@ -26,6 +26,7 @@ type MealFormState = {
   foodName: string;
   portionSize: string;
   foodDescription: string;
+  mealTakenTime: string;
   protein: string;
   sodium: string;
   phosphorus: string;
@@ -37,6 +38,7 @@ const emptyMeal = (): MealFormState => ({
   foodName: '',
   portionSize: '',
   foodDescription: '',
+  mealTakenTime: '',
   protein: '',
   sodium: '',
   phosphorus: '',
@@ -76,7 +78,7 @@ export default function NutritionDiaryPage() {
   }, [activePatient?.id]);
 
   useEffect(() => {
-    if (!patient?.id) return;
+    if (!activePatient?.id) return;
     const existing = recentDiaries.find((d) => d.diaryDate === diaryDate);
     if (!existing) return;
     const next: Record<string, MealFormState> = {
@@ -90,10 +92,16 @@ export default function NutritionDiaryPage() {
       const nutrients = Object.fromEntries(
         (m.nutrients ?? []).map((n) => [n.nutrientCode, String(n.amount ?? '')])
       );
+      let mealTakenTime = '';
+      if (m.mealTakenAt) {
+        const raw = m.mealTakenAt;
+        mealTakenTime = raw.includes('T') ? raw.slice(11, 16) : raw.slice(0, 5);
+      }
       next[key] = {
         foodName: m.foodName ?? '',
         portionSize: m.portionSize ?? '',
         foodDescription: m.foodDescription ?? '',
+        mealTakenTime,
         protein: nutrients.PROTEIN ?? '',
         sodium: nutrients.SODIUM ?? '',
         phosphorus: nutrients.PHOSPHORUS ?? '',
@@ -146,10 +154,15 @@ export default function NutritionDiaryPage() {
         }
       }
 
+      const mealTakenAt =
+        m.mealTakenTime.trim() !== ''
+          ? `${diaryDate}T${m.mealTakenTime.trim()}:00+05:30`
+          : undefined;
       return {
         meal_type: key,
         food_name: m.foodName || undefined,
         portion_size: m.portionSize || undefined,
+        meal_taken_at: mealTakenAt,
         food_description: m.foodDescription || `${label} — not specified`,
         nutrition_facts: {
           protein_g: m.protein ? Number(m.protein) : undefined,
@@ -230,6 +243,17 @@ export default function NutritionDiaryPage() {
                     <CardTitle className="text-base">{label}</CardTitle>
                   </CardHeader>
                   <CardContent className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <Label>Time eaten (IST)</Label>
+                      <Input
+                        type="time"
+                        value={m.mealTakenTime}
+                        onChange={(e) => updateMeal(key, { mealTakenTime: e.target.value })}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Used to calculate interdialytic potassium between sessions.
+                      </p>
+                    </div>
                     <FoodPotassiumInput
                       foodName={m.foodName}
                       portionSize={m.portionSize}

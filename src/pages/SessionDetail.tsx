@@ -735,10 +735,9 @@ export default function SessionDetail() {
               </AccordionTrigger>
               <AccordionContent>
                 <p className="text-sm text-muted-foreground mb-2">
-                  From renal fluid diary after session on{' '}
-                  {interdialyticFluids.lastSessionDate ?? '—'} through{' '}
-                  {interdialyticFluids.untilDate} (exclusive). Between-session fluid (IDWG via pre
-                  weight), not oral/IV during the run.
+                  Renal fluid diary between last session complete (
+                  {interdialyticFluids.lastSessionDate ?? '—'}) and new session start (
+                  {interdialyticFluids.untilDate}).
                 </p>
                 <p className="text-sm font-medium mb-3">
                   Total: {interdialyticFluids.totalLiters} L ({interdialyticFluids.totalMl} ml)

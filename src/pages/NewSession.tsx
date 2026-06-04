@@ -399,23 +399,36 @@ export default function NewSession() {
               </div>
 
               {sessionDefaults?.interdialyticNutritionPotassium &&
-                sessionDefaults.interdialyticNutritionPotassium.dayCount > 0 && (
+                (sessionDefaults.interdialyticNutritionPotassium.totalPotassiumMg > 0 ||
+                  (sessionDefaults.interdialyticNutritionPotassium.mealsInWindow?.length ?? 0) > 0) && (
                   <Card className="border-amber-500/30 bg-amber-500/5">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Dietary potassium since last session</CardTitle>
+                      <CardTitle className="text-base">Interdialytic potassium intake</CardTitle>
                       <CardDescription>
-                        From nutrition diary ({sessionDefaults.interdialyticNutritionPotassium.fromDate ?? '—'}{' '}
-                        to {sessionDate}). Use with clinical Pre K below.
+                        Calculated from nutrition diary meals between last session complete (
+                        {sessionDefaults.interdialyticNutritionPotassium.lastSessionCompletedAt
+                          ? new Date(
+                              sessionDefaults.interdialyticNutritionPotassium.lastSessionCompletedAt
+                            ).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+                          : sessionDefaults.interdialyticNutritionPotassium.fromDate ?? '—'}
+                        ) and new session start ({sessionDate}).
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="text-sm space-y-2">
                       <p className="font-medium text-lg">
-                        Total K intake: {sessionDefaults.interdialyticNutritionPotassium.totalPotassiumMg} mg
-                        {' '}
-                        over {sessionDefaults.interdialyticNutritionPotassium.dayCount} day(s)
+                        Total dietary K: {sessionDefaults.interdialyticNutritionPotassium.totalPotassiumMg} mg
                       </p>
+                      {(sessionDefaults.interdialyticNutritionPotassium.mealsInWindow ?? []).map((m, i) => (
+                        <div key={i} className="flex justify-between gap-2 text-muted-foreground">
+                          <span>
+                            {m.mealType} — {m.foodName ?? 'meal'}
+                            {m.mealTakenAt ? ` @ ${m.mealTakenAt}` : ''}
+                          </span>
+                          <span className="text-foreground font-medium shrink-0">{m.potassiumMg} mg</span>
+                        </div>
+                      ))}
                       {sessionDefaults.latestSerumPotassium && (
-                        <p className="text-muted-foreground">
+                        <p className="text-muted-foreground pt-1">
                           Latest lab serum K: {sessionDefaults.latestSerumPotassium.serumPotassiumMmolL} mmol/L
                           ({sessionDefaults.latestSerumPotassium.reportDate})
                         </p>
@@ -451,10 +464,8 @@ export default function NewSession() {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base">Interdialytic fluid intake</CardTitle>
                     <CardDescription>
-                      Renal fluid diary since last session (
-                      {interdialyticFluids.lastSessionDate ?? '—'}) until this visit ({sessionDate}).
-                      Fluid between sessions (reflected in pre weight / IDWG). Not the same as
-                      oral or IV during this dialysis run.
+                      Renal fluid diary between last session complete (
+                      {interdialyticFluids.lastSessionDate ?? '—'}) and new session start ({sessionDate}).
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="text-sm space-y-3">
@@ -501,20 +512,6 @@ export default function NewSession() {
                   value={assessmentRecordedAt}
                 />
               </div>
-
-              {sessionDefaults?.interdialyticNutritionPotassium?.totalPotassiumMg != null &&
-                sessionDefaults.interdialyticNutritionPotassium.totalPotassiumMg > 0 && (
-                  <p className="text-sm rounded-md bg-amber-500/10 border border-amber-500/20 px-3 py-2">
-                    Interdialytic dietary potassium:{' '}
-                    <strong>{sessionDefaults.interdialyticNutritionPotassium.totalPotassiumMg} mg</strong>
-                    {sessionDefaults.latestSerumPotassium && (
-                      <>
-                        {' '}
-                        · Last serum K: {sessionDefaults.latestSerumPotassium.serumPotassiumMmolL} mmol/L
-                      </>
-                    )}
-                  </p>
-                )}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">

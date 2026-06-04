@@ -312,9 +312,21 @@ export async function fetchSessionDefaults(
       ? {
           fromDate: nutritionK.from_date as string | null,
           untilDate: nutritionK.until_date as string,
+          lastSessionCompletedAt: (nutritionK.last_session_completed_at as string) ?? null,
+          newSessionDate: (nutritionK.new_session_date as string) ?? undefined,
           totalPotassiumMg: Number(nutritionK.total_potassium_mg ?? 0),
           dayCount: Number(nutritionK.day_count ?? 0),
-          dailyEntries: (nutritionK.daily_entries ?? []) as { diaryDate: string; totalPotassiumMg: number }[],
+          dailyEntries: ((nutritionK.daily_entries ?? []) as Record<string, unknown>[]).map((d) => ({
+            diaryDate: String(d.diary_date ?? ''),
+            totalPotassiumMg: Number(d.total_potassium_mg ?? 0),
+          })),
+          mealsInWindow: ((nutritionK.meals_in_window ?? []) as Record<string, unknown>[]).map((m) => ({
+            diaryDate: String(m.diary_date ?? ''),
+            mealType: String(m.meal_type ?? ''),
+            foodName: m.food_name as string | undefined,
+            mealTakenAt: m.meal_taken_at as string | undefined,
+            potassiumMg: Number(m.potassium_mg ?? 0),
+          })),
         }
       : null,
     latestSerumPotassium: data.latest_serum_potassium
@@ -674,6 +686,7 @@ function mapNutritionDiary(raw: Record<string, unknown>) {
     meals: ((raw.meals as Record<string, unknown>[]) ?? []).map((m) => ({
       id: String(m.id),
       mealType: String(m.meal_type),
+      mealTakenAt: m.meal_taken_at as string | undefined,
       foodName: m.food_name as string | undefined,
       portionSize: m.portion_size as string | undefined,
       foodDescription: m.food_description as string | undefined,
@@ -913,8 +926,124 @@ export async function saveCbpReport(
   });
 }
 
+export async function updateCbpReport(
+  patientId: string,
+  reportId: string,
+  payload: Record<string, unknown>
+): Promise<import('@/types').CbpReport> {
+  return apiRequest(`/patients/${patientId}/cbp-reports/${reportId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function deleteCbpReport(patientId: string, reportId: string): Promise<void> {
   await apiRequest(`/patients/${patientId}/cbp-reports/${reportId}`, {
     method: 'DELETE',
   });
+}
+
+function mapVaccineDiary(raw: Record<string, unknown>) {
+  return {
+    id: String(raw.id),
+    patientId: String(raw.patient_id),
+    diaryDate: String(raw.diary_date),
+    notes: raw.notes as string | undefined,
+    intakes: ((raw.intakes as Record<string, unknown>[]) ?? []).map((i) => ({
+      id: String(i.id),
+      vaccineName: String(i.vaccine_name ?? ''),
+      doseText: i.dose_text as string | undefined,
+      doseUnit: i.dose_unit as string | undefined,
+      site: i.site as string | undefined,
+      batchNumber: i.batch_number as string | undefined,
+      administered: Boolean(i.administered),
+      administeredAt: i.administered_at as string | undefined,
+      notes: i.notes as string | undefined,
+    })),
+  };
+}
+
+export async function fetchVaccineDiaries(patientId: string) {
+  const data = await apiRequest(`/patients/${patientId}/vaccine-diary`);
+  return (data.diaries ?? []).map((d: Record<string, unknown>) => mapVaccineDiary(d));
+}
+
+export async function saveVaccineDiary(
+  patientId: string,
+  payload: {
+    diary_date: string;
+    notes?: string;
+    intakes: import('@/types').VaccineDiaryIntakeInput[];
+  }
+) {
+  const data = await apiRequest(`/patients/${patientId}/vaccine-diary`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return { diary: mapVaccineDiary(data.diary) };
+}
+
+export async function fetchInvestigationsCatalog() {
+  return apiRequest('/patients/lab-investigations/catalog');
+}
+
+function mapLabInvestigation(raw: Record<string, unknown>) {
+  return {
+    id: String(raw.id),
+    patientId: String(raw.patient_id),
+    investigationType: String(raw.investigation_type),
+    investigationLabel: String(raw.investigation_label ?? raw.investigation_type),
+    reportDate: String(raw.report_date),
+    labName: raw.lab_name as string | undefined,
+    notes: raw.notes as string | undefined,
+    results: (raw.results as Record<string, number | string>) ?? {},
+  };
+}
+
+export async function fetchLabInvestigations(patientId: string, investigationType?: string) {
+  const qs = investigationType ? `?investigation_type=${encodeURIComponent(investigationType)}` : '';
+  const data = await apiRequest(`/patients/${patientId}/lab-investigations${qs}`);
+  return {
+    catalog: data.catalog,
+    reports: (data.reports ?? []).map((r: Record<string, unknown>) => mapLabInvestigation(r)),
+  };
+}
+
+export async function saveLabInvestigation(
+  patientId: string,
+  payload: {
+    investigation_type: string;
+    report_date: string;
+    lab_name?: string;
+    notes?: string;
+    results?: Record<string, number | string>;
+  }
+) {
+  return mapLabInvestigation(
+    await apiRequest(`/patients/${patientId}/lab-investigations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  );
+}
+
+export async function updateLabInvestigation(
+  patientId: string,
+  reportId: string,
+  payload: Record<string, unknown>
+) {
+  return mapLabInvestigation(
+    await apiRequest(`/patients/${patientId}/lab-investigations/${reportId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  );
+}
+
+export async function deleteLabInvestigation(patientId: string, reportId: string) {
+  await apiRequest(`/patients/${patientId}/lab-investigations/${reportId}`, { method: 'DELETE' });
 }

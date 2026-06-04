@@ -12,10 +12,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { fetchCbpReports, saveCbpReport, deleteCbpReport } from '@/services/api';
+import { fetchCbpReports, saveCbpReport, updateCbpReport, deleteCbpReport } from '@/services/api';
 import type { CbpReport, CbpReportsResponse } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { Droplets, Loader2, Save, TestTube2 } from 'lucide-react';
+import { Droplets, Loader2, Pencil, Save, TestTube2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CbpReportPreviewDialog } from '@/components/clinical/CbpReportPreviewDialog';
 
@@ -101,6 +101,7 @@ export function CbpReportCapture({ patientId, patientGender, showCardHeader = tr
   const [form, setForm] = useState(EMPTY_FORM);
   const [lastSaved, setLastSaved] = useState<CbpReport | null>(null);
   const [previewReport, setPreviewReport] = useState<CbpReport | null>(null);
+  const [editingReportId, setEditingReportId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!patientId) return;
@@ -187,6 +188,35 @@ export function CbpReportCapture({ patientId, patientGender, showCardHeader = tr
     parasites_details: form.parasites_details || undefined,
   });
 
+  const reportToForm = (r: CbpReport): Record<string, string | boolean> => {
+    const next: Record<string, string | boolean> = { ...EMPTY_FORM };
+    next.report_date = r.report_date;
+    next.lab_name = r.lab_name ?? '';
+    next.notes = r.notes ?? '';
+    for (const { key } of NUMERIC_FIELDS) {
+      const v = r[key as keyof CbpReport];
+      if (v != null && v !== '') next[key] = String(v);
+    }
+    next.rbc_morphology = r.rbc_morphology ?? '';
+    next.wbc_morphology = r.wbc_morphology ?? '';
+    next.platelets_on_smear = r.platelets_on_smear ?? '';
+    next.parasites_seen = Boolean(r.parasites_seen);
+    next.parasites_details = r.parasites_details ?? '';
+    return next;
+  };
+
+  const loadReportForEdit = (r: CbpReport) => {
+    setEditingReportId(r.id);
+    setForm(reportToForm(r));
+    setPreviewReport(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setEditingReportId(null);
+    setForm({ ...EMPTY_FORM, report_date: new Date().toISOString().slice(0, 10) });
+  };
+
   const handleSave = async () => {
     if (!form.report_date) {
       toast({ title: 'Report date is required', variant: 'destructive' });
@@ -194,16 +224,19 @@ export function CbpReportCapture({ patientId, patientGender, showCardHeader = tr
     }
     setSaving(true);
     try {
-      const saved = await saveCbpReport(patientId, buildPayload());
+      const saved = editingReportId
+        ? await updateCbpReport(patientId, editingReportId, buildPayload())
+        : await saveCbpReport(patientId, buildPayload());
       setLastSaved(saved);
       toast({
-        title: 'CBP report saved',
+        title: editingReportId ? 'CBP report updated' : 'CBP report saved',
         description:
           saved.abnormal_count && saved.abnormal_count > 0
             ? `${saved.abnormal_count} value(s) outside reference range.`
             : 'All entered values within reference range.',
       });
       await load();
+      setEditingReportId(null);
       setForm({ ...EMPTY_FORM, report_date: new Date().toISOString().slice(0, 10) });
     } catch (e) {
       console.error(e);
@@ -427,10 +460,22 @@ export function CbpReportCapture({ patientId, patientGender, showCardHeader = tr
           />
         </div>
 
-        <Button onClick={handleSave} disabled={saving || loading} className="w-full sm:w-auto">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-          Save CBP report
-        </Button>
+        {editingReportId && (
+          <p className="text-sm text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2">
+            Editing report dated {String(form.report_date)}. Save to apply changes or cancel to start a new entry.
+          </p>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={handleSave} disabled={saving || loading} className="w-full sm:w-auto">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+            {editingReportId ? 'Update CBP report' : 'Save CBP report'}
+          </Button>
+          {editingReportId && (
+            <Button type="button" variant="outline" onClick={cancelEdit}>
+              Cancel edit
+            </Button>
+          )}
+        </div>
 
         {!loading && (data?.reports.length ?? 0) > 0 && (
           <div className="border-t pt-4 space-y-2">
@@ -439,7 +484,7 @@ export function CbpReportCapture({ patientId, patientGender, showCardHeader = tr
               Previous reports
             </h4>
             <p className="text-xs text-muted-foreground">
-              Click a report to preview. You can delete a report from the preview dialog.
+              Click to preview, or use Edit to change a saved report.
             </p>
             <ul className="space-y-2 max-h-48 overflow-y-auto">
               {data!.reports.map((r) => (
@@ -465,7 +510,20 @@ export function CbpReportCapture({ patientId, patientGender, showCardHeader = tr
                       <span className="text-muted-foreground"> · URR {r.urr_pct}%</span>
                     )}
                   </span>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1 items-center">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        loadReportForEdit(r);
+                      }}
+                    >
+                      <Pencil className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
                     {r.urr_status === 'suboptimal' && (
                       <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-500">
                         URR low
