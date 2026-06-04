@@ -108,7 +108,7 @@ export default function Dashboard() {
                 <div>
                   <h3 className="font-semibold text-foreground">Monthly investigations</h3>
                   <p className="text-sm text-muted-foreground">
-                    CBP, lipid profile, liver tests, and more lab panels
+                    CBP, lipid profile, and liver function tests
                   </p>
                 </div>
               </CardContent>

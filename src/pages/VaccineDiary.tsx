@@ -26,8 +26,6 @@ type IntakeRow = {
   vaccineName: string;
   doseText: string;
   doseUnit: string;
-  site: string;
-  batchNumber: string;
   administered: 'yes' | 'no';
   administeredAt: string;
   notes: string;
@@ -38,8 +36,6 @@ const emptyIntake = (): IntakeRow => ({
   vaccineName: '',
   doseText: '',
   doseUnit: '',
-  site: '',
-  batchNumber: '',
   administered: 'yes',
   administeredAt: '',
   notes: '',
@@ -85,8 +81,6 @@ export default function VaccineDiaryPage() {
             vaccineName: i.vaccineName,
             doseText: i.doseText ?? '',
             doseUnit: i.doseUnit ?? '',
-            site: i.site ?? '',
-            batchNumber: i.batchNumber ?? '',
             administered: i.administered ? 'yes' : 'no',
             administeredAt: i.administeredAt ?? '',
             notes: i.notes ?? '',
@@ -118,8 +112,6 @@ export default function VaccineDiaryPage() {
         vaccine_name: r.vaccineName.trim(),
         dose_text: r.doseText || undefined,
         dose_unit: r.doseUnit || undefined,
-        site: r.site || undefined,
-        batch_number: r.batchNumber || undefined,
         administered: r.administered === 'yes',
         administered_at: r.administeredAt || undefined,
         notes: r.notes || undefined,
@@ -220,29 +212,6 @@ export default function VaccineDiaryPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div>
-                    <Label>Site</Label>
-                    <Input
-                      value={row.site}
-                      onChange={(e) =>
-                        setRows((prev) =>
-                          prev.map((r, i) => (i === idx ? { ...r, site: e.target.value } : r))
-                        )
-                      }
-                      placeholder="e.g. left deltoid"
-                    />
-                  </div>
-                  <div>
-                    <Label>Batch number</Label>
-                    <Input
-                      value={row.batchNumber}
-                      onChange={(e) =>
-                        setRows((prev) =>
-                          prev.map((r, i) => (i === idx ? { ...r, batchNumber: e.target.value } : r))
-                        )
-                      }
-                    />
                   </div>
                   <div>
                     <Label>Given?</Label>

@@ -133,7 +133,7 @@ export default function MonthlyInvestigations() {
               Monthly investigations
             </CardTitle>
             <CardDescription>
-              CBP, lipid profile, liver function, and other lab panels. Included in your care summary PDF.
+              CBP, lipid profile, and liver function tests. Included in your care summary PDF.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
