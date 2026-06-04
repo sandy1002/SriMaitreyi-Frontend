@@ -9,7 +9,7 @@ import { MedicalReportDownload } from '@/components/clinical/MedicalReportDownlo
 import { MedicalRecordsUpload } from '@/components/clinical/MedicalRecordsUpload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, MessageSquare, Calendar, TrendingUp, Utensils, Droplets, Pill, ClipboardList, TestTube2 } from 'lucide-react';
+import { Plus, MessageSquare, Calendar, TrendingUp, Utensils, Droplets, Pill, ClipboardList, TestTube2, Syringe } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
@@ -99,16 +99,35 @@ export default function Dashboard() {
           {isPatient && (
             <Card
               className="cursor-pointer shadow-clinical transition-all duration-200 hover:shadow-clinical-lg hover:-translate-y-0.5 border-primary/20"
-              onClick={() => navigate('/cbp')}
+              onClick={() => navigate('/investigations')}
             >
               <CardContent className="flex items-center gap-4 p-5">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/15">
                   <TestTube2 className="h-6 w-6 text-rose-700 dark:text-rose-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">CBP (Complete blood picture)</h3>
+                  <h3 className="font-semibold text-foreground">Monthly investigations</h3>
                   <p className="text-sm text-muted-foreground">
-                    Record full blood count and smear findings
+                    CBP, lipid profile, liver tests, and more lab panels
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {isPatient && (
+            <Card
+              className="cursor-pointer shadow-clinical transition-all duration-200 hover:shadow-clinical-lg hover:-translate-y-0.5"
+              onClick={() => navigate('/vaccine-diary')}
+            >
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/15">
+                  <Syringe className="h-6 w-6 text-teal-700 dark:text-teal-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Vaccine diary</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Log immunizations for your care summary report
                   </p>
                 </div>
               </CardContent>

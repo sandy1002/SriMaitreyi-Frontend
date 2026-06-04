@@ -31,6 +31,7 @@ import type { MedicationDiaryEntry, MedicationDiaryIntakeInput, Medicine } from 
 
 type IntakeRow = {
   key: string;
+  intakeId?: string;
   medicineId: string;
   medicineName: string;
   doseText: string;
@@ -91,7 +92,8 @@ export default function MedicationDiaryPage() {
     setRows(
       existing.intakes.length
         ? existing.intakes.map((i) => ({
-            key: i.id ?? crypto.randomUUID(),
+            key: crypto.randomUUID(),
+            intakeId: i.id,
             medicineId: i.medicineId ?? '',
             medicineName: i.medicineName ?? '',
             doseText: i.doseText ?? '',
@@ -124,6 +126,7 @@ export default function MedicationDiaryPage() {
     rows
       .filter((r) => r.medicineId || r.medicineName || r.doseText || r.notes)
       .map((r) => ({
+        id: r.intakeId || undefined,
         medicine_id: r.medicineId || undefined,
         medicine_name: r.medicineName || undefined,
         dose_text: r.doseText || undefined,

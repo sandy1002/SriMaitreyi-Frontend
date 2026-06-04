@@ -18,6 +18,8 @@ import CbpDiary from "./pages/CbpDiary";
 import NutritionDiary from "./pages/NutritionDiary";
 import RenalFluidDiary from "./pages/RenalFluidDiary";
 import MedicationDiary from "./pages/MedicationDiary";
+import VaccineDiary from "./pages/VaccineDiary";
+import MonthlyInvestigations from "./pages/MonthlyInvestigations";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
@@ -76,6 +78,14 @@ const App = () => (
                   <ProtectedRoute>
                     <HealthHistory />
                   </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/investigations"
+                element={
+                  <PatientRoute>
+                    <MonthlyInvestigations />
+                  </PatientRoute>
                 }
               />
               <Route
@@ -155,6 +165,22 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <MedicationDiary />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vaccine-diary"
+                element={
+                  <PatientRoute>
+                    <VaccineDiary />
+                  </PatientRoute>
+                }
+              />
+              <Route
+                path="/vaccine-diary/:patientId"
+                element={
+                  <ProtectedRoute>
+                    <VaccineDiary />
                   </ProtectedRoute>
                 }
               />
