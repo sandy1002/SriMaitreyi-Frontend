@@ -169,13 +169,70 @@ function parseContentDispositionFilename(header: string | null, fallback: string
   return plain ? plain[1] : fallback;
 }
 
+export type MedicalReportType = 'summary' | 'detailed';
+export type MedicalReportDisposition = 'inline' | 'attachment';
+
+export const MEDICAL_REPORT_OPTIONS: {
+  value: MedicalReportType;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'summary',
+    label: 'Rough summary',
+    description: 'Short, crisp overview with key clinical data',
+  },
+  {
+    value: 'detailed',
+    label: 'Final summary',
+    description: 'Full report with session, nutrition, and diary details',
+  },
+];
+
+export function medicalReportLabel(reportType: MedicalReportType): string {
+  return (
+    MEDICAL_REPORT_OPTIONS.find((option) => option.value === reportType)?.label ??
+    'Report'
+  );
+}
+
+function medicalReportUrl(
+  patientId: string,
+  days: number,
+  reportType: MedicalReportType,
+  disposition: MedicalReportDisposition
+): string {
+  const params = new URLSearchParams({
+    days: String(days),
+    format: 'pdf',
+    report_type: reportType,
+    disposition,
+  });
+  return `${API_BASE}/patients/${patientId}/medical-report?${params.toString()}`;
+}
+
+export async function fetchMedicalReportPdf(
+  patientId: string,
+  days: number,
+  reportType: MedicalReportType = 'detailed',
+  disposition: MedicalReportDisposition = 'inline'
+): Promise<Blob> {
+  const res = await fetch(medicalReportUrl(patientId, days, reportType, disposition));
+  if (!res.ok) {
+    const message = await res.text();
+    throw new Error(`Report ${res.status}: ${message}`);
+  }
+  return res.blob();
+}
+
 export async function downloadMedicalReport(
   patientId: string,
   days: number,
-  patientName?: string
+  patientName?: string,
+  reportType: MedicalReportType = 'detailed'
 ): Promise<void> {
   const res = await fetch(
-    `${API_BASE}/patients/${patientId}/medical-report?days=${days}&format=pdf`
+    medicalReportUrl(patientId, days, reportType, 'attachment')
   );
   if (!res.ok) {
     const message = await res.text();
