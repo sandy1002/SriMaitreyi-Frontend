@@ -1,7 +1,16 @@
 import { useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -9,8 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Download, Eye, FileText } from 'lucide-react';
-import { downloadMedicalReport, fetchMedicalReportPdf } from '@/services/api';
+import { ChevronDown, Download, Eye, FileText } from 'lucide-react';
+import {
+  downloadMedicalReport,
+  fetchMedicalReportPdf,
+  MEDICAL_REPORT_OPTIONS,
+  medicalReportLabel,
+} from '@/services/api';
 import type { MedicalReportType } from '@/services/api';
 import { REPORT_DAY_OPTIONS, type ReportDayRange } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -25,13 +39,82 @@ interface MedicalReportDownloadProps {
   description?: string;
 }
 
+interface ReportActionSplitButtonProps {
+  icon: LucideIcon;
+  label: string;
+  busyLabel: string;
+  variant?: 'default' | 'outline';
+  busy: boolean;
+  disabled: boolean;
+  reportType: MedicalReportType;
+  onAction: (reportType: MedicalReportType) => void;
+}
+
+function ReportActionSplitButton({
+  icon: Icon,
+  label,
+  busyLabel,
+  variant = 'default',
+  busy,
+  disabled,
+  reportType,
+  onAction,
+}: ReportActionSplitButtonProps) {
+  const isOutline = variant === 'outline';
+  const menuSideClass = isOutline
+    ? 'rounded-l-none border-l border-input px-2'
+    : 'rounded-l-none border-l border-primary-foreground/20 px-2';
+
+  return (
+    <div className="inline-flex rounded-md shadow-sm">
+      <Button
+        type="button"
+        variant={variant}
+        className="rounded-r-none"
+        disabled={disabled || busy}
+        onClick={() => onAction(reportType)}
+      >
+        <Icon className="h-4 w-4 mr-2" />
+        {busy ? busyLabel : label}
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant={variant}
+            className={menuSideClass}
+            disabled={disabled || busy}
+            aria-label={`${label} options`}
+          >
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>Choose report type</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {MEDICAL_REPORT_OPTIONS.map((option) => (
+            <DropdownMenuItem
+              key={option.value}
+              onClick={() => onAction(option.value)}
+              className="flex flex-col items-start gap-0.5 py-2"
+            >
+              <span className="font-medium">{option.label}</span>
+              <span className="text-xs text-muted-foreground">{option.description}</span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
 export function MedicalReportDownload({
   patientId: defaultPatientId,
   patientName,
   patients = [],
   allowPatientSelect = false,
   title = 'Medical report',
-  description = 'Preview or download a PDF with letterhead, executive summary, medications, CBP, lipid and liver panels (all time), session history, and care guidance for the selected period.',
+  description = 'Preview or download a PDF before saving. Rough summary is short and crisp; final summary includes full session, nutrition, fluid, and diary details. Medications, CBP, lipid, and liver panels always show all-time data.',
 }: MedicalReportDownloadProps) {
   const { toast } = useToast();
   const [days, setDays] = useState<ReportDayRange>(7);
@@ -46,22 +129,21 @@ export function MedicalReportDownload({
     patients.find((p) => p.id === effectivePatientId)?.name ||
     'patient';
 
-  const reportTypeLabel = reportType === 'summary' ? 'Summary' : 'Detailed';
-
-  const handlePreview = async () => {
+  const handlePreview = async (type: MedicalReportType) => {
     if (!effectivePatientId) {
       toast({ title: 'Select a patient', variant: 'destructive' });
       return;
     }
+    setReportType(type);
     setPreviewing(true);
     try {
-      const blob = await fetchMedicalReportPdf(effectivePatientId, days, reportType, 'inline');
+      const blob = await fetchMedicalReportPdf(effectivePatientId, days, type, 'inline');
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank', 'noopener,noreferrer');
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
       toast({
         title: 'Report opened',
-        description: `${reportTypeLabel} report for last ${days} days opened in a new tab.`,
+        description: `${medicalReportLabel(type)} for last ${days} days opened in a new tab.`,
       });
     } catch (err) {
       console.error(err);
@@ -75,17 +157,18 @@ export function MedicalReportDownload({
     }
   };
 
-  const handleDownload = async () => {
+  const handleDownload = async (type: MedicalReportType) => {
     if (!effectivePatientId) {
       toast({ title: 'Select a patient', variant: 'destructive' });
       return;
     }
+    setReportType(type);
     setDownloading(true);
     try {
-      await downloadMedicalReport(effectivePatientId, days, effectiveName, reportType);
+      await downloadMedicalReport(effectivePatientId, days, effectiveName, type);
       toast({
         title: 'Report downloaded',
-        description: `${reportTypeLabel} report (last ${days} days) saved as PDF.`,
+        description: `${medicalReportLabel(type)} (last ${days} days) saved as PDF.`,
       });
     } catch (err) {
       console.error(err);
@@ -100,6 +183,7 @@ export function MedicalReportDownload({
   };
 
   const busy = downloading || previewing;
+  const selectedLabel = medicalReportLabel(reportType);
 
   return (
     <Card className="shadow-clinical border-primary/15">
@@ -129,21 +213,6 @@ export function MedicalReportDownload({
               </Select>
             </div>
           )}
-          <div className="space-y-2 sm:w-44">
-            <Label>Report type</Label>
-            <Select
-              value={reportType}
-              onValueChange={(v) => setReportType(v as MedicalReportType)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="summary">Summary report</SelectItem>
-                <SelectItem value="detailed">Detailed report</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           <div className="space-y-2 sm:w-40">
             <Label>Period</Label>
             <Select value={String(days)} onValueChange={(v) => setDays(Number(v) as ReportDayRange)}>
@@ -160,19 +229,32 @@ export function MedicalReportDownload({
             </Select>
           </div>
         </div>
+
+        <p className="text-sm text-muted-foreground">
+          Default report type: <span className="font-medium text-foreground">{selectedLabel}</span>.
+          Use the arrow on each button to pick rough or final summary.
+        </p>
+
         <div className="flex flex-wrap gap-2">
-          <Button
+          <ReportActionSplitButton
+            icon={Eye}
+            label={`Preview PDF (${selectedLabel})`}
+            busyLabel="Generating…"
             variant="outline"
-            onClick={handlePreview}
+            busy={previewing}
             disabled={busy || !effectivePatientId}
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            {previewing ? 'Generating…' : 'Preview PDF'}
-          </Button>
-          <Button onClick={handleDownload} disabled={busy || !effectivePatientId}>
-            <Download className="h-4 w-4 mr-2" />
-            {downloading ? 'Generating…' : 'Download PDF'}
-          </Button>
+            reportType={reportType}
+            onAction={handlePreview}
+          />
+          <ReportActionSplitButton
+            icon={Download}
+            label={`Download PDF (${selectedLabel})`}
+            busyLabel="Generating…"
+            busy={downloading}
+            disabled={busy || !effectivePatientId}
+            reportType={reportType}
+            onAction={handleDownload}
+          />
         </div>
       </CardContent>
     </Card>

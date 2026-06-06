@@ -172,6 +172,30 @@ function parseContentDispositionFilename(header: string | null, fallback: string
 export type MedicalReportType = 'summary' | 'detailed';
 export type MedicalReportDisposition = 'inline' | 'attachment';
 
+export const MEDICAL_REPORT_OPTIONS: {
+  value: MedicalReportType;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'summary',
+    label: 'Rough summary',
+    description: 'Short, crisp overview with key clinical data',
+  },
+  {
+    value: 'detailed',
+    label: 'Final summary',
+    description: 'Full report with session, nutrition, and diary details',
+  },
+];
+
+export function medicalReportLabel(reportType: MedicalReportType): string {
+  return (
+    MEDICAL_REPORT_OPTIONS.find((option) => option.value === reportType)?.label ??
+    'Report'
+  );
+}
+
 function medicalReportUrl(
   patientId: string,
   days: number,
