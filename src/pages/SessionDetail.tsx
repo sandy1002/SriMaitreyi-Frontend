@@ -70,9 +70,9 @@ import { PatientDiaryLinks } from '@/components/clinical/PatientDiaryLinks';
 import { SessionEditDialog } from '@/components/clinical/SessionEditDialog';
 import {
   formatUfGoal,
-  formatVolumeFromMl,
 } from '@/lib/clinicalUnits';
-import type { InterdialyticFluidsSummary } from '@/types';
+import type { InterdialyticPeriodSummary } from '@/types';
+import { InterdialyticSessionSummary } from '@/components/clinical/InterdialyticSessionSummary';
 
 /* ---------------------------------------
    Safe Date Formatter (CRITICAL)
@@ -133,8 +133,8 @@ export default function SessionDetail() {
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [deletingSession, setDeletingSession] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [interdialyticFluids, setInterdialyticFluids] =
-    useState<InterdialyticFluidsSummary | null>(null);
+  const [interdialyticSummary, setInterdialyticSummary] =
+    useState<InterdialyticPeriodSummary | null>(null);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -159,10 +159,10 @@ export default function SessionDetail() {
     const s = currentSession;
     if (!s?.patientId || !s?.sessionDate) return;
     api
-      .fetchInterdialyticFluids(s.patientId, s.sessionDate)
-      .then(setInterdialyticFluids)
-      .catch(() => setInterdialyticFluids(null));
-  }, [currentSession?.patientId, currentSession?.sessionDate]);
+      .fetchInterdialyticFluids(s.patientId, s.sessionDate, s.id)
+      .then(setInterdialyticSummary)
+      .catch(() => setInterdialyticSummary(null));
+  }, [currentSession?.id, currentSession?.patientId, currentSession?.sessionDate]);
 
   // Keep local attachments in sync with context when session details reload
   useEffect(() => {
@@ -550,6 +550,18 @@ export default function SessionDetail() {
           </CardContent>
         </Card>
 
+        {(isCompleted || isInProgress || isPostDialysis) && (
+          <InterdialyticSessionSummary
+            fluids={interdialyticSummary?.fluids ?? null}
+            potassium={interdialyticSummary?.potassium ?? null}
+            sessionDate={String(
+              (session as { sessionDate?: string; session_date?: string }).sessionDate ??
+                (session as { session_date?: string }).session_date ??
+                ''
+            )}
+          />
+        )}
+
         {(alerts.length > 0 || checks.length > 0) && (
           <Card>
             <CardContent className="p-6">
@@ -728,43 +740,6 @@ export default function SessionDetail() {
             </AccordionContent>
           </AccordionItem>
 
-          {interdialyticFluids && interdialyticFluids.dailyEntries.length > 0 && (
-            <AccordionItem value="interdialytic-fluids">
-              <AccordionTrigger className="text-lg font-medium">
-                Interdialytic fluids (since last session)
-              </AccordionTrigger>
-              <AccordionContent>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Renal fluid diary between last session complete (
-                  {interdialyticFluids.lastSessionDate ?? '—'}) and new session start (
-                  {interdialyticFluids.untilDate}).
-                </p>
-                <p className="text-sm font-medium mb-3">
-                  Total: {interdialyticFluids.totalLiters} L ({interdialyticFluids.totalMl} ml)
-                  {' · '}oral {interdialyticFluids.totalOralMl} ml · IV{' '}
-                  {interdialyticFluids.totalIvMl} ml
-                </p>
-                {interdialyticFluids.dailyEntries.map((day) => (
-                  <div key={day.diaryDate} className="mb-4 border rounded-lg p-3">
-                    <p className="font-medium text-sm mb-2">{day.diaryDate}</p>
-                    <ul className="space-y-1 text-sm">
-                      {day.intakes.map((line) => (
-                        <li key={line.id} className="flex justify-between gap-2">
-                          <span className="text-muted-foreground capitalize">
-                            {line.category.replace('_', ' ')}
-                            {line.description ? ` — ${line.description}` : ''}
-                          </span>
-                          <span className="font-medium shrink-0">
-                            {formatVolumeFromMl(line.volumeMl, line.volumeUnit)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </AccordionContent>
-            </AccordionItem>
-          )}
         </Accordion>
 
         {postAssessment && (
