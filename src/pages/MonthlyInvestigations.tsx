@@ -4,14 +4,47 @@ import { useAuth } from '@/context/AuthContext';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, ClipboardList, Loader2, Save, TestTube2 } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Loader2, TestTube2 } from 'lucide-react';
 import * as api from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import type { LabInvestigationReport, LabInvestigationType } from '@/types';
 import { CbpReportCapture } from '@/components/clinical/CbpReportCapture';
+import { LabInvestigationForm } from '@/components/clinical/LabInvestigationForm';
+
+function buildResultsPayload(
+  typeMeta: LabInvestigationType,
+  values: Record<string, string>
+): Record<string, number | string> {
+  const results: Record<string, number | string> = {};
+
+  for (const mf of typeMeta.meta_fields ?? []) {
+    const raw = values[mf.key]?.trim();
+    if (raw) results[mf.key] = raw;
+  }
+
+  const fieldKeys = new Set<string>();
+  for (const section of typeMeta.sections ?? []) {
+    for (const f of section.fields) fieldKeys.add(f.key);
+  }
+  for (const f of typeMeta.fields ?? []) fieldKeys.add(f.key);
+
+  for (const key of fieldKeys) {
+    const raw = values[key]?.trim();
+    if (!raw) continue;
+    const n = Number(raw);
+    results[key] = Number.isFinite(n) ? n : raw;
+  }
+
+  return results;
+}
+
+function resultsToFormValues(results: Record<string, number | string>): Record<string, string> {
+  const next: Record<string, string> = {};
+  for (const [k, v] of Object.entries(results)) {
+    next[k] = String(v);
+  }
+  return next;
+}
 
 export default function MonthlyInvestigations() {
   const { patient, isAuthenticated } = useAuth();
@@ -70,25 +103,14 @@ export default function MonthlyInvestigations() {
     setReportDate(r.reportDate);
     setLabName(r.labName ?? '');
     setNotes(r.notes ?? '');
-    const next: Record<string, string> = {};
-    for (const [k, v] of Object.entries(r.results)) {
-      next[k] = String(v);
-    }
-    setValues(next);
+    setValues(resultsToFormValues(r.results));
   };
 
   const handleSave = async () => {
     if (!selectedType || !typeMeta || selectedType === 'cbp') return;
     setSaving(true);
     try {
-      const results: Record<string, number> = {};
-      for (const f of typeMeta.fields ?? []) {
-        const raw = values[f.key]?.trim();
-        if (raw) {
-          const n = Number(raw);
-          if (Number.isFinite(n)) results[f.key] = n;
-        }
-      }
+      const results = buildResultsPayload(typeMeta, values);
       if (editingId) {
         await api.updateLabInvestigation(patient.id, editingId, {
           report_date: reportDate,
@@ -120,7 +142,7 @@ export default function MonthlyInvestigations() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container py-6 max-w-4xl space-y-6">
+      <main className="container py-6 max-w-5xl space-y-6">
         <Button variant="ghost" onClick={() => navigate('/dashboard')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to dashboard
@@ -169,7 +191,7 @@ export default function MonthlyInvestigations() {
                     }}
                   >
                     <CardContent className="p-4">
-                      <p className="font-semibold">{t.label}</p>
+                      <p className="font-semibold">{t.short_label ?? t.label}</p>
                       <p className="text-xs text-muted-foreground">{t.description}</p>
                     </CardContent>
                   </Card>
@@ -184,52 +206,28 @@ export default function MonthlyInvestigations() {
         )}
 
         {selectedType && selectedType !== 'cbp' && typeMeta && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{typeMeta.label}</CardTitle>
-              <CardDescription>{typeMeta.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label>Report date</Label>
-                  <Input type="date" value={reportDate} onChange={(e) => setReportDate(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Lab name</Label>
-                  <Input value={labName} onChange={(e) => setLabName(e.target.value)} />
-                </div>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {(typeMeta.fields ?? []).map((f) => (
-                  <div key={f.key}>
-                    <Label>
-                      {f.label} ({f.unit})
-                    </Label>
-                    <Input
-                      type="number"
-                      step="any"
-                      value={values[f.key] ?? ''}
-                      onChange={(e) => setValues((p) => ({ ...p, [f.key]: e.target.value }))}
-                    />
-                  </div>
-                ))}
-              </div>
-              <div>
-                <Label>Notes</Label>
-                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleSave} disabled={saving}>
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                  {editingId ? 'Update report' : 'Save report'}
-                </Button>
-                <Button variant="outline" onClick={() => { resetForm(); setSelectedType(null); }}>
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <LabInvestigationForm
+            typeMeta={typeMeta}
+            patientName={patient.name}
+            patientMrn={patient.medicalRecordNumber}
+            patientAge={patient.age}
+            patientGender={patient.gender}
+            reportDate={reportDate}
+            onReportDateChange={setReportDate}
+            labName={labName}
+            onLabNameChange={setLabName}
+            notes={notes}
+            onNotesChange={setNotes}
+            values={values}
+            onValuesChange={setValues}
+            onSave={handleSave}
+            onCancel={() => {
+              resetForm();
+              setSelectedType(null);
+            }}
+            saving={saving}
+            editing={!!editingId}
+          />
         )}
 
         {reports.length > 0 && (
