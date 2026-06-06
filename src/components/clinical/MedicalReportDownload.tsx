@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronDown, Download, Eye, FileText } from 'lucide-react';
+import { ChevronDown, Eye, FileText } from 'lucide-react';
 import {
   downloadMedicalReport,
   fetchMedicalReportPdf,
@@ -115,7 +115,7 @@ export function MedicalReportDownload({
   patients = [],
   allowPatientSelect = false,
   title = 'Medical report',
-  description = 'Preview the PDF in a popup on this page, or download it. Rough summary is short and crisp; final summary includes full session, nutrition, fluid, and diary details. Medications, CBP, lipid, and liver panels always show all-time data.',
+  description = 'Preview the PDF in a popup on this page, then download from the preview if needed. Rough summary is short and crisp; final summary includes full session, nutrition, fluid, and diary details. Medications, CBP, lipid, and liver panels always show all-time data.',
 }: MedicalReportDownloadProps) {
   const { toast } = useToast();
   const [days, setDays] = useState<ReportDayRange>(7);
@@ -199,7 +199,7 @@ export function MedicalReportDownload({
     }
   };
 
-  const busy = downloading || previewing;
+  const busy = previewing;
   const selectedLabel = medicalReportLabel(reportType);
 
   return (
@@ -249,7 +249,7 @@ export function MedicalReportDownload({
 
         <p className="text-sm text-muted-foreground">
           Default report type: <span className="font-medium text-foreground">{selectedLabel}</span>.
-          Use the arrow on each button to pick rough or final summary.
+          Use the arrow on the preview button to pick rough or final summary.
         </p>
 
         <div className="flex flex-wrap gap-2">
@@ -262,15 +262,6 @@ export function MedicalReportDownload({
             disabled={busy || !effectivePatientId}
             reportType={reportType}
             onAction={handlePreview}
-          />
-          <ReportActionSplitButton
-            icon={Download}
-            label={`Download PDF (${selectedLabel})`}
-            busyLabel="Generating…"
-            busy={downloading}
-            disabled={busy || !effectivePatientId}
-            reportType={reportType}
-            onAction={handleDownload}
           />
         </div>
       </CardContent>
