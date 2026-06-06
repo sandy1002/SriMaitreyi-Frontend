@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +29,7 @@ import type { MedicalReportType } from '@/services/api';
 import { REPORT_DAY_OPTIONS, type ReportDayRange } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import type { Patient } from '@/types';
+import { MedicalReportPreviewDialog } from '@/components/clinical/MedicalReportPreviewDialog';
 
 interface MedicalReportDownloadProps {
   patientId: string;
@@ -114,7 +115,7 @@ export function MedicalReportDownload({
   patients = [],
   allowPatientSelect = false,
   title = 'Medical report',
-  description = 'Preview or download a PDF before saving. Rough summary is short and crisp; final summary includes full session, nutrition, fluid, and diary details. Medications, CBP, lipid, and liver panels always show all-time data.',
+  description = 'Preview the PDF in a popup on this page, or download it. Rough summary is short and crisp; final summary includes full session, nutrition, fluid, and diary details. Medications, CBP, lipid, and liver panels always show all-time data.',
 }: MedicalReportDownloadProps) {
   const { toast } = useToast();
   const [days, setDays] = useState<ReportDayRange>(7);
@@ -122,12 +123,29 @@ export function MedicalReportDownload({
   const [selectedPatientId, setSelectedPatientId] = useState(defaultPatientId);
   const [downloading, setDownloading] = useState(false);
   const [previewing, setPreviewing] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const effectivePatientId = allowPatientSelect ? selectedPatientId : defaultPatientId;
   const effectiveName =
     patientName ||
     patients.find((p) => p.id === effectivePatientId)?.name ||
     'patient';
+
+  useEffect(() => {
+    if (!previewOpen && previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+  }, [previewOpen, previewUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const handlePreview = async (type: MedicalReportType) => {
     if (!effectivePatientId) {
@@ -138,13 +156,12 @@ export function MedicalReportDownload({
     setPreviewing(true);
     try {
       const blob = await fetchMedicalReportPdf(effectivePatientId, days, type, 'inline');
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
       const url = URL.createObjectURL(blob);
-      window.open(url, '_blank', 'noopener,noreferrer');
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      toast({
-        title: 'Report opened',
-        description: `${medicalReportLabel(type)} for last ${days} days opened in a new tab.`,
-      });
+      setPreviewUrl(url);
+      setPreviewOpen(true);
     } catch (err) {
       console.error(err);
       toast({
@@ -257,6 +274,16 @@ export function MedicalReportDownload({
           />
         </div>
       </CardContent>
+
+      <MedicalReportPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        pdfUrl={previewUrl}
+        title={`${selectedLabel} — ${effectiveName}`}
+        subtitle={`Last ${days} days · review before downloading`}
+        onDownload={() => handleDownload(reportType)}
+        downloading={downloading}
+      />
     </Card>
   );
 }
