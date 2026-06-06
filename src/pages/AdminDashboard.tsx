@@ -35,6 +35,7 @@ import {
   RefreshCw,
   UserPlus,
   ClipboardList,
+  BookOpen,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatISTDate } from '@/lib/datetime';
@@ -178,6 +179,12 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/architecture">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Schema &amp; architecture
+              </Link>
+            </Button>
             <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -347,7 +354,7 @@ export default function AdminDashboard() {
                       </p>
                       <p>
                         <span className="font-medium text-foreground">Registered:</span>{' '}
-                        {p.createdAt ? formatISTDate(p.createdAt) : '—'}
+                        {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'}
                       </p>
                     </div>
                     <Button variant="outline" size="sm" asChild>
