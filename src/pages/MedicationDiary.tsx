@@ -203,6 +203,7 @@ export default function MedicationDiaryPage() {
                               ? {
                                   ...r,
                                   medicineId: v === 'none' ? '' : v,
+                                  medicineName: med?.name ?? (v === 'none' ? '' : r.medicineName),
                                   doseUnit: med?.unit ?? r.doseUnit,
                                 }
                               : r
