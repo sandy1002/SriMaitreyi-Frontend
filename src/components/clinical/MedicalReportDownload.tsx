@@ -124,7 +124,7 @@ export function MedicalReportDownload({
   const [downloading, setDownloading] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
 
   const effectivePatientId = allowPatientSelect ? selectedPatientId : defaultPatientId;
   const effectiveName =
@@ -133,19 +133,10 @@ export function MedicalReportDownload({
     'patient';
 
   useEffect(() => {
-    if (!previewOpen && previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
+    if (!previewOpen) {
+      setPreviewBlob(null);
     }
-  }, [previewOpen, previewUrl]);
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
+  }, [previewOpen]);
 
   const handlePreview = async (type: MedicalReportType) => {
     if (!effectivePatientId) {
@@ -156,11 +147,7 @@ export function MedicalReportDownload({
     setPreviewing(true);
     try {
       const blob = await fetchMedicalReportPdf(effectivePatientId, days, type, 'inline');
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-      const url = URL.createObjectURL(blob);
-      setPreviewUrl(url);
+      setPreviewBlob(blob);
       setPreviewOpen(true);
     } catch (err) {
       console.error(err);
@@ -269,9 +256,9 @@ export function MedicalReportDownload({
       <MedicalReportPreviewDialog
         open={previewOpen}
         onOpenChange={setPreviewOpen}
-        pdfUrl={previewUrl}
+        pdfBlob={previewBlob}
         title={`${selectedLabel} — ${effectiveName}`}
-        subtitle={`Last ${days} days · review before downloading`}
+        subtitle={`Last ${days} days · scroll to view all pages · download when ready`}
         onDownload={() => handleDownload(reportType)}
         downloading={downloading}
       />
