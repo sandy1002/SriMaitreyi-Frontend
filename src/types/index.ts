@@ -319,13 +319,32 @@ export interface LabInvestigationField {
   key: string;
   label: string;
   unit: string;
+  subtitle?: string;
+  reference_range?: string;
+}
+
+export interface LabInvestigationSection {
+  id: string;
+  title: string;
+  fields: LabInvestigationField[];
+}
+
+export interface LabInvestigationMetaField {
+  key: string;
+  label: string;
+  type: 'date' | 'text' | 'select';
+  options?: { value: string; label: string }[];
 }
 
 export interface LabInvestigationType {
   id: string;
   label: string;
+  short_label?: string;
   description?: string;
   fields?: LabInvestigationField[];
+  sections?: LabInvestigationSection[];
+  meta_fields?: LabInvestigationMetaField[];
+  clinical_notes?: string[];
   route: string;
 }
 
