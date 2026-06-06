@@ -135,10 +135,8 @@ export default function SessionDetail() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [interdialyticSummary, setInterdialyticSummary] =
     useState<InterdialyticPeriodSummary | null>(null);
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  const [interdialyticLoading, setInterdialyticLoading] = useState(false);
+  const [interdialyticError, setInterdialyticError] = useState<string | null>(null);
 
   useEffect(() => {
     if (sessionId) {
@@ -158,16 +156,29 @@ export default function SessionDetail() {
   useEffect(() => {
     const s = currentSession;
     if (!s?.patientId || !s?.sessionDate) return;
+    setInterdialyticLoading(true);
+    setInterdialyticError(null);
     api
       .fetchInterdialyticFluids(s.patientId, s.sessionDate, s.id)
-      .then(setInterdialyticSummary)
-      .catch(() => setInterdialyticSummary(null));
+      .then((data) => {
+        setInterdialyticSummary(data);
+        setInterdialyticError(null);
+      })
+      .catch((err: unknown) => {
+        setInterdialyticSummary(null);
+        setInterdialyticError(err instanceof Error ? err.message : 'Request failed');
+      })
+      .finally(() => setInterdialyticLoading(false));
   }, [currentSession?.id, currentSession?.patientId, currentSession?.sessionDate]);
 
   // Keep local attachments in sync with context when session details reload
   useEffect(() => {
     setAllAttachments(attachments ?? []);
   }, [attachments]);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
   const session = currentSession;
   const assessment = session?.preDialysisAssessment;
@@ -554,6 +565,8 @@ export default function SessionDetail() {
           <InterdialyticSessionSummary
             fluids={interdialyticSummary?.fluids ?? null}
             potassium={interdialyticSummary?.potassium ?? null}
+            loading={interdialyticLoading}
+            error={interdialyticError}
             sessionDate={String(
               (session as { sessionDate?: string; session_date?: string }).sessionDate ??
                 (session as { session_date?: string }).session_date ??

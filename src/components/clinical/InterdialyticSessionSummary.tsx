@@ -27,6 +27,8 @@ type InterdialyticSessionSummaryProps = {
   potassium: InterdialyticPotassiumSummary | null;
   sessionDate: string;
   compact?: boolean;
+  loading?: boolean;
+  error?: string | null;
 };
 
 export function InterdialyticSessionSummary({
@@ -34,7 +36,38 @@ export function InterdialyticSessionSummary({
   potassium,
   sessionDate,
   compact = false,
+  loading = false,
+  error = null,
 }: InterdialyticSessionSummaryProps) {
+  if (loading) {
+    return (
+      <div className={`grid gap-4 ${compact ? 'grid-cols-1' : 'md:grid-cols-2'}`}>
+        <Card className="border-sky-500/30 bg-sky-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Interdialytic fluid intake</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Loading…</CardContent>
+        </Card>
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Interdialytic potassium intake</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Loading…</CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-destructive/40 bg-destructive/5">
+        <CardContent className="py-4 text-sm text-destructive">
+          Could not load interdialytic summary: {error}
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!fluids && !potassium) return null;
 
   const hasFluidData = (fluids?.dailyEntries.length ?? 0) > 0 || (fluids?.totalMl ?? 0) > 0;

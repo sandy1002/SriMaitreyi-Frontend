@@ -56,7 +56,7 @@ export function Header() {
             <Button variant="ghost" size="sm" asChild>
               <Link to="/architecture">
                 <BookOpen className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Architecture</span>
+                <span className="hidden sm:inline">Schema &amp; architecture</span>
               </Link>
             </Button>
           )}
