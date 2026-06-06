@@ -392,6 +392,7 @@ export interface RenalFluidIntakeInput {
 export interface InterdialyticFluidsSummary {
   lastSessionId?: string | null;
   lastSessionDate?: string | null;
+  lastSessionCompletedAt?: string | null;
   fromDate?: string | null;
   untilDate: string;
   totalOralMl: number;
@@ -405,6 +406,28 @@ export interface InterdialyticFluidsSummary {
     notes?: string;
     intakes: RenalFluidIntakeLine[];
   }[];
+}
+
+export interface InterdialyticPotassiumSummary {
+  fromDate: string | null;
+  untilDate: string;
+  lastSessionCompletedAt?: string | null;
+  newSessionDate?: string;
+  totalPotassiumMg: number;
+  dayCount: number;
+  dailyEntries: { diaryDate: string; totalPotassiumMg: number }[];
+  mealsInWindow?: {
+    diaryDate: string;
+    mealType: string;
+    foodName?: string;
+    mealTakenAt?: string;
+    potassiumMg: number;
+  }[];
+}
+
+export interface InterdialyticPeriodSummary {
+  fluids: InterdialyticFluidsSummary;
+  potassium: InterdialyticPotassiumSummary;
 }
 
 export interface PreviousSessionPostWeight {

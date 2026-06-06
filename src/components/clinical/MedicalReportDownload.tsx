@@ -115,7 +115,7 @@ export function MedicalReportDownload({
   patients = [],
   allowPatientSelect = false,
   title = 'Medical report',
-  description = 'Preview the PDF in a popup on this page, then download from the preview if needed. Rough summary is short and crisp; final summary includes full session, nutrition, fluid, and diary details. Medications, CBP, lipid, and liver panels always show all-time data.',
+  description = 'Preview the PDF in a popup on this page, then download from the preview if needed. Short summary is crisp; detailed summary includes full session, nutrition, fluid, and diary details. Medications, CBP, lipid, and liver panels always show all-time data.',
 }: MedicalReportDownloadProps) {
   const { toast } = useToast();
   const [days, setDays] = useState<ReportDayRange>(7);
@@ -236,7 +236,7 @@ export function MedicalReportDownload({
 
         <p className="text-sm text-muted-foreground">
           Default report type: <span className="font-medium text-foreground">{selectedLabel}</span>.
-          Use the arrow on the preview button to pick rough or final summary.
+          Use the arrow on the preview button to pick short or detailed summary.
         </p>
 
         <div className="flex flex-wrap gap-2">

@@ -179,12 +179,12 @@ export const MEDICAL_REPORT_OPTIONS: {
 }[] = [
   {
     value: 'summary',
-    label: 'Rough summary',
+    label: 'Short summary',
     description: 'Short, crisp overview with key clinical data',
   },
   {
     value: 'detailed',
-    label: 'Final summary',
+    label: 'Detailed summary',
     description: 'Full report with session, nutrition, and diary details',
   },
 ];
@@ -862,35 +862,61 @@ function mapFluidDiary(raw: Record<string, unknown>) {
 
 export async function fetchInterdialyticFluids(
   patientId: string,
-  untilDate: string
-): Promise<import('@/types').InterdialyticFluidsSummary> {
+  untilDate: string,
+  sessionId?: string
+): Promise<import('@/types').InterdialyticPeriodSummary> {
+  const params = new URLSearchParams({ until_date: untilDate });
+  if (sessionId) params.set('session_id', sessionId);
   const data = await apiRequest(
-    `/patients/${patientId}/interdialytic-fluids?until_date=${encodeURIComponent(untilDate)}`
+    `/patients/${patientId}/interdialytic-fluids?${params.toString()}`
   );
+  const nutritionK = data.interdialytic_nutrition_potassium as Record<string, unknown> | undefined;
   return {
-    lastSessionId: data.last_session_id as string | null | undefined,
-    lastSessionDate: data.last_session_date as string | null | undefined,
-    fromDate: data.from_date as string | null | undefined,
-    untilDate: String(data.until_date),
-    totalOralMl: Number(data.total_oral_ml ?? 0),
-    totalIvMl: Number(data.total_iv_ml ?? 0),
-    totalPrimeRinsebackMl: Number(data.total_prime_rinseback_ml ?? 0),
-    totalOtherMl: Number(data.total_other_ml ?? 0),
-    totalMl: Number(data.total_ml ?? 0),
-    totalLiters: Number(data.total_liters ?? 0),
-    dailyEntries: ((data.daily_entries as Record<string, unknown>[]) ?? []).map((day) => ({
-      diaryDate: String(day.diary_date),
-      notes: day.notes as string | undefined,
-      intakes: ((day.intakes as Record<string, unknown>[]) ?? []).map((i) => ({
-        id: String(i.id),
-        category: String(i.category),
-        description: i.description as string | undefined,
-        volumeMl: i.volume_ml as number | null | undefined,
-        volumeUnit: (i.volume_unit as string) || 'ml',
-        displayVolume: i.display_volume as number | null | undefined,
-        recordedTime: i.recorded_time as string | undefined,
+    fluids: {
+      lastSessionId: data.last_session_id as string | null | undefined,
+      lastSessionDate: data.last_session_date as string | null | undefined,
+      lastSessionCompletedAt: (data.last_session_completed_at as string) ?? null,
+      fromDate: data.from_date as string | null | undefined,
+      untilDate: String(data.until_date),
+      totalOralMl: Number(data.total_oral_ml ?? 0),
+      totalIvMl: Number(data.total_iv_ml ?? 0),
+      totalPrimeRinsebackMl: Number(data.total_prime_rinseback_ml ?? 0),
+      totalOtherMl: Number(data.total_other_ml ?? 0),
+      totalMl: Number(data.total_ml ?? 0),
+      totalLiters: Number(data.total_liters ?? 0),
+      dailyEntries: ((data.daily_entries as Record<string, unknown>[]) ?? []).map((day) => ({
+        diaryDate: String(day.diary_date),
+        notes: day.notes as string | undefined,
+        intakes: ((day.intakes as Record<string, unknown>[]) ?? []).map((i) => ({
+          id: String(i.id),
+          category: String(i.category),
+          description: i.description as string | undefined,
+          volumeMl: i.volume_ml as number | null | undefined,
+          volumeUnit: (i.volume_unit as string) || 'ml',
+          displayVolume: i.display_volume as number | null | undefined,
+          recordedTime: i.recorded_time as string | undefined,
+        })),
       })),
-    })),
+    },
+    potassium: {
+      fromDate: (nutritionK?.from_date as string) ?? null,
+      untilDate: String(nutritionK?.until_date ?? untilDate),
+      lastSessionCompletedAt: (nutritionK?.last_session_completed_at as string) ?? null,
+      newSessionDate: (nutritionK?.new_session_date as string) ?? undefined,
+      totalPotassiumMg: Number(nutritionK?.total_potassium_mg ?? 0),
+      dayCount: Number(nutritionK?.day_count ?? 0),
+      dailyEntries: ((nutritionK?.daily_entries ?? []) as Record<string, unknown>[]).map((d) => ({
+        diaryDate: String(d.diary_date ?? ''),
+        totalPotassiumMg: Number(d.total_potassium_mg ?? 0),
+      })),
+      mealsInWindow: ((nutritionK?.meals_in_window ?? []) as Record<string, unknown>[]).map((m) => ({
+        diaryDate: String(m.diary_date ?? ''),
+        mealType: String(m.meal_type ?? ''),
+        foodName: m.food_name as string | undefined,
+        mealTakenAt: m.meal_taken_at as string | undefined,
+        potassiumMg: Number(m.potassium_mg ?? 0),
+      })),
+    },
   };
 }
 
