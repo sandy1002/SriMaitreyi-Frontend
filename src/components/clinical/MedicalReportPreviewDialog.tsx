@@ -8,11 +8,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { PdfDocumentPreview } from '@/components/clinical/PdfDocumentPreview';
 
 type MedicalReportPreviewDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  pdfUrl: string | null;
+  pdfBlob: Blob | null;
   title: string;
   subtitle?: string;
   onDownload?: () => void;
@@ -23,7 +24,7 @@ type MedicalReportPreviewDialogProps = {
 export function MedicalReportPreviewDialog({
   open,
   onOpenChange,
-  pdfUrl,
+  pdfBlob,
   title,
   subtitle,
   onDownload,
@@ -31,30 +32,26 @@ export function MedicalReportPreviewDialog({
 }: MedicalReportPreviewDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[90vh] max-h-[90vh] w-[min(1100px,95vw)] max-w-[95vw] flex-col gap-0 overflow-hidden p-0">
-        <DialogHeader className="shrink-0 px-6 pb-3 pt-6">
-          <DialogTitle>{title}</DialogTitle>
+      <DialogContent className="flex h-[100dvh] max-h-[100dvh] w-[100vw] max-w-[100vw] flex-col gap-0 overflow-hidden rounded-none border-0 p-0 sm:h-[90vh] sm:max-h-[90vh] sm:w-[min(1100px,95vw)] sm:max-w-[95vw] sm:rounded-lg sm:border">
+        <DialogHeader className="shrink-0 px-4 pb-2 pt-4 sm:px-6 sm:pb-3 sm:pt-6">
+          <DialogTitle className="text-base sm:text-lg">{title}</DialogTitle>
           {subtitle && <DialogDescription>{subtitle}</DialogDescription>}
         </DialogHeader>
-        <div className="min-h-0 flex-1 px-6 pb-2">
-          {pdfUrl ? (
-            <iframe
-              title={title}
-              src={pdfUrl}
-              className="h-full w-full rounded-md border bg-muted/20"
-            />
+        <div className="min-h-0 flex-1 px-3 pb-2 sm:px-6">
+          {pdfBlob ? (
+            <PdfDocumentPreview blob={pdfBlob} className="h-full" />
           ) : (
             <div className="flex h-full items-center justify-center rounded-md border bg-muted/20 text-sm text-muted-foreground">
               Preparing preview…
             </div>
           )}
         </div>
-        <DialogFooter className="shrink-0 px-6 pb-6 pt-3">
+        <DialogFooter className="shrink-0 gap-2 px-4 pb-4 pt-2 sm:px-6 sm:pb-6 sm:pt-3">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
           {onDownload && (
-            <Button type="button" onClick={onDownload} disabled={downloading || !pdfUrl}>
+            <Button type="button" onClick={onDownload} disabled={downloading || !pdfBlob}>
               <Download className="mr-2 h-4 w-4" />
               {downloading ? 'Downloading…' : 'Download PDF'}
             </Button>
