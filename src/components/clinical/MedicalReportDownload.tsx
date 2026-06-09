@@ -115,7 +115,7 @@ export function MedicalReportDownload({
   patients = [],
   allowPatientSelect = false,
   title = 'Medical report',
-  description = 'Preview the PDF in a popup on this page, then download from the preview if needed. Short summary is crisp; detailed summary includes full session, nutrition, fluid, and diary details. Medications, CBP, lipid, and liver panels always show all-time data.',
+  description = 'Use the Period filter (last 5, 7, 15, or 30 days) for sessions, diaries, and trend charts. Preview the PDF in a popup, then download from the preview. Clinical snapshot tables (medications, CBP, lipid, liver) show all-time data.',
 }: MedicalReportDownloadProps) {
   const { toast } = useToast();
   const [days, setDays] = useState<ReportDayRange>(7);

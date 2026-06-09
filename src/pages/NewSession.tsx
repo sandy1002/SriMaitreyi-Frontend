@@ -84,7 +84,7 @@ export default function NewSession() {
   const [potassiumMmolL, setPotassiumMmolL] = useState('');
   const [primeMl, setPrimeMl] = useState('250');
   const [ivFluidsMl, setIvFluidsMl] = useState('0');
-  const [oralIntakeMl, setOralIntakeMl] = useState('0');
+  const [oralIntakeMl, setOralIntakeMl] = useState('450');
   const [technicianName, setTechnicianName] = useState('');
   const [nurseName, setNurseName] = useState('');
   const [doctorName, setDoctorName] = useState('');
@@ -103,9 +103,8 @@ export default function NewSession() {
     setSessionDefaults(defaults);
     if (defaults.hospitalName) setHospitalName(defaults.hospitalName);
     setPrimeMl(String(defaults.suggestedPrimeRinsebackMl ?? 250));
-    // Oral/IV during session default to 0 — interdialytic diary totals are between sessions (IDWG).
-    setIvFluidsMl('0');
-    setOralIntakeMl('0');
+    setIvFluidsMl(String(defaults.suggestedIvFluidsMl ?? 0));
+    setOralIntakeMl(String(defaults.suggestedOralIntakeMl ?? 450));
     if (defaults.interdialyticFluids) {
       setInterdialyticFluids(defaults.interdialyticFluids);
     }

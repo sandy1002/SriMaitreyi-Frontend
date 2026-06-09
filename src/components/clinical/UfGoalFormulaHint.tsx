@@ -32,9 +32,10 @@ export function UfGoalFormulaHint() {
           </li>
         </ol>
         <p className="mt-2 text-muted-foreground">
-          Prime/rinseback defaults to 250 ml (typical line/dialyzer volume). Oral and IV fields are
-          for fluids given during this run only — not fluid diary totals between sessions (those
-          affect weight gain / IDWG via pre weight).
+          Prime/rinseback defaults to 250 ml (typical line/dialyzer volume). Oral during session
+          defaults to 450 ml and can be changed. IV defaults to 0. These are fluids given during
+          this run only — not fluid diary totals between sessions (those affect weight gain /
+          IDWG via pre weight).
         </p>
       </TooltipContent>
     </Tooltip>
