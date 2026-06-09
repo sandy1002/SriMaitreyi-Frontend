@@ -349,7 +349,7 @@ export async function fetchSessionDefaults(
       : null,
     suggestedPrimeRinsebackMl: Number(data.suggested_prime_rinseback_ml ?? 250),
     suggestedIvFluidsMl: Number(data.suggested_iv_fluids_ml ?? 0),
-    suggestedOralIntakeMl: Number(data.suggested_oral_intake_ml ?? 0),
+    suggestedOralIntakeMl: Number(data.suggested_oral_intake_ml ?? 450),
     interdialyticFluids: fluids
       ? {
           lastSessionId: fluids.last_session_id as string | null,
