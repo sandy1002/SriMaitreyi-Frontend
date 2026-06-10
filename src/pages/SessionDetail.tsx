@@ -211,7 +211,8 @@ export default function SessionDetail() {
   const isPatient = user?.role === 'patient';
   const isTechnician = user?.role === 'technician';
   const isCompleted = session.status === 'completed';
-  const canManageSession = (isPatient || isTechnician) && !isCompleted;
+  const canEditSessionAssessments = isPatient || isTechnician;
+  const canManageSession = canEditSessionAssessments && !isCompleted;
   const isPostDialysis = session.status === 'post-dialysis';
   const isInProgress = session.status === 'in-progress';
   const isSessionOpen = !isCompleted;
@@ -377,10 +378,10 @@ export default function SessionDetail() {
                     : 'In Progress'}
               </Badge>
 
-              {canManageSession && (
+              {canEditSessionAssessments && (
                 <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
                   <Pencil className="h-4 w-4 mr-2" />
-                  Edit session
+                  {isCompleted ? 'Correct assessment' : 'Edit session'}
                 </Button>
               )}
 

@@ -36,7 +36,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
-import { formatVolumeFromMl, formatUfGoal } from '@/lib/clinicalUnits';
+import { formatUfGoal } from '@/lib/clinicalUnits';
 import { UfGoalFormulaHint } from '@/components/clinical/UfGoalFormulaHint';
 import { nowISTClock } from '@/lib/datetime';
 import type {
@@ -465,22 +465,6 @@ export default function NewSession() {
                           {interdialyticFluids.totalMl} ml) · oral{' '}
                           {interdialyticFluids.totalOralMl} ml · IV {interdialyticFluids.totalIvMl} ml
                         </p>
-                        {interdialyticFluids.dailyEntries.map((day) => (
-                          <div key={day.diaryDate} className="border rounded-md p-2 space-y-1">
-                            <p className="font-medium">{day.diaryDate}</p>
-                            {day.intakes.map((line) => (
-                              <div key={line.id} className="flex justify-between gap-2 text-muted-foreground">
-                                <span className="capitalize">
-                                  {line.category.replace('_', ' ')}
-                                  {line.description ? ` — ${line.description}` : ''}
-                                </span>
-                                <span className="text-foreground font-medium shrink-0">
-                                  {formatVolumeFromMl(line.volumeMl, line.volumeUnit)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        ))}
                       </>
                     )}
                   </CardContent>
@@ -544,13 +528,6 @@ export default function NewSession() {
                           )
                         )}
                       </>
-                    )}
-                    {sessionDefaults.latestSerumPotassium && (
-                      <p className="text-muted-foreground">
-                        Latest lab serum K:{' '}
-                        {sessionDefaults.latestSerumPotassium.serumPotassiumMmolL} mmol/L (
-                        {sessionDefaults.latestSerumPotassium.reportDate})
-                      </p>
                     )}
                   </CardContent>
                 </Card>

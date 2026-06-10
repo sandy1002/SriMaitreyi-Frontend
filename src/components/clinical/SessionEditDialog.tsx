@@ -167,8 +167,9 @@ export function SessionEditDialog({
         <DialogHeader>
           <DialogTitle>Edit session</DialogTitle>
           <DialogDescription>
-            Update session details, pre-dialysis, or post-dialysis values. UF goal recalculates when
-            weight or fluid fields change.
+            Update session details, pre-dialysis, or post-dialysis values. Completed sessions can be
+            corrected here if something was entered incorrectly. UF goal recalculates when weight or
+            fluid fields change.
           </DialogDescription>
         </DialogHeader>
 
