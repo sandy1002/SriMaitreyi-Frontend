@@ -14,6 +14,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   ArrowLeft,
   Calendar,
   Building2,
@@ -82,6 +89,8 @@ export default function NewSession() {
   const [accessCondition, setAccessCondition] = useState<'Normal' | 'Abnormal'>('Normal');
   const [ufGoal, setUfGoal] = useState('');
   const [potassiumMmolL, setPotassiumMmolL] = useState('');
+  const [sodiumMmolL, setSodiumMmolL] = useState('');
+  const [ufProfile, setUfProfile] = useState('');
   const [primeMl, setPrimeMl] = useState('250');
   const [ivFluidsMl, setIvFluidsMl] = useState('0');
   const [oralIntakeMl, setOralIntakeMl] = useState('450');
@@ -249,6 +258,8 @@ export default function NewSession() {
           accessCondition,
           ufGoal,
           potassiumMmolL: potassiumMmolL ? Number(potassiumMmolL) : undefined,
+          sodiumMmolL: sodiumMmolL ? Number(sodiumMmolL) : undefined,
+          ufProfile: ufProfile !== '' ? Number(ufProfile) : undefined,
           targetDryWeightKg: dryWeightKg ? Number(dryWeightKg) : undefined,
           primeRinsebackMl: Number(primeMl) || 250,
           ivFluidsMl: Number(ivFluidsMl) || 0,
@@ -664,16 +675,48 @@ export default function NewSession() {
                 </div>
               </div>
 
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calculator className="h-4 w-4" />
-                UF goal (automated)
-                <UfGoalFormulaHint />
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Values update as you enter weight and fluids. Oral and IV are fluids given during
-                this dialysis run only (not interdialytic diary totals). Use the help icon for the
-                formula.
-              </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Calculator className="h-4 w-4" />
+                    UF goal (automated)
+                    <UfGoalFormulaHint />
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Values update as you enter weight and fluids. Oral and IV are fluids given during
+                    this dialysis run only (not interdialytic diary totals). Use the help icon for the
+                    formula.
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 sm:min-w-[280px]">
+                  <div className="space-y-2">
+                    <Label htmlFor="sodium">Sodium (mmol/L)</Label>
+                    <Input
+                      id="sodium"
+                      type="number"
+                      step="0.1"
+                      value={sodiumMmolL}
+                      onChange={(e) => setSodiumMmolL(e.target.value)}
+                      placeholder="e.g. 138"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ufProfile">UF (0–6)</Label>
+                    <Select value={ufProfile} onValueChange={setUfProfile}>
+                      <SelectTrigger id="ufProfile">
+                        <SelectValue placeholder="Select 0–6" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[0, 1, 2, 3, 4, 5, 6].map((n) => (
+                          <SelectItem key={n} value={String(n)}>
+                            {n}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="prime">Prime / rinseback (ml)</Label>
