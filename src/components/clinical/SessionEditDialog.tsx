@@ -49,7 +49,9 @@ export function SessionEditDialog({
   const [weightKg, setWeightKg] = useState(str(pre?.weightKg));
   const [dryWeightKg, setDryWeightKg] = useState(str(pre?.targetDryWeightKg));
   const [potassiumMmolL, setPotassiumMmolL] = useState(str(pre?.potassiumMmolL));
-  const [sodiumMmolL, setSodiumMmolL] = useState(str(pre?.sodiumMmolL));
+  const [sodiumProfile, setSodiumProfile] = useState(
+    pre?.sodiumProfile != null ? String(pre.sodiumProfile) : ''
+  );
   const [ufProfile, setUfProfile] = useState(
     pre?.ufProfile != null ? String(pre.ufProfile) : ''
   );
@@ -83,7 +85,7 @@ export function SessionEditDialog({
     setWeightKg(str(pre?.weightKg));
     setDryWeightKg(str(pre?.targetDryWeightKg));
     setPotassiumMmolL(str(pre?.potassiumMmolL));
-    setSodiumMmolL(str(pre?.sodiumMmolL));
+    setSodiumProfile(pre?.sodiumProfile != null ? String(pre.sodiumProfile) : '');
     setUfProfile(pre?.ufProfile != null ? String(pre.ufProfile) : '');
     setBloodPressure(pre?.bloodPressure ?? '');
     setPulse(str(pre?.pulse));
@@ -121,7 +123,7 @@ export function SessionEditDialog({
         weight_kg: parseNum(weightKg),
         target_dry_weight_kg: parseNum(dryWeightKg),
         potassium_mmol_l: parseNum(potassiumMmolL),
-        sodium_mmol_l: parseNum(sodiumMmolL),
+        sodium_profile: sodiumProfile !== '' ? Number(sodiumProfile) : undefined,
         uf_profile: ufProfile !== '' ? Number(ufProfile) : undefined,
         blood_pressure: bloodPressure.trim() || undefined,
         pulse: parseNum(pulse),
@@ -213,8 +215,19 @@ export function SessionEditDialog({
               <Input type="number" step="0.1" value={potassiumMmolL} onChange={(e) => setPotassiumMmolL(e.target.value)} />
             </div>
             <div className="space-y-1">
-              <Label>Sodium (mmol/L)</Label>
-              <Input type="number" step="0.1" value={sodiumMmolL} onChange={(e) => setSodiumMmolL(e.target.value)} />
+              <Label>Sodium (0–6)</Label>
+              <Select value={sodiumProfile} onValueChange={setSodiumProfile}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select 0–6" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[0, 1, 2, 3, 4, 5, 6].map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label>UF (0–6)</Label>

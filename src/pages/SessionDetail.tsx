@@ -667,9 +667,9 @@ export default function SessionDetail() {
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Sodium: </span>
+                  <span className="text-muted-foreground">Sodium (0–6): </span>
                   <span className="font-semibold">
-                    {assessment?.sodiumMmolL != null ? `${assessment.sodiumMmolL} mmol/L` : '—'}
+                    {assessment?.sodiumProfile != null ? assessment.sodiumProfile : '—'}
                   </span>
                 </div>
                 <div>

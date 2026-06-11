@@ -89,7 +89,7 @@ export default function NewSession() {
   const [accessCondition, setAccessCondition] = useState<'Normal' | 'Abnormal'>('Normal');
   const [ufGoal, setUfGoal] = useState('');
   const [potassiumMmolL, setPotassiumMmolL] = useState('');
-  const [sodiumMmolL, setSodiumMmolL] = useState('');
+  const [sodiumProfile, setSodiumProfile] = useState('');
   const [ufProfile, setUfProfile] = useState('');
   const [primeMl, setPrimeMl] = useState('250');
   const [ivFluidsMl, setIvFluidsMl] = useState('0');
@@ -258,7 +258,7 @@ export default function NewSession() {
           accessCondition,
           ufGoal,
           potassiumMmolL: potassiumMmolL ? Number(potassiumMmolL) : undefined,
-          sodiumMmolL: sodiumMmolL ? Number(sodiumMmolL) : undefined,
+          sodiumProfile: sodiumProfile !== '' ? Number(sodiumProfile) : undefined,
           ufProfile: ufProfile !== '' ? Number(ufProfile) : undefined,
           targetDryWeightKg: dryWeightKg ? Number(dryWeightKg) : undefined,
           primeRinsebackMl: Number(primeMl) || 250,
@@ -690,15 +690,19 @@ export default function NewSession() {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 sm:min-w-[280px]">
                   <div className="space-y-2">
-                    <Label htmlFor="sodium">Sodium (mmol/L)</Label>
-                    <Input
-                      id="sodium"
-                      type="number"
-                      step="0.1"
-                      value={sodiumMmolL}
-                      onChange={(e) => setSodiumMmolL(e.target.value)}
-                      placeholder="e.g. 138"
-                    />
+                    <Label htmlFor="sodiumProfile">Sodium (0–6)</Label>
+                    <Select value={sodiumProfile} onValueChange={setSodiumProfile}>
+                      <SelectTrigger id="sodiumProfile">
+                        <SelectValue placeholder="Select 0–6" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[0, 1, 2, 3, 4, 5, 6].map((n) => (
+                          <SelectItem key={n} value={String(n)}>
+                            {n}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="ufProfile">UF (0–6)</Label>

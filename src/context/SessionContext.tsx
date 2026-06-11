@@ -28,7 +28,7 @@ interface SessionContextType {
       accessCondition: 'Normal' | 'Abnormal';
       ufGoal: string;
       potassiumMmolL?: number;
-      sodiumMmolL?: number;
+      sodiumProfile?: number;
       ufProfile?: number;
       targetDryWeightKg?: number;
       primeRinsebackMl?: number;
@@ -113,7 +113,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       accessCondition: 'Normal' | 'Abnormal';
       ufGoal: string;
       potassiumMmolL?: number;
-      sodiumMmolL?: number;
+      sodiumProfile?: number;
       ufProfile?: number;
       targetDryWeightKg?: number;
       primeRinsebackMl?: number;
@@ -137,7 +137,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       access_condition: assessment.accessCondition,
       uf_goal: assessment.ufGoal,
       potassium_mmol_l: assessment.potassiumMmolL,
-      sodium_mmol_l: assessment.sodiumMmolL,
+      sodium_profile: assessment.sodiumProfile,
       uf_profile: assessment.ufProfile,
       target_dry_weight_kg: assessment.targetDryWeightKg,
       prime_rinseback_ml: assessment.primeRinsebackMl,
