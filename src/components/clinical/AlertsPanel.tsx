@@ -19,10 +19,12 @@ export function AlertsPanel({ alerts, checks = [], title = 'Clinical alerts & ch
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 text-amber-600" />
-        {title}
-      </h3>
+      {title ? (
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          {title}
+        </h3>
+      ) : null}
 
       {alerts.map((a) => (
         <Alert

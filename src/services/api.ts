@@ -30,6 +30,8 @@ function mapPreAssessment(raw: Record<string, unknown> | null | undefined) {
     accessCondition: raw.access_condition as string | undefined,
     ufGoal: raw.uf_goal as string | undefined,
     potassiumMmolL: raw.potassium_mmol_l as number | null | undefined,
+    sodiumMmolL: raw.sodium_mmol_l as number | null | undefined,
+    ufProfile: raw.uf_profile as number | null | undefined,
     targetDryWeightKg: raw.target_dry_weight_kg as number | null | undefined,
     primeRinsebackMl: raw.prime_rinseback_ml as number | null | undefined,
     ivFluidsMl: raw.iv_fluids_ml as number | null | undefined,

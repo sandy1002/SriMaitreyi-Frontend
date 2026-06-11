@@ -34,6 +34,8 @@ export interface PreDialysisAssessment {
   accessCondition?: string;
   ufGoal?: string;
   potassiumMmolL?: number | null;
+  sodiumMmolL?: number | null;
+  ufProfile?: number | null;
   targetDryWeightKg?: number | null;
   primeRinsebackMl?: number | null;
   ivFluidsMl?: number | null;

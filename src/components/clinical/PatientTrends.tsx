@@ -4,9 +4,12 @@ import { fetchPatientTrends } from '@/services/api';
 import type { PatientTrendsResponse } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { TrendingUp, AlertTriangle, Network } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { TrendingUp, AlertTriangle, Network, ChevronDown } from 'lucide-react';
 import { AlertsPanel } from '@/components/clinical/AlertsPanel';
+import { cn } from '@/lib/utils';
 
 const weightChartConfig = {
   pre: { label: 'Pre (kg)', color: 'hsl(var(--primary))' },
@@ -22,6 +25,7 @@ export function PatientTrends({ patientId, compact }: PatientTrendsProps) {
   const [trends, setTrends] = useState<PatientTrendsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [alertsOpen, setAlertsOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +75,7 @@ export function PatientTrends({ patientId, compact }: PatientTrendsProps) {
 
   const pg = trends.propertyGraph;
   const neo4jOn = pg?.neo4jAvailable === true;
+  const alertCount = trends.recentAlerts.length;
 
   return (
     <div className="space-y-4">
@@ -101,8 +106,37 @@ export function PatientTrends({ patientId, compact }: PatientTrendsProps) {
         </CardContent>
       </Card>
 
-      {!compact && trends.recentAlerts.length > 0 && (
-        <AlertsPanel alerts={trends.recentAlerts} title="Recent alerts across sessions" />
+      {!compact && alertCount > 0 && (
+        <Collapsible open={alertsOpen} onOpenChange={setAlertsOpen}>
+          <Card className="shadow-clinical">
+            <CollapsibleTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full h-auto justify-between px-6 py-4 rounded-xl hover:bg-muted/50"
+              >
+                <span className="flex items-center gap-2 text-sm font-semibold">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  Recent alerts across sessions
+                  <Badge variant="secondary" className="ml-1">
+                    {alertCount}
+                  </Badge>
+                </span>
+                <ChevronDown
+                  className={cn(
+                    'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
+                    alertsOpen && 'rotate-180'
+                  )}
+                />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 pb-4">
+                <AlertsPanel alerts={trends.recentAlerts} title="" />
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
       )}
 
       <Card className="shadow-clinical">
