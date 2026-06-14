@@ -405,6 +405,26 @@ export async function fetchSessionDefaults(
   };
 }
 
+export async function fetchFoodPotassiumList(
+  patientId?: string,
+  limit = 200
+): Promise<import('@/types').FoodPotassiumItem[]> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (patientId) params.set('patient_id', patientId);
+  const data = await apiRequest(`/food-items?${params.toString()}`);
+  return (data.items ?? []).map((item: Record<string, unknown>) => ({
+    id: String(item.id),
+    name: String(item.name),
+    category: String(item.category),
+    servingDescription: String(item.serving_description ?? ''),
+    servingGrams: item.serving_grams as number | undefined,
+    potassiumMgPerServing: Number(item.potassium_mg_per_serving),
+    aliases: item.aliases as string | undefined,
+    isCustom: Boolean(item.is_custom),
+    patientId: (item.patient_id as string) ?? null,
+  }));
+}
+
 export async function searchFoodPotassiumItems(
   query: string,
   category?: string,

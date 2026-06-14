@@ -16,6 +16,7 @@ import StaffDashboard from "./pages/StaffDashboard";
 import HealthHistory from "./pages/HealthHistory";
 import CbpDiary from "./pages/CbpDiary";
 import NutritionDiary from "./pages/NutritionDiary";
+import AllergyDiary from "./pages/AllergyDiary";
 import RenalFluidDiary from "./pages/RenalFluidDiary";
 import MedicationDiary from "./pages/MedicationDiary";
 import VaccineDiary from "./pages/VaccineDiary";
@@ -118,6 +119,22 @@ const App = () => (
                   <PatientRoute>
                     <Dashboard />
                   </PatientRoute>
+                }
+              />
+              <Route
+                path="/allergy-diary"
+                element={
+                  <PatientRoute>
+                    <AllergyDiary />
+                  </PatientRoute>
+                }
+              />
+              <Route
+                path="/allergy-diary/:patientId"
+                element={
+                  <ProtectedRoute>
+                    <AllergyDiary />
+                  </ProtectedRoute>
                 }
               />
               <Route
