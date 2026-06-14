@@ -407,21 +407,57 @@ export async function fetchSessionDefaults(
 
 export async function searchFoodPotassiumItems(
   query: string,
-  category?: 'fruit' | 'vegetable'
+  category?: string,
+  patientId?: string
 ): Promise<import('@/types').FoodPotassiumItem[]> {
   const params = new URLSearchParams();
   if (query) params.set('q', query);
   if (category) params.set('category', category);
+  if (patientId) params.set('patient_id', patientId);
   const data = await apiRequest(`/food-items?${params.toString()}`);
   return (data.items ?? []).map((item: Record<string, unknown>) => ({
     id: String(item.id),
     name: String(item.name),
-    category: String(item.category) as 'fruit' | 'vegetable' | 'other',
+    category: String(item.category),
     servingDescription: String(item.serving_description ?? ''),
     servingGrams: item.serving_grams as number | undefined,
     potassiumMgPerServing: Number(item.potassium_mg_per_serving),
     aliases: item.aliases as string | undefined,
+    isCustom: Boolean(item.is_custom),
+    patientId: (item.patient_id as string) ?? null,
   }));
+}
+
+export async function createCustomFoodPotassiumItem(payload: {
+  patientId: string;
+  name: string;
+  potassiumMgPerServing: number;
+  servingDescription?: string;
+  servingGrams?: number;
+}): Promise<import('@/types').FoodPotassiumItem> {
+  const data = await apiRequest('/food-items', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      patient_id: payload.patientId,
+      name: payload.name,
+      potassium_mg_per_serving: payload.potassiumMgPerServing,
+      serving_description: payload.servingDescription ?? '1 serving',
+      serving_grams: payload.servingGrams,
+      category: 'custom',
+    }),
+  });
+  const item = data.item as Record<string, unknown>;
+  return {
+    id: String(item.id),
+    name: String(item.name),
+    category: String(item.category),
+    servingDescription: String(item.serving_description ?? ''),
+    servingGrams: item.serving_grams as number | undefined,
+    potassiumMgPerServing: Number(item.potassium_mg_per_serving),
+    isCustom: true,
+    patientId: (item.patient_id as string) ?? null,
+  };
 }
 
 export async function calculateFoodPotassium(payload: {
@@ -429,6 +465,7 @@ export async function calculateFoodPotassium(payload: {
   foodName?: string;
   portionSize?: string;
   servings?: number;
+  patientId?: string;
 }): Promise<{ potassiumMg: number; servingDescription: string }> {
   const data = await apiRequest('/food-items/calculate-potassium', {
     method: 'POST',
@@ -438,6 +475,7 @@ export async function calculateFoodPotassium(payload: {
       food_name: payload.foodName,
       portion_size: payload.portionSize,
       servings: payload.servings ?? 1,
+      patient_id: payload.patientId,
     }),
   });
   return {
@@ -957,6 +995,24 @@ export async function fetchHealthHistory(
   patientId: string
 ): Promise<import('@/types').PatientHealthHistoryRecord> {
   return apiRequest(`/patients/${patientId}/health-history`);
+}
+
+export async function saveAllergyDiary(
+  patientId: string,
+  payload: {
+    drug_allergies_none: boolean;
+    drug_allergies_list?: string;
+    food_env_allergies_none: boolean;
+    food_env_allergies_list?: string;
+    latex_contrast_reaction?: string | null;
+    latex_contrast_details?: string;
+  }
+): Promise<Record<string, unknown>> {
+  return apiRequest(`/patients/${patientId}/health-history/allergies`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function saveHealthHistory(

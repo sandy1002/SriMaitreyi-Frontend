@@ -49,6 +49,7 @@ const emptyMeal = (): MealFormState => ({
 export default function NutritionDiaryPage() {
   const {
     activePatient,
+    targetPatientId,
     backPath,
     isAuthenticated,
     staffMissingRoute,
@@ -255,6 +256,7 @@ export default function NutritionDiaryPage() {
                       </p>
                     </div>
                     <FoodPotassiumInput
+                      patientId={targetPatientId}
                       foodName={m.foodName}
                       portionSize={m.portionSize}
                       potassium={m.potassium}
