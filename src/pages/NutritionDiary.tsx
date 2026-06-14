@@ -7,13 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Utensils, Save } from 'lucide-react';
+import { ArrowLeft, Utensils, Save, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
 import { DiaryEntryViewDialog } from '@/components/clinical/DiaryEntryViewDialog';
 import { FoodPotassiumInput } from '@/components/clinical/FoodPotassiumInput';
+import { CustomFoodDialog } from '@/components/clinical/CustomFoodDialog';
 import { nowISTClock } from '@/lib/datetime';
-import type { NutritionDiaryEntry, NutritionMealInput } from '@/types';
+import type { FoodPotassiumItem, NutritionDiaryEntry, NutritionMealInput } from '@/types';
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: 'Breakfast' },
@@ -72,10 +73,22 @@ export default function NutritionDiaryPage() {
   const [recentDiaries, setRecentDiaries] = useState<NutritionDiaryEntry[]>([]);
   const [previewEntry, setPreviewEntry] = useState<NutritionDiaryEntry | null>(null);
   const [saving, setSaving] = useState(false);
+  const [foodItems, setFoodItems] = useState<FoodPotassiumItem[]>([]);
+  const [showAddFoodDialog, setShowAddFoodDialog] = useState(false);
+
+  const loadFoodItems = async (patientId: string) => {
+    try {
+      const items = await api.fetchFoodPotassiumList(patientId);
+      setFoodItems(items);
+    } catch {
+      setFoodItems([]);
+    }
+  };
 
   useEffect(() => {
     if (!activePatient?.id) return;
     api.fetchNutritionDiaries(activePatient.id).then(setRecentDiaries).catch(console.error);
+    loadFoodItems(activePatient.id);
   }, [activePatient?.id]);
 
   useEffect(() => {
@@ -213,17 +226,31 @@ export default function NutritionDiaryPage() {
 
         <Card className="shadow-clinical">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Utensils className="h-5 w-5 text-primary" />
-              Renal nutrition diary
-              {isTechnician && (
-                <span className="text-sm font-normal text-muted-foreground">— {patient.name}</span>
-              )}
-            </CardTitle>
-            <CardDescription>
-              Select fruits/vegetables to auto-calculate potassium (mg). Times shown in IST.
-            </CardDescription>
-            <p className="text-xs text-muted-foreground">Current time (IST): {nowISTClock()}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1.5">
+                <CardTitle className="flex items-center gap-2">
+                  <Utensils className="h-5 w-5 text-primary" />
+                  Renal nutrition diary
+                  {isTechnician && (
+                    <span className="text-sm font-normal text-muted-foreground">— {patient.name}</span>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  Choose from your saved food list or search. Times shown in IST.
+                </CardDescription>
+                <p className="text-xs text-muted-foreground">Current time (IST): {nowISTClock()}</p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => setShowAddFoodDialog(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add food
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="max-w-xs">
@@ -257,6 +284,7 @@ export default function NutritionDiaryPage() {
                     </div>
                     <FoodPotassiumInput
                       patientId={targetPatientId}
+                      foodItems={foodItems}
                       foodName={m.foodName}
                       portionSize={m.portionSize}
                       potassium={m.potassium}
@@ -434,6 +462,18 @@ export default function NutritionDiaryPage() {
             </>
           )}
         </DiaryEntryViewDialog>
+
+        <CustomFoodDialog
+          open={showAddFoodDialog}
+          onOpenChange={setShowAddFoodDialog}
+          patientId={patient.id}
+          onSaved={(item) => {
+            setFoodItems((prev) => {
+              const without = prev.filter((f) => f.id !== item.id);
+              return [item, ...without];
+            });
+          }}
+        />
       </main>
     </div>
   );

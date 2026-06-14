@@ -6,11 +6,10 @@ import { SessionCard } from '@/components/cards/SessionCard';
 import { AIAssistant } from '@/components/chat/AIAssistant';
 import { PatientTrends } from '@/components/clinical/PatientTrends';
 import { MedicalReportDownload } from '@/components/clinical/MedicalReportDownload';
-import { AllergyDiaryCard } from '@/components/clinical/AllergyDiaryCard';
 import { MedicalRecordsUpload } from '@/components/clinical/MedicalRecordsUpload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, MessageSquare, Calendar, TrendingUp, Utensils, Droplets, Pill, ClipboardList, TestTube2, Syringe } from 'lucide-react';
+import { Plus, MessageSquare, Calendar, TrendingUp, Utensils, Droplets, Pill, ClipboardList, TestTube2, Syringe, AlertTriangle } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
@@ -46,8 +45,6 @@ export default function Dashboard() {
       <main className="container py-6 space-y-6">
         {/* Patient Info */}
         <PatientInfoCard patient={patient} />
-
-        {isPatient && <AllergyDiaryCard patientId={patient.id} />}
 
         <div className="grid gap-4 lg:grid-cols-2">
           <MedicalRecordsUpload patientId={patient.id} />
@@ -131,6 +128,25 @@ export default function Dashboard() {
                   <h3 className="font-semibold text-foreground">Vaccine diary</h3>
                   <p className="text-sm text-muted-foreground">
                     Log immunizations for your care summary report
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {isPatient && (
+            <Card
+              className="cursor-pointer shadow-clinical transition-all duration-200 hover:shadow-clinical-lg hover:-translate-y-0.5"
+              onClick={() => navigate('/allergy-diary')}
+            >
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/15">
+                  <AlertTriangle className="h-6 w-6 text-amber-700 dark:text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Allergy diary</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Record drug, food, and latex/contrast allergies
                   </p>
                 </div>
               </CardContent>
