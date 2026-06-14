@@ -6,6 +6,7 @@ import { SessionCard } from '@/components/cards/SessionCard';
 import { AIAssistant } from '@/components/chat/AIAssistant';
 import { PatientTrends } from '@/components/clinical/PatientTrends';
 import { MedicalReportDownload } from '@/components/clinical/MedicalReportDownload';
+import { AllergyDiaryCard } from '@/components/clinical/AllergyDiaryCard';
 import { MedicalRecordsUpload } from '@/components/clinical/MedicalRecordsUpload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,6 +46,8 @@ export default function Dashboard() {
       <main className="container py-6 space-y-6">
         {/* Patient Info */}
         <PatientInfoCard patient={patient} />
+
+        {isPatient && <AllergyDiaryCard patientId={patient.id} />}
 
         <div className="grid gap-4 lg:grid-cols-2">
           <MedicalRecordsUpload patientId={patient.id} />

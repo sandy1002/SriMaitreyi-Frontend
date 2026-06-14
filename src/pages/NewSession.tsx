@@ -117,9 +117,6 @@ export default function NewSession() {
     if (defaults.interdialyticFluids) {
       setInterdialyticFluids(defaults.interdialyticFluids);
     }
-    if (defaults.latestSerumPotassium?.serumPotassiumMmolL != null) {
-      setPotassiumMmolL(String(defaults.latestSerumPotassium.serumPotassiumMmolL));
-    }
   }, []);
 
   useEffect(() => {

@@ -477,11 +477,13 @@ export interface SessionStartDefaults {
 export interface FoodPotassiumItem {
   id: string;
   name: string;
-  category: 'fruit' | 'vegetable' | 'other';
+  category: string;
   servingDescription: string;
   servingGrams?: number;
   potassiumMgPerServing: number;
   aliases?: string;
+  isCustom?: boolean;
+  patientId?: string | null;
 }
 
 export interface PatientTrendsResponse {
