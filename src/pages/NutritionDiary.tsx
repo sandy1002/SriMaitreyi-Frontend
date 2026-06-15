@@ -11,7 +11,7 @@ import { ArrowLeft, Utensils, Save, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
 import { DiaryEntryViewDialog } from '@/components/clinical/DiaryEntryViewDialog';
-import { FoodPotassiumInput } from '@/components/clinical/FoodPotassiumInput';
+import { FoodPotassiumInput, type MealFoodSelection } from '@/components/clinical/FoodPotassiumInput';
 import { CustomFoodDialog } from '@/components/clinical/CustomFoodDialog';
 import { nowISTClock } from '@/lib/datetime';
 import type { FoodPotassiumItem, NutritionDiaryEntry, NutritionMealInput } from '@/types';
@@ -24,26 +24,22 @@ const MEAL_TYPES = [
 ] as const;
 
 type MealFormState = {
-  foodName: string;
-  portionSize: string;
+  foods: MealFoodSelection[];
   foodDescription: string;
   mealTakenTime: string;
   protein: string;
   sodium: string;
   phosphorus: string;
-  potassium: string;
   medicalDetails: string;
 };
 
 const emptyMeal = (): MealFormState => ({
-  foodName: '',
-  portionSize: '',
+  foods: [],
   foodDescription: '',
   mealTakenTime: '',
   protein: '',
   sodium: '',
   phosphorus: '',
-  potassium: '',
   medicalDetails: '',
 });
 
@@ -94,36 +90,74 @@ export default function NutritionDiaryPage() {
   useEffect(() => {
     if (!activePatient?.id) return;
     const existing = recentDiaries.find((d) => d.diaryDate === diaryDate);
-    if (!existing) return;
+    if (!existing) {
+      setMeals({
+        breakfast: emptyMeal(),
+        lunch: emptyMeal(),
+        dinner: emptyMeal(),
+        snacks: emptyMeal(),
+      });
+      setNotes('');
+      setMedicineDiary('');
+      return;
+    }
     const next: Record<string, MealFormState> = {
       breakfast: emptyMeal(),
       lunch: emptyMeal(),
       dinner: emptyMeal(),
       snacks: emptyMeal(),
     };
+    const mealsByType: Record<string, typeof existing.meals> = {
+      breakfast: [],
+      lunch: [],
+      dinner: [],
+      snacks: [],
+    };
     for (const m of existing.meals) {
       const key = m.mealType.toLowerCase();
+      if (mealsByType[key]) mealsByType[key].push(m);
+    }
+    for (const key of Object.keys(next)) {
+      const rows = mealsByType[key] ?? [];
+      if (rows.length === 0) continue;
+      const first = rows[0];
       const nutrients = Object.fromEntries(
-        (m.nutrients ?? []).map((n) => [n.nutrientCode, String(n.amount ?? '')])
+        (first.nutrients ?? []).map((n) => [n.nutrientCode, String(n.amount ?? '')])
       );
       let mealTakenTime = '';
-      if (m.mealTakenAt) {
-        const raw = m.mealTakenAt;
+      if (first.mealTakenAt) {
+        const raw = first.mealTakenAt;
         mealTakenTime = raw.includes('T') ? raw.slice(11, 16) : raw.slice(0, 5);
       }
+      const foods: MealFoodSelection[] = rows
+        .filter(
+          (m) =>
+            m.foodName ||
+            m.portionSize ||
+            (m.nutrients ?? []).some((n) => n.nutrientCode === 'POTASSIUM' && n.amount)
+        )
+        .map((m, idx) => {
+          const rowNutrients = Object.fromEntries(
+            (m.nutrients ?? []).map((n) => [n.nutrientCode, n.amount ?? 0])
+          );
+          return {
+            key: m.id ?? `loaded-${key}-${idx}`,
+            name: m.foodName ?? '',
+            portionSize: m.portionSize ?? '',
+            potassiumMg: Number(rowNutrients.POTASSIUM ?? 0),
+          };
+        });
       next[key] = {
-        foodName: m.foodName ?? '',
-        portionSize: m.portionSize ?? '',
-        foodDescription: m.foodDescription ?? '',
+        foods,
+        foodDescription: first.foodDescription ?? '',
         mealTakenTime,
         protein: nutrients.PROTEIN ?? '',
         sodium: nutrients.SODIUM ?? '',
         phosphorus: nutrients.PHOSPHORUS ?? '',
-        potassium: nutrients.POTASSIUM ?? '',
         medicalDetails:
-          typeof m.medicalDetails === 'string'
-            ? m.medicalDetails
-            : JSON.stringify(m.medicalDetails ?? {}),
+          typeof first.medicalDetails === 'string'
+            ? first.medicalDetails
+            : JSON.stringify(first.medicalDetails ?? {}),
       };
     }
     setMeals(next);
@@ -151,13 +185,13 @@ export default function NutritionDiaryPage() {
   };
 
   const buildMealsPayload = (): NutritionMealInput[] => {
-    return MEAL_TYPES.map(({ key, label }) => {
+    const result: NutritionMealInput[] = [];
+    for (const { key, label } of MEAL_TYPES) {
       const m = meals[key];
-      const nutrients = [];
-      if (m.protein) nutrients.push({ nutrient_code: 'PROTEIN', amount: Number(m.protein), unit: 'g' });
-      if (m.sodium) nutrients.push({ nutrient_code: 'SODIUM', amount: Number(m.sodium), unit: 'mg' });
-      if (m.phosphorus) nutrients.push({ nutrient_code: 'PHOSPHORUS', amount: Number(m.phosphorus), unit: 'mg' });
-      if (m.potassium) nutrients.push({ nutrient_code: 'POTASSIUM', amount: Number(m.potassium), unit: 'mg' });
+      const mealTakenAt =
+        m.mealTakenTime.trim() !== ''
+          ? `${diaryDate}T${m.mealTakenTime.trim()}:00+05:30`
+          : undefined;
 
       let medicalDetails: Record<string, unknown> = {};
       if (m.medicalDetails.trim()) {
@@ -168,26 +202,70 @@ export default function NutritionDiaryPage() {
         }
       }
 
-      const mealTakenAt =
-        m.mealTakenTime.trim() !== ''
-          ? `${diaryDate}T${m.mealTakenTime.trim()}:00+05:30`
-          : undefined;
-      return {
+      if (m.foods.length > 0) {
+        m.foods.forEach((food, index) => {
+          const nutrients = [
+            { nutrient_code: 'POTASSIUM', amount: food.potassiumMg, unit: 'mg' },
+          ];
+          if (index === 0 && m.protein) {
+            nutrients.push({ nutrient_code: 'PROTEIN', amount: Number(m.protein), unit: 'g' });
+          }
+          if (index === 0 && m.sodium) {
+            nutrients.push({ nutrient_code: 'SODIUM', amount: Number(m.sodium), unit: 'mg' });
+          }
+          if (index === 0 && m.phosphorus) {
+            nutrients.push({ nutrient_code: 'PHOSPHORUS', amount: Number(m.phosphorus), unit: 'mg' });
+          }
+          result.push({
+            meal_type: key,
+            food_name: food.name || undefined,
+            portion_size: food.portionSize || undefined,
+            meal_taken_at: mealTakenAt,
+            food_description:
+              m.foodDescription ||
+              (m.foods.length > 1 ? `${label}: ${food.name}` : food.name || `${label} — not specified`),
+            nutrition_facts: {
+              protein_g: index === 0 && m.protein ? Number(m.protein) : undefined,
+              sodium_mg: index === 0 && m.sodium ? Number(m.sodium) : undefined,
+              phosphorus_mg: index === 0 && m.phosphorus ? Number(m.phosphorus) : undefined,
+              potassium_mg: food.potassiumMg || undefined,
+            },
+            medical_details: index === 0 ? medicalDetails : {},
+            nutrients,
+          });
+        });
+        continue;
+      }
+
+      const nutrients = [];
+      if (m.protein) nutrients.push({ nutrient_code: 'PROTEIN', amount: Number(m.protein), unit: 'g' });
+      if (m.sodium) nutrients.push({ nutrient_code: 'SODIUM', amount: Number(m.sodium), unit: 'mg' });
+      if (m.phosphorus) nutrients.push({ nutrient_code: 'PHOSPHORUS', amount: Number(m.phosphorus), unit: 'mg' });
+
+      const hasOtherData =
+        m.foodDescription.trim() ||
+        m.protein ||
+        m.sodium ||
+        m.phosphorus ||
+        m.medicalDetails.trim() ||
+        mealTakenAt;
+
+      if (!hasOtherData) continue;
+
+      result.push({
         meal_type: key,
-        food_name: m.foodName || undefined,
-        portion_size: m.portionSize || undefined,
         meal_taken_at: mealTakenAt,
         food_description: m.foodDescription || `${label} — not specified`,
         nutrition_facts: {
           protein_g: m.protein ? Number(m.protein) : undefined,
           sodium_mg: m.sodium ? Number(m.sodium) : undefined,
           phosphorus_mg: m.phosphorus ? Number(m.phosphorus) : undefined,
-          potassium_mg: m.potassium ? Number(m.potassium) : undefined,
         },
         medical_details: medicalDetails,
         nutrients,
-      };
-    });
+      });
+    }
+    return result;
   };
 
   const handleSave = async () => {
@@ -236,7 +314,7 @@ export default function NutritionDiaryPage() {
                   )}
                 </CardTitle>
                 <CardDescription>
-                  Choose from your saved food list or search. Times shown in IST.
+                  Search and add multiple foods per meal. Potassium totals automatically.
                 </CardDescription>
                 <p className="text-xs text-muted-foreground">Current time (IST): {nowISTClock()}</p>
               </div>
@@ -285,12 +363,8 @@ export default function NutritionDiaryPage() {
                     <FoodPotassiumInput
                       patientId={targetPatientId}
                       foodItems={foodItems}
-                      foodName={m.foodName}
-                      portionSize={m.portionSize}
-                      potassium={m.potassium}
-                      onFoodNameChange={(v) => updateMeal(key, { foodName: v })}
-                      onPortionSizeChange={(v) => updateMeal(key, { portionSize: v })}
-                      onPotassiumChange={(v) => updateMeal(key, { potassium: v })}
+                      selectedFoods={m.foods}
+                      onSelectedFoodsChange={(foods) => updateMeal(key, { foods })}
                     />
                     <div className="sm:col-span-2">
                       <Label>Food description / portions</Label>
@@ -421,22 +495,29 @@ export default function NutritionDiaryPage() {
                   <p className="font-medium">{previewEntry.totalPotassiumMg ?? '—'} mg</p>
                 </div>
               </div>
-              {previewEntry.meals.map((meal) => (
-                <div key={meal.id ?? meal.mealType} className="border rounded-lg p-3 space-y-1">
+              {previewEntry.meals.map((meal) => {
+                const k = (meal.nutrients ?? []).find((n) => n.nutrientCode === 'POTASSIUM');
+                return (
+                <div key={meal.id ?? meal.mealType + (meal.foodName ?? '')} className="border rounded-lg p-3 space-y-1">
                   <p className="font-medium capitalize">{meal.mealType}</p>
                   <p>{meal.foodName || meal.foodDescription || '—'}</p>
                   {meal.portionSize && (
                     <p className="text-muted-foreground">Portion: {meal.portionSize}</p>
                   )}
-                  {(meal.nutrients ?? []).length > 0 && (
+                  {k && (
+                    <p className="text-muted-foreground text-xs">Potassium: {k.amount ?? '—'} {k.unit}</p>
+                  )}
+                  {(meal.nutrients ?? []).filter((n) => n.nutrientCode !== 'POTASSIUM').length > 0 && (
                     <p className="text-muted-foreground text-xs">
                       {(meal.nutrients ?? [])
+                        .filter((n) => n.nutrientCode !== 'POTASSIUM')
                         .map((n) => `${n.nutrientCode}: ${n.amount ?? '—'} ${n.unit}`)
                         .join(' · ')}
                     </p>
                   )}
                 </div>
-              ))}
+              );
+              })}
               {previewEntry.medicineDiary && (
                 <div>
                   <p className="font-medium">Medicine diary</p>
