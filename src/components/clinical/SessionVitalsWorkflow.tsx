@@ -55,9 +55,17 @@ export function SessionVitalsWorkflow({
     }
     try {
       const data = await api.getVitalsWorkflow(sessionId);
+      if (data.workflowActive === false) {
+        setWorkflow({
+          readings: data.readings ?? initialReadings,
+          slots: [],
+          nextDue: null,
+        });
+        return;
+      }
       setWorkflow(data);
       if (data.currentTime) {
-        setDisplayTime(formatDateTime(data.currentTime));
+        setDisplayTime(formatISTDateTime(data.currentTime));
       }
     } catch {
       setWorkflow(null);
@@ -120,7 +128,7 @@ export function SessionVitalsWorkflow({
     }
   };
 
-  if (isCompleted) {
+  if (isCompleted || workflow?.workflowActive === false) {
     const readings = workflow?.readings?.length ? workflow.readings : initialReadings;
     return readings.length ? (
       <Card className="shadow-clinical">
