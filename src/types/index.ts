@@ -78,6 +78,7 @@ export interface VitalsWorkflowState {
     label: string;
     dueAt?: string;
   } | null;
+  workflowActive?: boolean;
 }
 
 export interface PostDialysisAssessment {

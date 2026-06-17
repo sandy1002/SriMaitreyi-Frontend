@@ -586,7 +586,7 @@ export default function SessionDetail() {
 
         <SessionVitalsWorkflow
           sessionId={session.id}
-          isCompleted={!isInProgress}
+          isCompleted={isCompleted || isPostDialysis}
           initialReadings={vitalReadings}
           onAlertsUpdated={() => loadSessionDetails(session.id)}
         />

@@ -71,6 +71,7 @@ function mapVitalsWorkflow(raw: Record<string, unknown>) {
       label: String(s.label),
       status: s.status as 'recorded' | 'pending',
     })),
+    workflowActive: raw.workflow_active as boolean | undefined,
     nextDue: raw.next_due
       ? {
           intervalMinutes: Number((raw.next_due as Record<string, unknown>).interval_minutes),
