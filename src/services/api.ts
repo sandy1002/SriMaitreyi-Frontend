@@ -311,11 +311,23 @@ export async function createPatient(payload: {
   name: string;
   age?: number;
   gender?: string;
-}) {
+  login_username?: string;
+  login_password?: string;
+}): Promise<{
+  id: string;
+  name: string;
+  loginUsername?: string;
+}> {
   return apiRequest('/patients/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      name: payload.name,
+      age: payload.age,
+      gender: payload.gender,
+      login_username: payload.login_username,
+      login_password: payload.login_password,
+    }),
   });
 }
 

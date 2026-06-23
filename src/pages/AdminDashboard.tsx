@@ -70,6 +70,8 @@ export default function AdminDashboard() {
   const [newName, setNewName] = useState('');
   const [newAge, setNewAge] = useState('');
   const [newGender, setNewGender] = useState<string>('');
+  const [newLoginUsername, setNewLoginUsername] = useState('');
+  const [newLoginPassword, setNewLoginPassword] = useState('');
   const [addingPatient, setAddingPatient] = useState(false);
   const [reportPatientId, setReportPatientId] = useState('');
 
@@ -102,17 +104,31 @@ export default function AdminDashboard() {
       toast({ title: 'Name required', variant: 'destructive' });
       return;
     }
+    if (newLoginPassword && newLoginPassword.length < 4) {
+      toast({ title: 'Password must be at least 4 characters', variant: 'destructive' });
+      return;
+    }
     setAddingPatient(true);
     try {
-      await createPatient({
+      const created = await createPatient({
         name: newName.trim(),
         age: newAge ? Number(newAge) : undefined,
         gender: newGender || undefined,
+        login_username: newLoginUsername.trim() || undefined,
+        login_password: newLoginPassword || undefined,
       });
-      toast({ title: 'Patient added', description: `${newName} is now registered.` });
+      const loginHint = created.loginUsername
+        ? ` Login username: ${created.loginUsername}`
+        : '';
+      toast({
+        title: 'Patient added',
+        description: `${newName} is now registered.${loginHint}`,
+      });
       setNewName('');
       setNewAge('');
       setNewGender('');
+      setNewLoginUsername('');
+      setNewLoginPassword('');
       setAddDialogOpen(false);
       await refreshPatients();
       await load();
@@ -196,7 +212,7 @@ export default function AdminDashboard() {
                 <DialogHeader>
                   <DialogTitle>Add new patient</DialogTitle>
                   <DialogDescription>
-                    Register a patient so they can sign in from the Patient persona on the login page.
+                    Register a patient with portal login credentials for the Patient sign-in page.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-2">
@@ -208,6 +224,29 @@ export default function AdminDashboard() {
                       onChange={(e) => setNewName(e.target.value)}
                       placeholder="e.g. Anita Sharma"
                     />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="ploginUser">Login username</Label>
+                      <Input
+                        id="ploginUser"
+                        value={newLoginUsername}
+                        onChange={(e) => setNewLoginUsername(e.target.value)}
+                        placeholder="Auto-generated if blank"
+                        autoComplete="off"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ploginPass">Login password</Label>
+                      <Input
+                        id="ploginPass"
+                        type="password"
+                        value={newLoginPassword}
+                        onChange={(e) => setNewLoginPassword(e.target.value)}
+                        placeholder="Default: patient123"
+                        autoComplete="new-password"
+                      />
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
