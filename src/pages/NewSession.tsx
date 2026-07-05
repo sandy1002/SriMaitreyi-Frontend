@@ -28,9 +28,7 @@ import {
   Calculator,
   AlertTriangle,
   Clock,
-  CircleHelp,
 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +43,7 @@ import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
 import { formatUfGoal } from '@/lib/clinicalUnits';
 import { UfGoalFormulaHint } from '@/components/clinical/UfGoalFormulaHint';
+import { InterdialyticSessionSummary } from '@/components/clinical/InterdialyticSessionSummary';
 import { nowISTClock } from '@/lib/datetime';
 import type {
   DialysisSession,
@@ -437,108 +436,13 @@ export default function NewSession() {
                 </Card>
               )}
 
-              {interdialyticFluids && (
-                <Card className="border-sky-500/30 bg-sky-500/5">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      Interdialytic fluid intake
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            className="inline-flex rounded-full p-0.5 text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            aria-label="About interdialytic fluid intake"
-                          >
-                            <CircleHelp className="h-4 w-4" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" align="start" className="max-w-[300px] text-xs leading-relaxed">
-                          <p>
-                            Totals from the renal fluid diary between last session complete (
-                            {interdialyticFluids.lastSessionDate ?? '—'}) and new session start (
-                            {sessionDate}). These are fluids taken between dialysis sessions, not oral or IV
-                            volumes entered for this run below.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-sm space-y-3">
-                    {interdialyticFluids.dailyEntries.length === 0 ? (
-                      <p className="text-muted-foreground">No fluid diary entries in this period.</p>
-                    ) : (
-                      <>
-                        <p className="font-medium">
-                          Total: {interdialyticFluids.totalLiters} L (
-                          {interdialyticFluids.totalMl} ml) · oral{' '}
-                          {interdialyticFluids.totalOralMl} ml · IV {interdialyticFluids.totalIvMl} ml
-                        </p>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {sessionDefaults?.interdialyticNutritionPotassium && (
-                <Card className="border-amber-500/30 bg-amber-500/5">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      Interdialytic potassium intake
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            className="inline-flex rounded-full p-0.5 text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            aria-label="About interdialytic potassium intake"
-                          >
-                            <CircleHelp className="h-4 w-4" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" align="start" className="max-w-[300px] text-xs leading-relaxed">
-                          <p>
-                            Dietary potassium (mg) from nutrition diary meals between last session complete (
-                            {sessionDefaults.interdialyticNutritionPotassium.lastSessionCompletedAt
-                              ? new Date(
-                                  sessionDefaults.interdialyticNutritionPotassium.lastSessionCompletedAt
-                                ).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
-                              : sessionDefaults.interdialyticNutritionPotassium.fromDate ?? '—'}
-                            ) and new session start ({sessionDate}). Meals with a logged time are counted by
-                            that time; otherwise the diary date is used.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-sm space-y-3">
-                    {(sessionDefaults.interdialyticNutritionPotassium.mealsInWindow?.length ?? 0) ===
-                    0 ? (
-                      <p className="text-muted-foreground">No nutrition diary entries in this period.</p>
-                    ) : (
-                      <>
-                        <p className="font-medium">
-                          Total dietary K:{' '}
-                          {sessionDefaults.interdialyticNutritionPotassium.totalPotassiumMg} mg
-                        </p>
-                        {(sessionDefaults.interdialyticNutritionPotassium.mealsInWindow ?? []).map(
-                          (m, i) => (
-                            <div
-                              key={i}
-                              className="flex justify-between gap-2 text-muted-foreground border rounded-md p-2"
-                            >
-                              <span>
-                                {m.diaryDate} · {m.mealType} — {m.foodName ?? 'meal'}
-                                {m.mealTakenAt ? ` @ ${m.mealTakenAt}` : ''}
-                              </span>
-                              <span className="text-foreground font-medium shrink-0">
-                                {m.potassiumMg} mg
-                              </span>
-                            </div>
-                          )
-                        )}
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
+              {(interdialyticFluids || sessionDefaults?.interdialyticNutritionPotassium) && (
+                <InterdialyticSessionSummary
+                  fluids={interdialyticFluids}
+                  potassium={sessionDefaults?.interdialyticNutritionPotassium ?? null}
+                  sessionDate={sessionDate}
+                  compact
+                />
               )}
 
               <div className="space-y-2">

@@ -406,6 +406,25 @@ export async function fetchSessionDefaults(
   };
 }
 
+function mapFoodPotassiumItem(item: Record<string, unknown>) {
+  return {
+    id: String(item.id),
+    name: String(item.name),
+    category: String(item.category),
+    servingDescription: String(item.serving_description ?? ''),
+    servingGrams: item.serving_grams as number | undefined,
+    potassiumMgPerServing: Number(item.potassium_mg_per_serving),
+    proteinGPerServing: item.protein_g_per_serving as number | null | undefined,
+    kcalPerServing: item.kcal_per_serving as number | null | undefined,
+    potassiumMgPer100g: item.potassium_mg_per_100g as number | null | undefined,
+    proteinGPer100g: item.protein_g_per_100g as number | null | undefined,
+    kcalPer100g: item.kcal_per_100g as number | null | undefined,
+    aliases: item.aliases as string | undefined,
+    isCustom: Boolean(item.is_custom),
+    patientId: (item.patient_id as string) ?? null,
+  };
+}
+
 export async function fetchFoodPotassiumList(
   patientId?: string,
   limit = 200
@@ -413,17 +432,7 @@ export async function fetchFoodPotassiumList(
   const params = new URLSearchParams({ limit: String(limit) });
   if (patientId) params.set('patient_id', patientId);
   const data = await apiRequest(`/food-items?${params.toString()}`);
-  return (data.items ?? []).map((item: Record<string, unknown>) => ({
-    id: String(item.id),
-    name: String(item.name),
-    category: String(item.category),
-    servingDescription: String(item.serving_description ?? ''),
-    servingGrams: item.serving_grams as number | undefined,
-    potassiumMgPerServing: Number(item.potassium_mg_per_serving),
-    aliases: item.aliases as string | undefined,
-    isCustom: Boolean(item.is_custom),
-    patientId: (item.patient_id as string) ?? null,
-  }));
+  return (data.items ?? []).map((item: Record<string, unknown>) => mapFoodPotassiumItem(item));
 }
 
 export async function searchFoodPotassiumItems(
@@ -436,23 +445,15 @@ export async function searchFoodPotassiumItems(
   if (category) params.set('category', category);
   if (patientId) params.set('patient_id', patientId);
   const data = await apiRequest(`/food-items?${params.toString()}`);
-  return (data.items ?? []).map((item: Record<string, unknown>) => ({
-    id: String(item.id),
-    name: String(item.name),
-    category: String(item.category),
-    servingDescription: String(item.serving_description ?? ''),
-    servingGrams: item.serving_grams as number | undefined,
-    potassiumMgPerServing: Number(item.potassium_mg_per_serving),
-    aliases: item.aliases as string | undefined,
-    isCustom: Boolean(item.is_custom),
-    patientId: (item.patient_id as string) ?? null,
-  }));
+  return (data.items ?? []).map((item: Record<string, unknown>) => mapFoodPotassiumItem(item));
 }
 
 export async function createCustomFoodPotassiumItem(payload: {
   patientId: string;
   name: string;
   potassiumMgPerServing: number;
+  proteinGPerServing?: number;
+  kcalPerServing?: number;
   servingDescription?: string;
   servingGrams?: number;
 }): Promise<import('@/types').FoodPotassiumItem> {
@@ -463,22 +464,46 @@ export async function createCustomFoodPotassiumItem(payload: {
       patient_id: payload.patientId,
       name: payload.name,
       potassium_mg_per_serving: payload.potassiumMgPerServing,
-      serving_description: payload.servingDescription ?? '1 serving',
-      serving_grams: payload.servingGrams,
+      protein_g_per_serving: payload.proteinGPerServing,
+      kcal_per_serving: payload.kcalPerServing,
+      serving_description: payload.servingDescription ?? '100 g',
+      serving_grams: payload.servingGrams ?? 100,
       category: 'custom',
     }),
   });
   const item = data.item as Record<string, unknown>;
-  return {
-    id: String(item.id),
-    name: String(item.name),
-    category: String(item.category),
-    servingDescription: String(item.serving_description ?? ''),
-    servingGrams: item.serving_grams as number | undefined,
-    potassiumMgPerServing: Number(item.potassium_mg_per_serving),
-    isCustom: true,
-    patientId: (item.patient_id as string) ?? null,
-  };
+  return mapFoodPotassiumItem(item);
+}
+
+export async function updateFoodPotassiumItem(
+  foodId: string,
+  payload: {
+    patientId?: string;
+    editGlobal?: boolean;
+    name?: string;
+    potassiumMgPerServing?: number;
+    proteinGPerServing?: number;
+    kcalPerServing?: number;
+    servingDescription?: string;
+    servingGrams?: number;
+  }
+): Promise<import('@/types').FoodPotassiumItem> {
+  const data = await apiRequest(`/food-items/${foodId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      patient_id: payload.patientId,
+      edit_global: payload.editGlobal ?? false,
+      name: payload.name,
+      potassium_mg_per_serving: payload.potassiumMgPerServing,
+      protein_g_per_serving: payload.proteinGPerServing,
+      kcal_per_serving: payload.kcalPerServing,
+      serving_description: payload.servingDescription,
+      serving_grams: payload.servingGrams,
+    }),
+  });
+  const item = data.item as Record<string, unknown>;
+  return mapFoodPotassiumItem(item);
 }
 
 export async function calculateFoodPotassium(payload: {
@@ -487,7 +512,12 @@ export async function calculateFoodPotassium(payload: {
   portionSize?: string;
   servings?: number;
   patientId?: string;
-}): Promise<{ potassiumMg: number; servingDescription: string }> {
+}): Promise<{
+  potassiumMg: number;
+  proteinG: number | null;
+  kcal: number | null;
+  servingDescription: string;
+}> {
   const data = await apiRequest('/food-items/calculate-potassium', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -501,6 +531,8 @@ export async function calculateFoodPotassium(payload: {
   });
   return {
     potassiumMg: Number(data.potassium_mg),
+    proteinG: data.protein_g != null ? Number(data.protein_g) : null,
+    kcal: data.kcal != null ? Number(data.kcal) : null,
     servingDescription: String(data.serving_description ?? ''),
   };
 }
@@ -801,6 +833,7 @@ function mapNutritionDiary(raw: Record<string, unknown>) {
     totalSodiumMg: raw.total_sodium_mg as number | null | undefined,
     totalPhosphorusMg: raw.total_phosphorus_mg as number | null | undefined,
     totalPotassiumMg: raw.total_potassium_mg as number | null | undefined,
+    totalKcal: raw.total_kcal as number | null | undefined,
     meals: ((raw.meals as Record<string, unknown>[]) ?? []).map((m) => ({
       id: String(m.id),
       mealType: String(m.meal_type),

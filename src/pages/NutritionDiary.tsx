@@ -1,27 +1,48 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { usePatientDiaryPage } from '@/hooks/usePatientDiaryPage';
+import { useAuth } from '@/context/AuthContext';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Utensils, Save, Plus } from 'lucide-react';
+import { ArrowLeft, Utensils, Save, Plus, TrendingUp, Settings2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
 import { DiaryEntryViewDialog } from '@/components/clinical/DiaryEntryViewDialog';
 import { FoodPotassiumInput, type MealFoodSelection } from '@/components/clinical/FoodPotassiumInput';
-import { CustomFoodDialog } from '@/components/clinical/CustomFoodDialog';
+import { FoodItemFormDialog } from '@/components/clinical/FoodItemFormDialog';
+import { FoodCatalogDialog } from '@/components/clinical/FoodCatalogDialog';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { nowISTClock } from '@/lib/datetime';
 import type { FoodPotassiumItem, NutritionDiaryEntry, NutritionMealInput } from '@/types';
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: 'Breakfast' },
+  { key: 'pre_lunch', label: 'Pre Lunch' },
   { key: 'lunch', label: 'Lunch' },
   { key: 'dinner', label: 'Dinner' },
-  { key: 'snacks', label: 'Snacks & Other' },
+  { key: 'snack', label: 'Snack' },
+  { key: 'other', label: 'Other' },
 ] as const;
+
+const MEAL_TYPE_KEYS = MEAL_TYPES.map((m) => m.key);
+
+const LEGACY_MEAL_TYPE_ALIASES: Record<string, (typeof MEAL_TYPE_KEYS)[number]> = {
+  snacks: 'snack',
+};
+
+function normalizeMealTypeKey(type: string): string {
+  const key = type.toLowerCase();
+  return LEGACY_MEAL_TYPE_ALIASES[key] ?? key;
+}
+
+function emptyMealsState(): Record<string, MealFormState> {
+  return Object.fromEntries(MEAL_TYPE_KEYS.map((k) => [k, emptyMeal()]));
+}
 
 type MealFormState = {
   foods: MealFoodSelection[];
@@ -43,6 +64,28 @@ const emptyMeal = (): MealFormState => ({
   medicalDetails: '',
 });
 
+const nutritionChartConfig = {
+  potassium: { label: 'K (mg)', color: 'hsl(var(--chart-1))' },
+  protein: { label: 'Protein (g)', color: 'hsl(var(--chart-2))' },
+  kcal: { label: 'Kcal', color: 'hsl(var(--chart-3))' },
+};
+
+function sumFoodNutrients(foods: MealFoodSelection[]) {
+  return foods.reduce(
+    (acc, f) => ({
+      potassium: acc.potassium + (f.potassiumMg || 0),
+      protein: acc.protein + (f.proteinG || 0),
+      kcal: acc.kcal + (f.kcal || 0),
+    }),
+    { potassium: 0, protein: 0, kcal: 0 }
+  );
+}
+
+function formatNutrientTotal(value: number, decimals = 0) {
+  if (decimals === 0) return String(Math.round(value));
+  return String(Math.round(value * 10) / 10);
+}
+
 export default function NutritionDiaryPage() {
   const {
     activePatient,
@@ -54,16 +97,13 @@ export default function NutritionDiaryPage() {
     patientMismatch,
     isTechnician,
   } = usePatientDiaryPage();
+  const { isStaff, isAdmin } = useAuth();
+  const canEditGlobalCatalog = isStaff || isAdmin;
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const [diaryDate, setDiaryDate] = useState(new Date().toISOString().split('T')[0]);
-  const [meals, setMeals] = useState<Record<string, MealFormState>>({
-    breakfast: emptyMeal(),
-    lunch: emptyMeal(),
-    dinner: emptyMeal(),
-    snacks: emptyMeal(),
-  });
+  const [meals, setMeals] = useState<Record<string, MealFormState>>(emptyMealsState);
   const [notes, setNotes] = useState('');
   const [medicineDiary, setMedicineDiary] = useState('');
   const [recentDiaries, setRecentDiaries] = useState<NutritionDiaryEntry[]>([]);
@@ -71,6 +111,7 @@ export default function NutritionDiaryPage() {
   const [saving, setSaving] = useState(false);
   const [foodItems, setFoodItems] = useState<FoodPotassiumItem[]>([]);
   const [showAddFoodDialog, setShowAddFoodDialog] = useState(false);
+  const [showFoodCatalog, setShowFoodCatalog] = useState(false);
 
   const loadFoodItems = async (patientId: string) => {
     try {
@@ -91,33 +132,20 @@ export default function NutritionDiaryPage() {
     if (!activePatient?.id) return;
     const existing = recentDiaries.find((d) => d.diaryDate === diaryDate);
     if (!existing) {
-      setMeals({
-        breakfast: emptyMeal(),
-        lunch: emptyMeal(),
-        dinner: emptyMeal(),
-        snacks: emptyMeal(),
-      });
+      setMeals(emptyMealsState());
       setNotes('');
       setMedicineDiary('');
       return;
     }
-    const next: Record<string, MealFormState> = {
-      breakfast: emptyMeal(),
-      lunch: emptyMeal(),
-      dinner: emptyMeal(),
-      snacks: emptyMeal(),
-    };
-    const mealsByType: Record<string, typeof existing.meals> = {
-      breakfast: [],
-      lunch: [],
-      dinner: [],
-      snacks: [],
-    };
+    const next = emptyMealsState();
+    const mealsByType: Record<string, typeof existing.meals> = Object.fromEntries(
+      MEAL_TYPE_KEYS.map((k) => [k, [] as typeof existing.meals])
+    );
     for (const m of existing.meals) {
-      const key = m.mealType.toLowerCase();
+      const key = normalizeMealTypeKey(m.mealType);
       if (mealsByType[key]) mealsByType[key].push(m);
     }
-    for (const key of Object.keys(next)) {
+    for (const key of MEAL_TYPE_KEYS) {
       const rows = mealsByType[key] ?? [];
       if (rows.length === 0) continue;
       const first = rows[0];
@@ -145,13 +173,19 @@ export default function NutritionDiaryPage() {
             name: m.foodName ?? '',
             portionSize: m.portionSize ?? '',
             potassiumMg: Number(rowNutrients.POTASSIUM ?? 0),
+            proteinG: Number(rowNutrients.PROTEIN ?? 0),
+            kcal: Number(rowNutrients.ENERGY ?? 0),
           };
         });
+      const foodTotals = sumFoodNutrients(foods);
       next[key] = {
         foods,
         foodDescription: first.foodDescription ?? '',
         mealTakenTime,
-        protein: nutrients.PROTEIN ?? '',
+        protein:
+          foods.length > 0
+            ? formatNutrientTotal(foodTotals.protein, 1)
+            : nutrients.PROTEIN ?? '',
         sodium: nutrients.SODIUM ?? '',
         phosphorus: nutrients.PHOSPHORUS ?? '',
         medicalDetails:
@@ -164,6 +198,34 @@ export default function NutritionDiaryPage() {
     setNotes(existing.notesEndOfDay ?? '');
     setMedicineDiary(existing.medicineDiary ?? '');
   }, [diaryDate, recentDiaries, activePatient?.id]);
+
+  const editingDailyTotals = useMemo(() => {
+    let potassium = 0;
+    let protein = 0;
+    let kcal = 0;
+    for (const key of MEAL_TYPE_KEYS) {
+      const m = meals[key];
+      const foodTotals = sumFoodNutrients(m.foods);
+      potassium += foodTotals.potassium;
+      protein += foodTotals.protein;
+      kcal += foodTotals.kcal;
+      if (m.foods.length === 0 && m.protein) protein += Number(m.protein) || 0;
+    }
+    return { potassium, protein, kcal };
+  }, [meals]);
+
+  const nutritionTrendData = useMemo(() => {
+    return [...recentDiaries]
+      .sort((a, b) => a.diaryDate.localeCompare(b.diaryDate))
+      .slice(-14)
+      .map((d) => ({
+        label: d.diaryDate.slice(5),
+        potassium: d.totalPotassiumMg ?? 0,
+        protein: d.totalProteinG ?? 0,
+        kcal: d.totalKcal ?? 0,
+        isCurrent: d.diaryDate === diaryDate,
+      }));
+  }, [recentDiaries, diaryDate]);
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (staffMissingRoute) return <Navigate to="/staff" replace />;
@@ -182,6 +244,14 @@ export default function NutritionDiaryPage() {
 
   const updateMeal = (type: string, patch: Partial<MealFormState>) => {
     setMeals((prev) => ({ ...prev, [type]: { ...prev[type], ...patch } }));
+  };
+
+  const handleFoodsChange = (mealKey: string, foods: MealFoodSelection[]) => {
+    const totals = sumFoodNutrients(foods);
+    updateMeal(mealKey, {
+      foods,
+      protein: foods.length > 0 ? formatNutrientTotal(totals.protein, 1) : meals[mealKey].protein,
+    });
   };
 
   const buildMealsPayload = (): NutritionMealInput[] => {
@@ -207,8 +277,11 @@ export default function NutritionDiaryPage() {
           const nutrients = [
             { nutrient_code: 'POTASSIUM', amount: food.potassiumMg, unit: 'mg' },
           ];
-          if (index === 0 && m.protein) {
-            nutrients.push({ nutrient_code: 'PROTEIN', amount: Number(m.protein), unit: 'g' });
+          if (food.proteinG) {
+            nutrients.push({ nutrient_code: 'PROTEIN', amount: food.proteinG, unit: 'g' });
+          }
+          if (food.kcal) {
+            nutrients.push({ nutrient_code: 'ENERGY', amount: food.kcal, unit: 'kcal' });
           }
           if (index === 0 && m.sodium) {
             nutrients.push({ nutrient_code: 'SODIUM', amount: Number(m.sodium), unit: 'mg' });
@@ -225,10 +298,11 @@ export default function NutritionDiaryPage() {
               m.foodDescription ||
               (m.foods.length > 1 ? `${label}: ${food.name}` : food.name || `${label} — not specified`),
             nutrition_facts: {
-              protein_g: index === 0 && m.protein ? Number(m.protein) : undefined,
+              protein_g: food.proteinG || undefined,
               sodium_mg: index === 0 && m.sodium ? Number(m.sodium) : undefined,
               phosphorus_mg: index === 0 && m.phosphorus ? Number(m.phosphorus) : undefined,
               potassium_mg: food.potassiumMg || undefined,
+              kcal: food.kcal || undefined,
             },
             medical_details: index === 0 ? medicalDetails : {},
             nutrients,
@@ -302,6 +376,73 @@ export default function NutritionDiaryPage() {
           {isTechnician ? 'Back to staff workspace' : 'Back to dashboard'}
         </Button>
 
+        {nutritionTrendData.length > 1 && (
+          <Card className="shadow-clinical">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Nutrition trends
+              </CardTitle>
+              <CardDescription>
+                Daily potassium, protein, and kcal from saved diary entries. K limit guideline: 2000 mg/day.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={nutritionChartConfig} className="h-[240px] w-full">
+                <BarChart data={nutritionTrendData} margin={{ left: 4, right: 4, top: 8, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
+                  <YAxis yAxisId="left" tickLine={false} axisLine={false} fontSize={11} width={42} />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tickLine={false}
+                    axisLine={false}
+                    fontSize={11}
+                    width={42}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar
+                    yAxisId="left"
+                    dataKey="potassium"
+                    fill="var(--color-potassium)"
+                    radius={[3, 3, 0, 0]}
+                    name="K (mg)"
+                  />
+                  <Bar
+                    yAxisId="right"
+                    dataKey="protein"
+                    fill="var(--color-protein)"
+                    radius={[3, 3, 0, 0]}
+                    name="Protein (g)"
+                  />
+                  <Bar
+                    yAxisId="right"
+                    dataKey="kcal"
+                    fill="var(--color-kcal)"
+                    radius={[3, 3, 0, 0]}
+                    name="Kcal"
+                  />
+                </BarChart>
+              </ChartContainer>
+              <div className="flex flex-wrap gap-4 mt-3 text-xs text-muted-foreground justify-center">
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[hsl(var(--chart-1))]" />
+                  Potassium (mg)
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[hsl(var(--chart-2))]" />
+                  Protein (g)
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[hsl(var(--chart-3))]" />
+                  Kcal
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="shadow-clinical">
           <CardHeader>
             <div className="flex items-start justify-between gap-3">
@@ -314,39 +455,69 @@ export default function NutritionDiaryPage() {
                   )}
                 </CardTitle>
                 <CardDescription>
-                  Search and add multiple foods per meal. Potassium totals automatically.
+                  Search and add multiple foods per meal. Potassium, protein, and kcal auto-calculate from portions.
                 </CardDescription>
                 <p className="text-xs text-muted-foreground">Current time (IST): {nowISTClock()}</p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="shrink-0"
-                onClick={() => setShowAddFoodDialog(true)}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Add food
-              </Button>
+              <div className="flex shrink-0 flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFoodCatalog(true)}
+                >
+                  <Settings2 className="h-4 w-4 mr-1" />
+                  Manage foods
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddFoodDialog(true)}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add food
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="max-w-xs">
-              <Label htmlFor="diaryDate">Date</Label>
-              <Input
-                id="diaryDate"
-                type="date"
-                value={diaryDate}
-                onChange={(e) => setDiaryDate(e.target.value)}
-              />
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="max-w-xs">
+                <Label htmlFor="diaryDate">Date</Label>
+                <Input
+                  id="diaryDate"
+                  type="date"
+                  value={diaryDate}
+                  onChange={(e) => setDiaryDate(e.target.value)}
+                />
+              </div>
+              <div className="flex-1 min-w-[200px] rounded-lg border bg-muted/30 px-4 py-2.5">
+                <p className="text-xs text-muted-foreground mb-1">Today&apos;s running totals (from form)</p>
+                <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm font-medium">
+                  <span>K: {formatNutrientTotal(editingDailyTotals.potassium)} mg</span>
+                  <span>Protein: {formatNutrientTotal(editingDailyTotals.protein, 1)} g</span>
+                  <span>Kcal: {formatNutrientTotal(editingDailyTotals.kcal)}</span>
+                </div>
+              </div>
             </div>
 
             {MEAL_TYPES.map(({ key, label }) => {
               const m = meals[key];
+              const mealFoodTotals = sumFoodNutrients(m.foods);
               return (
                 <Card key={key} className="border-dashed">
                   <CardHeader className="py-3">
-                    <CardTitle className="text-base">{label}</CardTitle>
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="text-base">{label}</CardTitle>
+                      {m.foods.length > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          K {formatNutrientTotal(mealFoodTotals.potassium)} mg · Protein{' '}
+                          {formatNutrientTotal(mealFoodTotals.protein, 1)} g · Kcal{' '}
+                          {formatNutrientTotal(mealFoodTotals.kcal)}
+                        </span>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent className="grid gap-3 sm:grid-cols-2">
                     <div>
@@ -364,7 +535,7 @@ export default function NutritionDiaryPage() {
                       patientId={targetPatientId}
                       foodItems={foodItems}
                       selectedFoods={m.foods}
-                      onSelectedFoodsChange={(foods) => updateMeal(key, { foods })}
+                      onSelectedFoodsChange={(foods) => handleFoodsChange(key, foods)}
                     />
                     <div className="sm:col-span-2">
                       <Label>Food description / portions</Label>
@@ -375,11 +546,13 @@ export default function NutritionDiaryPage() {
                       />
                     </div>
                     <div>
-                      <Label>Protein (g)</Label>
+                      <Label>Protein (g){m.foods.length > 0 ? ' — auto from foods' : ''}</Label>
                       <Input
                         type="number"
                         value={m.protein}
                         onChange={(e) => updateMeal(key, { protein: e.target.value })}
+                        readOnly={m.foods.length > 0}
+                        className={m.foods.length > 0 ? 'bg-muted/50' : undefined}
                       />
                     </div>
                     <div>
@@ -458,7 +631,8 @@ export default function NutritionDiaryPage() {
                   >
                     <span>{d.diaryDate}</span>
                     <span className="text-muted-foreground">
-                      K {d.totalPotassiumMg ?? '—'} mg · {d.alerts?.length ?? 0} alert(s)
+                      K {d.totalPotassiumMg ?? '—'} mg · Protein {d.totalProteinG ?? '—'} g · Kcal{' '}
+                      {d.totalKcal ?? '—'}
                       {isSelected ? ' · in form' : ''}
                     </span>
                   </div>
@@ -483,6 +657,10 @@ export default function NutritionDiaryPage() {
                   <p className="font-medium">{previewEntry.totalProteinG ?? '—'} g</p>
                 </div>
                 <div>
+                  <span className="text-muted-foreground">Kcal</span>
+                  <p className="font-medium">{previewEntry.totalKcal ?? '—'}</p>
+                </div>
+                <div>
                   <span className="text-muted-foreground">Sodium</span>
                   <p className="font-medium">{previewEntry.totalSodiumMg ?? '—'} mg</p>
                 </div>
@@ -496,27 +674,30 @@ export default function NutritionDiaryPage() {
                 </div>
               </div>
               {previewEntry.meals.map((meal) => {
-                const k = (meal.nutrients ?? []).find((n) => n.nutrientCode === 'POTASSIUM');
+                const nutrients = Object.fromEntries(
+                  (meal.nutrients ?? []).map((n) => [n.nutrientCode, n])
+                );
                 return (
-                <div key={meal.id ?? meal.mealType + (meal.foodName ?? '')} className="border rounded-lg p-3 space-y-1">
-                  <p className="font-medium capitalize">{meal.mealType}</p>
-                  <p>{meal.foodName || meal.foodDescription || '—'}</p>
-                  {meal.portionSize && (
-                    <p className="text-muted-foreground">Portion: {meal.portionSize}</p>
-                  )}
-                  {k && (
-                    <p className="text-muted-foreground text-xs">Potassium: {k.amount ?? '—'} {k.unit}</p>
-                  )}
-                  {(meal.nutrients ?? []).filter((n) => n.nutrientCode !== 'POTASSIUM').length > 0 && (
+                  <div
+                    key={meal.id ?? meal.mealType + (meal.foodName ?? '')}
+                    className="border rounded-lg p-3 space-y-1"
+                  >
+                    <p className="font-medium capitalize">{meal.mealType.replace('_', ' ')}</p>
+                    <p>{meal.foodName || meal.foodDescription || '—'}</p>
+                    {meal.portionSize && (
+                      <p className="text-muted-foreground">Portion: {meal.portionSize}</p>
+                    )}
                     <p className="text-muted-foreground text-xs">
-                      {(meal.nutrients ?? [])
-                        .filter((n) => n.nutrientCode !== 'POTASSIUM')
-                        .map((n) => `${n.nutrientCode}: ${n.amount ?? '—'} ${n.unit}`)
-                        .join(' · ')}
+                      {[
+                        nutrients.POTASSIUM && `K: ${nutrients.POTASSIUM.amount} mg`,
+                        nutrients.PROTEIN && `Protein: ${nutrients.PROTEIN.amount} g`,
+                        nutrients.ENERGY && `Kcal: ${nutrients.ENERGY.amount}`,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ') || '—'}
                     </p>
-                  )}
-                </div>
-              );
+                  </div>
+                );
               })}
               {previewEntry.medicineDiary && (
                 <div>
@@ -544,7 +725,7 @@ export default function NutritionDiaryPage() {
           )}
         </DiaryEntryViewDialog>
 
-        <CustomFoodDialog
+        <FoodItemFormDialog
           open={showAddFoodDialog}
           onOpenChange={setShowAddFoodDialog}
           patientId={patient.id}
@@ -554,6 +735,14 @@ export default function NutritionDiaryPage() {
               return [item, ...without];
             });
           }}
+        />
+
+        <FoodCatalogDialog
+          open={showFoodCatalog}
+          onOpenChange={setShowFoodCatalog}
+          patientId={patient.id}
+          editGlobal={canEditGlobalCatalog}
+          onFoodsChanged={() => loadFoodItems(patient.id)}
         />
       </main>
     </div>

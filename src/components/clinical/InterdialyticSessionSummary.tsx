@@ -199,7 +199,7 @@ export function InterdialyticSessionSummary({
             ) : (
               <>
                 <p className="font-medium">Total dietary K: {potassium.totalPotassiumMg} mg</p>
-                {!compact && hasPotassiumDaywise && (
+                {hasPotassiumDaywise && (
                   <Collapsible open={potassiumDetailsOpen} onOpenChange={setPotassiumDetailsOpen}>
                     <CollapsibleTrigger asChild>
                       <Button
