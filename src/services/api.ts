@@ -427,12 +427,42 @@ function mapFoodPotassiumItem(item: Record<string, unknown>) {
 
 export async function fetchFoodPotassiumList(
   patientId?: string,
-  limit = 200
+  limit = 200,
+  offset = 0
 ): Promise<import('@/types').FoodPotassiumItem[]> {
-  const params = new URLSearchParams({ limit: String(limit) });
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
   if (patientId) params.set('patient_id', patientId);
   const data = await apiRequest(`/food-items?${params.toString()}`);
   return (data.items ?? []).map((item: Record<string, unknown>) => mapFoodPotassiumItem(item));
+}
+
+/** Load the full catalog (paginated) for manage-food UI. */
+export async function fetchAllFoodPotassiumList(
+  patientId?: string,
+  searchQuery = ''
+): Promise<import('@/types').FoodPotassiumItem[]> {
+  const pageSize = 250;
+  let offset = 0;
+  const all: import('@/types').FoodPotassiumItem[] = [];
+  for (;;) {
+    const params = new URLSearchParams({
+      limit: String(pageSize),
+      offset: String(offset),
+    });
+    if (patientId) params.set('patient_id', patientId);
+    if (searchQuery.trim()) params.set('q', searchQuery.trim());
+    const data = await apiRequest(`/food-items?${params.toString()}`);
+    const batch = (data.items ?? []).map((item: Record<string, unknown>) =>
+      mapFoodPotassiumItem(item)
+    );
+    all.push(...batch);
+    if (batch.length < pageSize) break;
+    offset += pageSize;
+  }
+  return all;
 }
 
 export async function searchFoodPotassiumItems(

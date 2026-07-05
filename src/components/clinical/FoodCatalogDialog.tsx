@@ -9,8 +9,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Plus, Search } from 'lucide-react';
-import { fetchFoodPotassiumList } from '@/services/api';
+import { Pencil, Plus, RefreshCw, Search } from 'lucide-react';
+import { fetchAllFoodPotassiumList } from '@/services/api';
 import { FoodItemFormDialog } from '@/components/clinical/FoodItemFormDialog';
 import type { FoodPotassiumItem } from '@/types';
 
@@ -42,27 +42,50 @@ export function FoodCatalogDialog({
 }: FoodCatalogDialogProps) {
   const [foods, setFoods] = useState<FoodPotassiumItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [editingFood, setEditingFood] = useState<FoodPotassiumItem | null>(null);
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
   const loadFoods = useCallback(async () => {
-    setLoading(true);
-    try {
-      const items = await fetchFoodPotassiumList(patientId, 500);
-      setFoods(items);
-    } catch {
+    if (!patientId) {
+      setError('No patient selected.');
       setFoods([]);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const items = await fetchAllFoodPotassiumList(patientId, debouncedQuery);
+      setFoods(items);
+    } catch (e) {
+      setFoods([]);
+      setError(e instanceof Error ? e.message : 'Could not load food catalog');
     } finally {
       setLoading(false);
     }
-  }, [patientId]);
+  }, [patientId, debouncedQuery]);
 
   useEffect(() => {
     if (open) loadFoods();
   }, [open, loadFoods]);
 
+  useEffect(() => {
+    if (!open) {
+      setQuery('');
+      setDebouncedQuery('');
+      setError(null);
+    }
+  }, [open]);
+
   const filtered = useMemo(() => {
+    if (debouncedQuery.trim()) return foods;
     const q = query.trim().toLowerCase();
     if (!q) return foods;
     return foods.filter(
@@ -71,7 +94,7 @@ export function FoodCatalogDialog({
         (f.aliases ?? '').toLowerCase().includes(q) ||
         f.category.toLowerCase().includes(q)
     );
-  }, [foods, query]);
+  }, [foods, query, debouncedQuery]);
 
   const customFoods = filtered.filter((f) => f.isCustom);
   const referenceFoods = filtered.filter((f) => !f.isCustom);
@@ -132,6 +155,12 @@ export function FoodCatalogDialog({
     );
   };
 
+  const emptyMessage = error
+    ? null
+    : debouncedQuery.trim() || query.trim()
+      ? 'No foods match your search.'
+      : 'No foods in the catalog yet. Add a food or ask staff to sync the reference catalog.';
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -157,6 +186,10 @@ export function FoodCatalogDialog({
                 onChange={(e) => setQuery(e.target.value)}
               />
             </div>
+            <Button type="button" size="sm" variant="outline" onClick={loadFoods} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
             <Button type="button" size="sm" onClick={openAdd}>
               <Plus className="h-4 w-4 mr-1" />
               Add food
@@ -166,8 +199,15 @@ export function FoodCatalogDialog({
           <div className="flex-1 overflow-y-auto min-h-0 pr-1 -mr-1">
             {loading ? (
               <p className="text-sm text-muted-foreground py-8 text-center">Loading foods…</p>
+            ) : error ? (
+              <div className="py-8 text-center space-y-3">
+                <p className="text-sm text-destructive">{error}</p>
+                <Button type="button" size="sm" variant="outline" onClick={loadFoods}>
+                  Try again
+                </Button>
+              </div>
             ) : filtered.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">No foods match your search.</p>
+              <p className="text-sm text-muted-foreground py-8 text-center">{emptyMessage}</p>
             ) : (
               <div className="space-y-4">
                 {customFoods.length > 0 && (
