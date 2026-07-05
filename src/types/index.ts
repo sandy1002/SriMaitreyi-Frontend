@@ -238,6 +238,7 @@ export interface NutritionDiaryEntry {
   totalSodiumMg?: number | null;
   totalPhosphorusMg?: number | null;
   totalPotassiumMg?: number | null;
+  totalKcal?: number | null;
   meals: NutritionMeal[];
   alerts?: NutritionAlert[];
 }
@@ -482,6 +483,11 @@ export interface FoodPotassiumItem {
   servingDescription: string;
   servingGrams?: number;
   potassiumMgPerServing: number;
+  proteinGPerServing?: number | null;
+  kcalPerServing?: number | null;
+  potassiumMgPer100g?: number | null;
+  proteinGPer100g?: number | null;
+  kcalPer100g?: number | null;
   aliases?: string;
   isCustom?: boolean;
   patientId?: string | null;

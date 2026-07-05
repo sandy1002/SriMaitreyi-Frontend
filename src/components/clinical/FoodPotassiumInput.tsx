@@ -23,6 +23,8 @@ export type MealFoodSelection = {
   name: string;
   portionSize: string;
   potassiumMg: number;
+  proteinG: number;
+  kcal: number;
 };
 
 type FoodPotassiumInputProps = {
@@ -35,6 +37,12 @@ type FoodPotassiumInputProps = {
 function newSelectionKey() {
   return `food-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
+
+type NutrientCalc = {
+  potassiumMg: number;
+  proteinG: number | null;
+  kcal: number | null;
+};
 
 export function FoodPotassiumInput({
   patientId,
@@ -83,8 +91,10 @@ export function FoodPotassiumInput({
   }, [searchQuery, patientId]);
 
   const totalPotassium = selectedFoods.reduce((sum, f) => sum + (f.potassiumMg || 0), 0);
+  const totalProtein = selectedFoods.reduce((sum, f) => sum + (f.proteinG || 0), 0);
+  const totalKcal = selectedFoods.reduce((sum, f) => sum + (f.kcal || 0), 0);
 
-  const recalcPotassiumForEntry = async (entry: MealFoodSelection): Promise<number | null> => {
+  const recalcNutrientsForEntry = async (entry: MealFoodSelection): Promise<NutrientCalc | null> => {
     if (!entry.foodItemId) return null;
     try {
       const result = await api.calculateFoodPotassium({
@@ -93,11 +103,31 @@ export function FoodPotassiumInput({
         servings: 1,
         patientId,
       });
-      return result.potassiumMg;
+      return {
+        potassiumMg: result.potassiumMg,
+        proteinG: result.proteinG,
+        kcal: result.kcal,
+      };
     } catch {
       return null;
     }
   };
+
+  const applyNutrients = (
+    foods: MealFoodSelection[],
+    key: string,
+    nutrients: NutrientCalc
+  ): MealFoodSelection[] =>
+    foods.map((f) =>
+      f.key === key
+        ? {
+            ...f,
+            potassiumMg: nutrients.potassiumMg,
+            proteinG: nutrients.proteinG ?? f.proteinG,
+            kcal: nutrients.kcal ?? f.kcal,
+          }
+        : f
+    );
 
   const addFoodItem = async (item: FoodPotassiumItem) => {
     const portion = item.servingDescription || '1 serving';
@@ -107,16 +137,16 @@ export function FoodPotassiumInput({
       name: item.name,
       portionSize: portion,
       potassiumMg: item.potassiumMgPerServing,
+      proteinG: item.proteinGPerServing ?? 0,
+      kcal: item.kcalPerServing ?? 0,
     };
     const next = [...selectedFoods, entry];
     onSelectedFoodsChange(next);
     setOpen(true);
     setCalculatingKey(entry.key);
-    const k = await recalcPotassiumForEntry(entry);
-    if (k !== null) {
-      onSelectedFoodsChange(
-        next.map((f) => (f.key === entry.key ? { ...f, potassiumMg: k } : f))
-      );
+    const nutrients = await recalcNutrientsForEntry(entry);
+    if (nutrients !== null) {
+      onSelectedFoodsChange(applyNutrients(next, entry.key, nutrients));
     }
     setCalculatingKey(null);
   };
@@ -128,11 +158,9 @@ export function FoodPotassiumInput({
     const updated = next.find((f) => f.key === key);
     if (!updated?.foodItemId) return;
     setCalculatingKey(key);
-    const k = await recalcPotassiumForEntry(updated);
-    if (k !== null) {
-      onSelectedFoodsChange(
-        next.map((f) => (f.key === key ? { ...f, potassiumMg: k } : f))
-      );
+    const nutrients = await recalcNutrientsForEntry(updated);
+    if (nutrients !== null) {
+      onSelectedFoodsChange(applyNutrients(next, key, nutrients));
     }
     setCalculatingKey(null);
   };
@@ -157,7 +185,15 @@ export function FoodPotassiumInput({
         <span className="font-medium">{item.name}</span>
         {item.isCustom && <span className="text-xs text-primary ml-1">(yours)</span>}
         <span className="text-muted-foreground ml-2 text-xs">
-          {item.potassiumMgPerServing} mg K / {item.servingDescription}
+          {item.potassiumMgPerServing} mg K
+          {item.proteinGPerServing != null ? ` · ${item.proteinGPerServing} g protein` : ''}
+          {item.kcalPer100g != null
+            ? ` · ${Math.round(item.kcalPer100g)} kcal/100g`
+            : item.kcalPerServing != null
+              ? ` · ${item.kcalPerServing} kcal`
+              : ''}
+          {' / '}
+          {item.servingDescription}
         </span>
       </span>
     </CommandItem>
@@ -202,7 +238,7 @@ export function FoodPotassiumInput({
           </PopoverContent>
         </Popover>
         <p className="text-xs text-muted-foreground">
-          Select multiple foods — each stays in the list. Adjust portion per item below.
+          Select multiple foods — potassium, protein, and kcal auto-calculate from portion size (kcal shown per 100 g).
         </p>
       </div>
 
@@ -232,21 +268,6 @@ export function FoodPotassiumInput({
                   />
                 </div>
                 <div className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <Label className="text-xs text-muted-foreground">
-                      K (mg){calculatingKey === food.key ? ' …' : ''}
-                    </Label>
-                    <Input
-                      className="mt-1 h-8"
-                      type="number"
-                      value={food.potassiumMg || ''}
-                      onChange={(e) =>
-                        updateEntry(food.key, {
-                          potassiumMg: e.target.value === '' ? 0 : Number(e.target.value),
-                        })
-                      }
-                    />
-                  </div>
                   <Button
                     type="button"
                     variant="ghost"
@@ -259,11 +280,56 @@ export function FoodPotassiumInput({
                   </Button>
                 </div>
               </div>
+              <div className="grid grid-cols-3 gap-2 sm:col-span-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    K (mg){calculatingKey === food.key ? ' …' : ''}
+                  </Label>
+                  <Input
+                    className="mt-1 h-8"
+                    type="number"
+                    value={food.potassiumMg || ''}
+                    onChange={(e) =>
+                      updateEntry(food.key, {
+                        potassiumMg: e.target.value === '' ? 0 : Number(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Protein (g)</Label>
+                  <Input
+                    className="mt-1 h-8"
+                    type="number"
+                    value={food.proteinG || ''}
+                    onChange={(e) =>
+                      updateEntry(food.key, {
+                        proteinG: e.target.value === '' ? 0 : Number(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Kcal</Label>
+                  <Input
+                    className="mt-1 h-8"
+                    type="number"
+                    value={food.kcal || ''}
+                    onChange={(e) =>
+                      updateEntry(food.key, {
+                        kcal: e.target.value === '' ? 0 : Number(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+              </div>
             </div>
           ))}
-          <p className="text-sm font-medium text-right pt-1">
-            Meal potassium total: {Math.round(totalPotassium * 10) / 10} mg
-          </p>
+          <div className="flex flex-wrap justify-end gap-x-4 gap-y-1 text-sm font-medium pt-1">
+            <span>Meal K: {Math.round(totalPotassium * 10) / 10} mg</span>
+            <span>Protein: {Math.round(totalProtein * 10) / 10} g</span>
+            <span>Kcal: {Math.round(totalKcal)}</span>
+          </div>
         </div>
       )}
     </div>
