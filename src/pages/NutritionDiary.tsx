@@ -13,7 +13,7 @@ import { ArrowLeft, Utensils, Save, Plus, TrendingUp, Settings2 } from 'lucide-r
 import { useToast } from '@/hooks/use-toast';
 import * as api from '@/services/api';
 import { DiaryEntryViewDialog } from '@/components/clinical/DiaryEntryViewDialog';
-import { FoodPotassiumInput, type MealFoodSelection } from '@/components/clinical/FoodPotassiumInput';
+import { FoodPotassiumInput, type MealFoodSelection, parsePortionQuantity, formatPortionSizeForSave } from '@/components/clinical/FoodPotassiumInput';
 import { FoodItemFormDialog } from '@/components/clinical/FoodItemFormDialog';
 import { FoodCatalogDialog } from '@/components/clinical/FoodCatalogDialog';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -168,10 +168,14 @@ export default function NutritionDiaryPage() {
           const rowNutrients = Object.fromEntries(
             (m.nutrients ?? []).map((n) => [n.nutrientCode, n.amount ?? 0])
           );
+          const catalogMatch = foodItems.find(
+            (f) => f.name.toLowerCase() === (m.foodName ?? '').toLowerCase()
+          );
           return {
             key: m.id ?? `loaded-${key}-${idx}`,
+            foodItemId: catalogMatch?.id,
             name: m.foodName ?? '',
-            portionSize: m.portionSize ?? '',
+            quantity: parsePortionQuantity(m.portionSize),
             potassiumMg: Number(rowNutrients.POTASSIUM ?? 0),
             proteinG: Number(rowNutrients.PROTEIN ?? 0),
             kcal: Number(rowNutrients.ENERGY ?? 0),
@@ -197,7 +201,7 @@ export default function NutritionDiaryPage() {
     setMeals(next);
     setNotes(existing.notesEndOfDay ?? '');
     setMedicineDiary(existing.medicineDiary ?? '');
-  }, [diaryDate, recentDiaries, activePatient?.id]);
+  }, [diaryDate, recentDiaries, activePatient?.id, foodItems]);
 
   const editingDailyTotals = useMemo(() => {
     let potassium = 0;
@@ -274,6 +278,9 @@ export default function NutritionDiaryPage() {
 
       if (m.foods.length > 0) {
         m.foods.forEach((food, index) => {
+          const catalogItem = food.foodItemId
+            ? foodItems.find((f) => f.id === food.foodItemId)
+            : undefined;
           const nutrients = [
             { nutrient_code: 'POTASSIUM', amount: food.potassiumMg, unit: 'mg' },
           ];
@@ -292,7 +299,10 @@ export default function NutritionDiaryPage() {
           result.push({
             meal_type: key,
             food_name: food.name || undefined,
-            portion_size: food.portionSize || undefined,
+            portion_size: formatPortionSizeForSave(
+              food.quantity,
+              catalogItem?.servingDescription
+            ),
             meal_taken_at: mealTakenAt,
             food_description:
               m.foodDescription ||
