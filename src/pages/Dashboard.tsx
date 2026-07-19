@@ -9,7 +9,7 @@ import { MedicalReportDownload } from '@/components/clinical/MedicalReportDownlo
 import { MedicalRecordsUpload } from '@/components/clinical/MedicalRecordsUpload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, MessageSquare, Calendar, TrendingUp, Utensils, Droplets, Pill, ClipboardList, TestTube2, Syringe, AlertTriangle } from 'lucide-react';
+import { Plus, MessageSquare, Calendar, TrendingUp, Utensils, Droplets, Pill, ClipboardList, TestTube2, Syringe, AlertTriangle, BarChart3 } from 'lucide-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
@@ -166,6 +166,25 @@ export default function Dashboard() {
                   <h3 className="font-semibold text-foreground">Nutrition diary</h3>
                   <p className="text-sm text-muted-foreground">
                     Log meals and nutrition facts
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {isPatient && (
+            <Card
+              className="cursor-pointer shadow-clinical transition-all duration-200 hover:shadow-clinical-lg hover:-translate-y-0.5 border-primary/20"
+              onClick={() => navigate('/report-comparison')}
+            >
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/15">
+                  <BarChart3 className="h-6 w-6 text-indigo-700 dark:text-indigo-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Report comparison</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Compare nutrition, BP, UF, and lab trends
                   </p>
                 </div>
               </CardContent>

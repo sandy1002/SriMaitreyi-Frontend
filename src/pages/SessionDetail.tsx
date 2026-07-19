@@ -371,11 +371,9 @@ export default function SessionDetail() {
 
             <div className="flex items-center gap-3 flex-wrap justify-end">
               <Badge>
-                {isCompleted
+                {isCompleted || isPostDialysis
                   ? 'Completed'
-                  : isPostDialysis
-                    ? 'Awaiting Post K'
-                    : 'In Progress'}
+                  : 'In Progress'}
               </Badge>
 
               {canEditSessionAssessments && (
@@ -428,8 +426,7 @@ export default function SessionDetail() {
                       <DialogHeader>
                         <DialogTitle>End dialysis</DialogTitle>
                         <DialogDescription>
-                          Record post-dialysis vitals and staff. The session stays open until Post K
-                          is entered at your next visit (or below if known now).
+                          Enter post weight to complete the session. Other fields are optional.
                         </DialogDescription>
                       </DialogHeader>
 
@@ -440,7 +437,7 @@ export default function SessionDetail() {
 
                         <div className="grid sm:grid-cols-2 gap-2">
                           <div>
-                            <Label htmlFor="postWeight">Post Weight (kg)</Label>
+                            <Label htmlFor="postWeight">Post Weight (kg) *</Label>
                             <Input id="postWeight" type="number" value={postWeight} onChange={e => setPostWeight(e.target.value)} />
                           </div>
 
@@ -488,7 +485,7 @@ export default function SessionDetail() {
                               step="0.1"
                               value={postPotassium}
                               onChange={(e) => setPostPotassium(e.target.value)}
-                              placeholder="Optional now — required before next session"
+                              placeholder="Optional"
                             />
                           </div>
                           <div className="space-y-2">
@@ -510,9 +507,8 @@ export default function SessionDetail() {
                         <div className="flex gap-2">
                           <Button variant="outline" onClick={() => setCloseDialogOpen(false)}>Cancel</Button>
                           <Button onClick={async () => {
-                            // validate required fields
-                            if (!postWeight || !postBp || !totalUf || !technicianName || !nurseName || !doctorName) {
-                              setFormError('All fields are required before closing the session.');
+                            if (!postWeight) {
+                              setFormError('Post weight (kg) is required to end dialysis.');
                               return;
                             }
                             setFormError(null);
@@ -520,12 +516,12 @@ export default function SessionDetail() {
                             try {
                               const result = await closeSession(session.id, {
                                 postWeightKg: Number(postWeight),
-                                postBp: postBp,
-                                totalUfRemoved: Number(totalUf),
+                                postBp: postBp || undefined,
+                                totalUfRemoved: totalUf ? Number(totalUf) : undefined,
                                 condition,
-                                technicianName,
-                                nurseName,
-                                doctorName,
+                                technicianName: technicianName.trim() || undefined,
+                                nurseName: nurseName.trim() || undefined,
+                                doctorName: doctorName.trim() || undefined,
                                 postPotassiumMmolL: postPotassium
                                   ? Number(postPotassium)
                                   : undefined,
@@ -536,13 +532,8 @@ export default function SessionDetail() {
 
                               await loadSessionDetails(session.id);
                               toast({
-                                title: result.session.status === 'completed'
-                                  ? 'Session completed'
-                                  : 'Dialysis ended',
-                                description:
-                                  result.session.status === 'completed'
-                                    ? 'Post K recorded — session is complete.'
-                                    : 'Session stays open until Post K is entered at your next visit.',
+                                title: 'Session completed',
+                                description: 'Dialysis ended and session is complete.',
                               });
                               setCloseDialogOpen(false);
                             } catch (err) {
@@ -602,10 +593,9 @@ export default function SessionDetail() {
         {isPostDialysis && canManageSession && (
           <Card className="border-amber-500/40">
             <CardHeader>
-              <CardTitle className="text-lg">Post K — complete session</CardTitle>
+              <CardTitle className="text-lg">Optional — add Post K</CardTitle>
               <CardDescription>
-                Enter Post K when available. The session remains open until this is saved or you
-                start a new session.
+                This session was ended without Post K. You can still record it here if available.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col sm:flex-row gap-3">
@@ -634,6 +624,44 @@ export default function SessionDetail() {
                 }}
               >
                 {savingPostK ? 'Saving...' : 'Save Post K'}
+              </Button>
+              <Button
+                variant="outline"
+                disabled={savingPostK}
+                onClick={async () => {
+                  setSavingPostK(true);
+                  try {
+                    // Re-end with existing post weight to force completed if still post-dialysis
+                    const post = session.postDialysisAssessment;
+                    if (!post?.postWeightKg) {
+                      toast({
+                        title: 'Post weight missing',
+                        description: 'Use Edit session to add post weight, then complete.',
+                        variant: 'destructive',
+                      });
+                      return;
+                    }
+                    await closeSession(session.id, {
+                      postWeightKg: post.postWeightKg,
+                      postBp: post.postBp,
+                      totalUfRemoved: post.totalUfRemoved ?? undefined,
+                      condition: (post.condition as 'Stable' | 'Unstable') || 'Stable',
+                      technicianName: post.technicianName,
+                      nurseName: post.nurseName,
+                      doctorName: post.doctorName,
+                      postPotassiumMmolL: post.postPotassiumMmolL ?? undefined,
+                      postBloodSugar: post.postBloodSugar ?? undefined,
+                    });
+                    await loadSessionDetails(session.id);
+                    toast({ title: 'Session marked completed' });
+                  } catch {
+                    toast({ title: 'Failed to complete session', variant: 'destructive' });
+                  } finally {
+                    setSavingPostK(false);
+                  }
+                }}
+              >
+                Mark completed
               </Button>
             </CardContent>
           </Card>

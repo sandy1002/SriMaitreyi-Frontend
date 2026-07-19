@@ -6,7 +6,7 @@ import type { DialysisSession } from '@/types';
 
 function statusLabel(status: DialysisSession['status']) {
   if (status === 'completed') return 'Completed';
-  if (status === 'post-dialysis') return 'Awaiting Post K';
+  if (status === 'post-dialysis') return 'Ended';
   return 'In progress';
 }
 

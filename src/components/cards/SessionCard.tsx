@@ -66,7 +66,7 @@ export function SessionCard({ session }: SessionCardProps) {
               {session.status === 'completed'
                 ? 'Completed'
                 : session.status === 'post-dialysis'
-                  ? 'Awaiting Post K'
+                  ? 'Ended'
                   : 'In Progress'}
             </Badge>
 
