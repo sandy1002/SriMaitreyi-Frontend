@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Droplets, Utensils, Pill, Syringe } from 'lucide-react';
+import { Droplets, Utensils, Pill, Syringe, BarChart3 } from 'lucide-react';
 
 interface Props {
   patientId: string;
@@ -34,6 +34,12 @@ export function PatientDiaryLinks({ patientId, compact }: Props) {
         <Link to={`/vaccine-diary/${patientId}`}>
           <Syringe className="h-4 w-4 mr-1" />
           Vaccine diary
+        </Link>
+      </Button>
+      <Button size={btn} variant="outline" asChild>
+        <Link to={`/report-comparison/${patientId}`}>
+          <BarChart3 className="h-4 w-4 mr-1" />
+          Report comparison
         </Link>
       </Button>
     </div>

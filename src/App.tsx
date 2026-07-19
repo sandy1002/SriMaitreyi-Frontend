@@ -21,6 +21,7 @@ import RenalFluidDiary from "./pages/RenalFluidDiary";
 import MedicationDiary from "./pages/MedicationDiary";
 import VaccineDiary from "./pages/VaccineDiary";
 import MonthlyInvestigations from "./pages/MonthlyInvestigations";
+import ReportComparison from "./pages/ReportComparison";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
@@ -198,6 +199,22 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <VaccineDiary />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/report-comparison"
+                element={
+                  <PatientRoute>
+                    <ReportComparison />
+                  </PatientRoute>
+                }
+              />
+              <Route
+                path="/report-comparison/:patientId"
+                element={
+                  <ProtectedRoute>
+                    <ReportComparison />
                   </ProtectedRoute>
                 }
               />

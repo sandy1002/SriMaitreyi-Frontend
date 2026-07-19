@@ -102,7 +102,6 @@ export default function NewSession() {
     ufGoalLiters: number;
   } | null>(null);
 
-  const [previousPostK, setPreviousPostK] = useState('');
   const [interdialyticFluids, setInterdialyticFluids] =
     useState<InterdialyticFluidsSummary | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -220,7 +219,6 @@ export default function NewSession() {
     );
   }
 
-  const needsPreviousPostK = openSession?.status === 'post-dialysis';
   const hasInProgressSession = openSession?.status === 'in-progress';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -230,10 +228,10 @@ export default function NewSession() {
       setInProgressWarningOpen(true);
       return;
     }
-    if (needsPreviousPostK && !previousPostK) {
+    if (!dryWeightKg) {
       toast({
-        title: 'Post K required',
-        description: 'Enter Post K for your previous session before starting a new one.',
+        title: 'Target dry weight required',
+        description: 'Enter target dry weight (kg) before starting the session.',
         variant: 'destructive',
       });
       return;
@@ -246,21 +244,20 @@ export default function NewSession() {
         hospitalName,
         sessionDate,
         {
-          weightKg: Number(weightKg),
-          bloodPressure,
-          pulse: Number(pulse),
-          temperature: Number(temperature),
-          bloodSugar: Number(bloodSugar),
-          accessCondition,
-          ufGoal,
+          weightKg: weightKg ? Number(weightKg) : undefined,
+          bloodPressure: bloodPressure || undefined,
+          pulse: pulse ? Number(pulse) : undefined,
+          temperature: temperature ? Number(temperature) : undefined,
+          bloodSugar: bloodSugar ? Number(bloodSugar) : undefined,
+          accessCondition: accessCondition || undefined,
+          ufGoal: ufGoal || undefined,
           potassiumMmolL: potassiumMmolL ? Number(potassiumMmolL) : undefined,
           sodiumProfile: sodiumProfile !== '' ? Number(sodiumProfile) : undefined,
           ufProfile: ufProfile !== '' ? Number(ufProfile) : undefined,
-          targetDryWeightKg: dryWeightKg ? Number(dryWeightKg) : undefined,
+          targetDryWeightKg: Number(dryWeightKg),
           primeRinsebackMl: Number(primeMl) || 250,
           ivFluidsMl: Number(ivFluidsMl) || 0,
           oralIntakeMl: Number(oralIntakeMl) || 0,
-          previousSessionPostK: needsPreviousPostK ? Number(previousPostK) : undefined,
           technicianName: technicianName.trim() || undefined,
           nurseName: nurseName.trim() || undefined,
           doctorName: doctorName.trim() || undefined,
@@ -361,31 +358,6 @@ export default function NewSession() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <fieldset disabled={hasInProgressSession} className="space-y-6 disabled:opacity-60">
-              {needsPreviousPostK && openSession && (
-                <Card className="border-amber-500/40 bg-amber-500/5">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">Previous session — Post K</CardTitle>
-                    <CardDescription>
-                      Session from {openSession.sessionDate} is open until Post K is recorded.
-                      Enter Post K before starting today&apos;s session.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Label htmlFor="prevPostK">Potassium — Post K (mmol/L)</Label>
-                    <Input
-                      id="prevPostK"
-                      type="number"
-                      step="0.1"
-                      className="mt-2"
-                      value={previousPostK}
-                      onChange={(e) => setPreviousPostK(e.target.value)}
-                      placeholder="e.g. 4.2"
-                      required
-                    />
-                  </CardContent>
-                </Card>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="date" className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-primary" />
@@ -466,13 +438,12 @@ export default function NewSession() {
                     type="number"
                     value={weightKg}
                     onChange={(e) => setWeightKg(e.target.value)}
-                    required
                     min={0}
                     step="0.1"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="dryWeight">Target dry weight (kg)</Label>
+                  <Label htmlFor="dryWeight">Target dry weight (kg) *</Label>
                   <Input
                     id="dryWeight"
                     type="number"
@@ -499,12 +470,11 @@ export default function NewSession() {
                     id="bloodPressure"
                     value={bloodPressure}
                     onChange={(e) => setBloodPressure(e.target.value)}
-                    required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="pulse">Pulse</Label>
-                  <Input id="pulse" type="number" value={pulse} onChange={(e) => setPulse(e.target.value)} required />
+                  <Input id="pulse" type="number" value={pulse} onChange={(e) => setPulse(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="temperature">Temperature</Label>
@@ -514,7 +484,6 @@ export default function NewSession() {
                     step="0.1"
                     value={temperature}
                     onChange={(e) => setTemperature(e.target.value)}
-                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -527,7 +496,6 @@ export default function NewSession() {
                     value={bloodSugar}
                     onChange={(e) => setBloodSugar(e.target.value)}
                     placeholder="e.g. 110"
-                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -537,7 +505,6 @@ export default function NewSession() {
                     className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
                     value={accessCondition}
                     onChange={(e) => setAccessCondition(e.target.value as 'Normal' | 'Abnormal')}
-                    required
                   >
                     <option value="Normal">Normal</option>
                     <option value="Abnormal">Abnormal</option>
@@ -659,7 +626,6 @@ export default function NewSession() {
                   value={ufGoal}
                   onChange={(e) => setUfGoal(e.target.value)}
                   placeholder={ufCalc ? `${ufCalc.ufGoalLiters} L` : 'e.g. 2.50 L'}
-                  required
                 />
                 {ufCalc && (
                   <p className="text-xs text-muted-foreground">

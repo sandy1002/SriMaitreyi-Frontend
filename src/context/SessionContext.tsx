@@ -20,13 +20,13 @@ interface SessionContextType {
     hospitalName: string,
     sessionDate: string,
     assessment: {
-      weightKg: number;
-      bloodPressure: string;
-      pulse: number;
-      temperature: number;
-      bloodSugar: number;
-      accessCondition: 'Normal' | 'Abnormal';
-      ufGoal: string;
+      weightKg?: number;
+      bloodPressure?: string;
+      pulse?: number;
+      temperature?: number;
+      bloodSugar?: number;
+      accessCondition?: 'Normal' | 'Abnormal';
+      ufGoal?: string;
       potassiumMmolL?: number;
       sodiumProfile?: number;
       ufProfile?: number;
@@ -105,13 +105,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     hospitalName: string,
     sessionDate: string,
     assessment: {
-      weightKg: number;
-      bloodPressure: string;
-      pulse: number;
-      temperature: number;
-      bloodSugar: number;
-      accessCondition: 'Normal' | 'Abnormal';
-      ufGoal: string;
+      weightKg?: number;
+      bloodPressure?: string;
+      pulse?: number;
+      temperature?: number;
+      bloodSugar?: number;
+      accessCondition?: 'Normal' | 'Abnormal';
+      ufGoal?: string;
       potassiumMmolL?: number;
       sodiumProfile?: number;
       ufProfile?: number;
