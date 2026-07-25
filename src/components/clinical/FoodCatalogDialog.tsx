@@ -138,7 +138,12 @@ export function FoodCatalogDialog({
             {item.servingGrams ? ` · ${item.servingGrams} g` : ''}
           </p>
           <p className="text-xs text-muted-foreground">
-            {n.potassium} · {n.protein} · {n.kcal}
+            {[n.potassium, n.protein !== '—' ? n.protein : null, n.kcal !== '—' ? n.kcal : null]
+              .filter(Boolean)
+              .join(' · ')}
+            {n.protein === '—' && n.kcal === '—' ? (
+              <span className="text-amber-700"> · add protein &amp; kcal</span>
+            ) : null}
           </p>
         </div>
         <Button

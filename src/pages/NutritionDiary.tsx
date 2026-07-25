@@ -400,49 +400,74 @@ export default function NutritionDiaryPage() {
                 K limit guideline: 2000 mg/day.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <p className="text-sm font-medium mb-2">Potassium (mg)</p>
-                <ChartContainer config={nutritionChartConfig} className="h-[200px] w-full">
-                  <BarChart data={nutritionTrendData} margin={{ left: 4, right: 4, top: 20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
-                    <YAxis tickLine={false} axisLine={false} fontSize={11} width={42} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="potassium" fill="var(--color-potassium)" radius={[3, 3, 0, 0]} name="K (mg)">
-                      <LabelList dataKey="potassium" position="top" fontSize={10} formatter={(v: number) => (v ? Math.round(v) : '')} />
-                    </Bar>
-                  </BarChart>
-                </ChartContainer>
-              </div>
-              <div>
-                <p className="text-sm font-medium mb-2">Protein (g)</p>
-                <ChartContainer config={nutritionChartConfig} className="h-[200px] w-full">
-                  <BarChart data={nutritionTrendData} margin={{ left: 4, right: 4, top: 20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
-                    <YAxis tickLine={false} axisLine={false} fontSize={11} width={42} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="protein" fill="var(--color-protein)" radius={[3, 3, 0, 0]} name="Protein (g)">
-                      <LabelList dataKey="protein" position="top" fontSize={10} formatter={(v: number) => (v ? Number(v).toFixed(1) : '')} />
-                    </Bar>
-                  </BarChart>
-                </ChartContainer>
-              </div>
-              <div>
-                <p className="text-sm font-medium mb-2">Kcal</p>
-                <ChartContainer config={nutritionChartConfig} className="h-[200px] w-full">
-                  <BarChart data={nutritionTrendData} margin={{ left: 4, right: 4, top: 20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
-                    <YAxis tickLine={false} axisLine={false} fontSize={11} width={42} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="kcal" fill="var(--color-kcal)" radius={[3, 3, 0, 0]} name="Kcal">
-                      <LabelList dataKey="kcal" position="top" fontSize={10} formatter={(v: number) => (v ? Math.round(v) : '')} />
-                    </Bar>
-                  </BarChart>
-                </ChartContainer>
-              </div>
+            <CardContent>
+              <ChartContainer config={nutritionChartConfig} className="h-[260px] w-full">
+                <BarChart data={nutritionTrendData} margin={{ left: 4, right: 8, top: 28, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
+                  <YAxis
+                    yAxisId="left"
+                    tickLine={false}
+                    axisLine={false}
+                    fontSize={11}
+                    width={42}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tickLine={false}
+                    axisLine={false}
+                    fontSize={11}
+                    width={42}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar
+                    yAxisId="left"
+                    dataKey="potassium"
+                    fill="var(--color-potassium)"
+                    radius={[3, 3, 0, 0]}
+                    name="K (mg)"
+                  >
+                    <LabelList
+                      dataKey="potassium"
+                      position="top"
+                      fontSize={9}
+                      formatter={(v: number) => (v ? Math.round(v) : '')}
+                    />
+                  </Bar>
+                  <Bar
+                    yAxisId="left"
+                    dataKey="protein"
+                    fill="var(--color-protein)"
+                    radius={[3, 3, 0, 0]}
+                    name="Protein (g)"
+                  >
+                    <LabelList
+                      dataKey="protein"
+                      position="top"
+                      fontSize={9}
+                      formatter={(v: number) => (v ? Number(v).toFixed(1) : '')}
+                    />
+                  </Bar>
+                  <Bar
+                    yAxisId="right"
+                    dataKey="kcal"
+                    fill="var(--color-kcal)"
+                    radius={[3, 3, 0, 0]}
+                    name="Kcal"
+                  >
+                    <LabelList
+                      dataKey="kcal"
+                      position="top"
+                      fontSize={9}
+                      formatter={(v: number) => (v ? Math.round(v) : '')}
+                    />
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Left axis: potassium (mg) &amp; protein (g). Right axis: kcal. Values shown on each bar.
+              </p>
             </CardContent>
           </Card>
         )}
