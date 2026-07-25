@@ -4,6 +4,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  LabelList,
   Line,
   LineChart,
   Legend,
@@ -362,45 +363,64 @@ export default function ReportComparison() {
               </CardHeader>
               <CardContent>
                 {nutritionData.length > 0 ? (
-                  <>
-                    <ChartContainer config={nutritionChartConfig} className="h-[280px] w-full">
-                      <BarChart data={nutritionData} margin={{ left: 4, right: 4, top: 8, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
-                        <YAxis yAxisId="left" tickLine={false} axisLine={false} fontSize={11} width={42} />
-                        <YAxis
-                          yAxisId="right"
-                          orientation="right"
-                          tickLine={false}
-                          axisLine={false}
-                          fontSize={11}
-                          width={42}
-                        />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Legend />
-                        <Bar
-                          yAxisId="left"
-                          dataKey="potassium"
-                          fill="var(--color-potassium)"
-                          radius={[3, 3, 0, 0]}
-                          name="Potassium (mg)"
-                        />
-                        <Bar
-                          yAxisId="right"
-                          dataKey="protein"
-                          fill="var(--color-protein)"
-                          radius={[3, 3, 0, 0]}
-                          name="Protein (g)"
-                        />
-                        <Bar
-                          yAxisId="right"
-                          dataKey="kcal"
-                          fill="var(--color-kcal)"
-                          radius={[3, 3, 0, 0]}
-                          name="Kcal"
-                        />
-                      </BarChart>
-                    </ChartContainer>
+                  <div className="space-y-6">
+                    <div>
+                      <p className="text-sm font-medium mb-2">Potassium (mg)</p>
+                      <ChartContainer config={nutritionChartConfig} className="h-[220px] w-full">
+                        <BarChart data={nutritionData} margin={{ left: 4, right: 4, top: 22, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
+                          <YAxis tickLine={false} axisLine={false} fontSize={11} width={42} />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar dataKey="potassium" fill="var(--color-potassium)" radius={[3, 3, 0, 0]} name="Potassium (mg)">
+                            <LabelList
+                              dataKey="potassium"
+                              position="top"
+                              fontSize={10}
+                              formatter={(v: number) => (v ? Math.round(v) : '')}
+                            />
+                          </Bar>
+                        </BarChart>
+                      </ChartContainer>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium mb-2">Protein (g)</p>
+                      <ChartContainer config={nutritionChartConfig} className="h-[220px] w-full">
+                        <BarChart data={nutritionData} margin={{ left: 4, right: 4, top: 22, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
+                          <YAxis tickLine={false} axisLine={false} fontSize={11} width={42} />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar dataKey="protein" fill="var(--color-protein)" radius={[3, 3, 0, 0]} name="Protein (g)">
+                            <LabelList
+                              dataKey="protein"
+                              position="top"
+                              fontSize={10}
+                              formatter={(v: number) => (v ? Number(v).toFixed(1) : '')}
+                            />
+                          </Bar>
+                        </BarChart>
+                      </ChartContainer>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium mb-2">Kcal</p>
+                      <ChartContainer config={nutritionChartConfig} className="h-[220px] w-full">
+                        <BarChart data={nutritionData} margin={{ left: 4, right: 4, top: 22, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
+                          <YAxis tickLine={false} axisLine={false} fontSize={11} width={42} />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar dataKey="kcal" fill="var(--color-kcal)" radius={[3, 3, 0, 0]} name="Kcal">
+                            <LabelList
+                              dataKey="kcal"
+                              position="top"
+                              fontSize={10}
+                              formatter={(v: number) => (v ? Math.round(v) : '')}
+                            />
+                          </Bar>
+                        </BarChart>
+                      </ChartContainer>
+                    </div>
                     <ChartLegend
                       items={[
                         { color: 'hsl(var(--chart-1))', label: 'Potassium (mg)' },
@@ -408,7 +428,7 @@ export default function ReportComparison() {
                         { color: 'hsl(var(--chart-3))', label: 'Kcal' },
                       ]}
                     />
-                  </>
+                  </div>
                 ) : (
                   <EmptyChart message="No nutrition diary entries in this period." />
                 )}

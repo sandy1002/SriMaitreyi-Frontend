@@ -852,33 +852,80 @@ function mapMedicine(raw: Record<string, unknown>) {
   };
 }
 
+function sumMealNutrient(
+  meals: { nutrients?: { nutrientCode: string; amount?: number | null }[] }[],
+  code: string
+): number | null {
+  let total = 0;
+  let found = false;
+  for (const m of meals) {
+    for (const n of m.nutrients ?? []) {
+      if (n.nutrientCode?.toUpperCase() === code && n.amount != null) {
+        total += Number(n.amount);
+        found = true;
+      }
+    }
+  }
+  return found ? Math.round(total * 100) / 100 : null;
+}
+
+function sumMealFact(
+  meals: { nutritionFacts?: Record<string, unknown> }[],
+  key: string
+): number | null {
+  let total = 0;
+  let found = false;
+  for (const m of meals) {
+    const val = m.nutritionFacts?.[key];
+    if (val != null && val !== '') {
+      const n = Number(val);
+      if (!Number.isNaN(n)) {
+        total += n;
+        found = true;
+      }
+    }
+  }
+  return found ? Math.round(total * 100) / 100 : null;
+}
+
 function mapNutritionDiary(raw: Record<string, unknown>) {
+  const meals = ((raw.meals as Record<string, unknown>[]) ?? []).map((m) => ({
+    id: String(m.id),
+    mealType: String(m.meal_type),
+    mealTakenAt: m.meal_taken_at as string | undefined,
+    foodName: m.food_name as string | undefined,
+    portionSize: m.portion_size as string | undefined,
+    foodDescription: m.food_description as string | undefined,
+    nutritionFacts: (m.nutrition_facts as Record<string, unknown>) ?? {},
+    medicalDetails: (m.medical_details as Record<string, unknown>) ?? {},
+    nutrients: ((m.nutrients as Record<string, unknown>[]) ?? []).map((n) => ({
+      nutrientCode: String(n.nutrient_code),
+      amount: n.amount as number | null | undefined,
+      unit: String(n.unit),
+    })),
+  }));
+
+  const proteinFromMeals =
+    sumMealNutrient(meals, 'PROTEIN') ?? sumMealFact(meals, 'protein_g');
+  const potassiumFromMeals =
+    sumMealNutrient(meals, 'POTASSIUM') ?? sumMealFact(meals, 'potassium_mg');
+  const kcalFromMeals =
+    sumMealNutrient(meals, 'ENERGY') ?? sumMealFact(meals, 'kcal');
+
   return {
     id: String(raw.id),
     patientId: String(raw.patient_id),
     diaryDate: String(raw.diary_date),
     notesEndOfDay: raw.notes_end_of_day as string | undefined,
     medicineDiary: raw.medicine_diary as string | undefined,
-    totalProteinG: raw.total_protein_g as number | null | undefined,
+    totalProteinG:
+      (raw.total_protein_g as number | null | undefined) ?? proteinFromMeals,
     totalSodiumMg: raw.total_sodium_mg as number | null | undefined,
     totalPhosphorusMg: raw.total_phosphorus_mg as number | null | undefined,
-    totalPotassiumMg: raw.total_potassium_mg as number | null | undefined,
-    totalKcal: raw.total_kcal as number | null | undefined,
-    meals: ((raw.meals as Record<string, unknown>[]) ?? []).map((m) => ({
-      id: String(m.id),
-      mealType: String(m.meal_type),
-      mealTakenAt: m.meal_taken_at as string | undefined,
-      foodName: m.food_name as string | undefined,
-      portionSize: m.portion_size as string | undefined,
-      foodDescription: m.food_description as string | undefined,
-      nutritionFacts: (m.nutrition_facts as Record<string, unknown>) ?? {},
-      medicalDetails: (m.medical_details as Record<string, unknown>) ?? {},
-      nutrients: ((m.nutrients as Record<string, unknown>[]) ?? []).map((n) => ({
-        nutrientCode: String(n.nutrient_code),
-        amount: n.amount as number | null | undefined,
-        unit: String(n.unit),
-      })),
-    })),
+    totalPotassiumMg:
+      (raw.total_potassium_mg as number | null | undefined) ?? potassiumFromMeals,
+    totalKcal: (raw.total_kcal as number | null | undefined) ?? kcalFromMeals,
+    meals,
     alerts: ((raw.alerts as Record<string, unknown>[]) ?? []).map((a) => ({
       id: String(a.id),
       patientId: String(a.patient_id),
@@ -906,6 +953,10 @@ export async function saveNutritionDiary(
     diary_date: string;
     notes_end_of_day?: string;
     medicine_diary?: string;
+    total_protein_g?: number;
+    total_potassium_mg?: number;
+    total_sodium_mg?: number;
+    total_phosphorus_mg?: number;
     meals: import('@/types').NutritionMealInput[];
   }
 ) {
