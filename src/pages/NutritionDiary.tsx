@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from 'recharts';
 import { usePatientDiaryPage } from '@/hooks/usePatientDiaryPage';
 import { useAuth } from '@/context/AuthContext';
 import { Header } from '@/components/layout/Header';
@@ -284,11 +284,11 @@ export default function NutritionDiaryPage() {
           const nutrients = [
             { nutrient_code: 'POTASSIUM', amount: food.potassiumMg, unit: 'mg' },
           ];
-          if (food.proteinG) {
-            nutrients.push({ nutrient_code: 'PROTEIN', amount: food.proteinG, unit: 'g' });
+          if (food.proteinG != null && !Number.isNaN(Number(food.proteinG))) {
+            nutrients.push({ nutrient_code: 'PROTEIN', amount: Number(food.proteinG), unit: 'g' });
           }
-          if (food.kcal) {
-            nutrients.push({ nutrient_code: 'ENERGY', amount: food.kcal, unit: 'kcal' });
+          if (food.kcal != null && !Number.isNaN(Number(food.kcal))) {
+            nutrients.push({ nutrient_code: 'ENERGY', amount: Number(food.kcal), unit: 'kcal' });
           }
           if (index === 0 && m.sodium) {
             nutrients.push({ nutrient_code: 'SODIUM', amount: Number(m.sodium), unit: 'mg' });
@@ -359,6 +359,8 @@ export default function NutritionDiaryPage() {
         diary_date: diaryDate,
         notes_end_of_day: notes || undefined,
         medicine_diary: medicineDiary || undefined,
+        total_protein_g: editingDailyTotals.protein || undefined,
+        total_potassium_mg: editingDailyTotals.potassium || undefined,
         meals: buildMealsPayload(),
       });
       toast({
@@ -394,60 +396,52 @@ export default function NutritionDiaryPage() {
                 Nutrition trends
               </CardTitle>
               <CardDescription>
-                Daily potassium, protein, and kcal from saved diary entries. K limit guideline: 2000 mg/day.
+                Daily potassium, protein, and kcal from saved diary entries (values shown on each bar).
+                K limit guideline: 2000 mg/day.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={nutritionChartConfig} className="h-[240px] w-full">
-                <BarChart data={nutritionTrendData} margin={{ left: 4, right: 4, top: 8, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
-                  <YAxis yAxisId="left" tickLine={false} axisLine={false} fontSize={11} width={42} />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={11}
-                    width={42}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar
-                    yAxisId="left"
-                    dataKey="potassium"
-                    fill="var(--color-potassium)"
-                    radius={[3, 3, 0, 0]}
-                    name="K (mg)"
-                  />
-                  <Bar
-                    yAxisId="right"
-                    dataKey="protein"
-                    fill="var(--color-protein)"
-                    radius={[3, 3, 0, 0]}
-                    name="Protein (g)"
-                  />
-                  <Bar
-                    yAxisId="right"
-                    dataKey="kcal"
-                    fill="var(--color-kcal)"
-                    radius={[3, 3, 0, 0]}
-                    name="Kcal"
-                  />
-                </BarChart>
-              </ChartContainer>
-              <div className="flex flex-wrap gap-4 mt-3 text-xs text-muted-foreground justify-center">
-                <span className="flex items-center gap-1.5">
-                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[hsl(var(--chart-1))]" />
-                  Potassium (mg)
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[hsl(var(--chart-2))]" />
-                  Protein (g)
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[hsl(var(--chart-3))]" />
-                  Kcal
-                </span>
+            <CardContent className="space-y-6">
+              <div>
+                <p className="text-sm font-medium mb-2">Potassium (mg)</p>
+                <ChartContainer config={nutritionChartConfig} className="h-[200px] w-full">
+                  <BarChart data={nutritionTrendData} margin={{ left: 4, right: 4, top: 20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
+                    <YAxis tickLine={false} axisLine={false} fontSize={11} width={42} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="potassium" fill="var(--color-potassium)" radius={[3, 3, 0, 0]} name="K (mg)">
+                      <LabelList dataKey="potassium" position="top" fontSize={10} formatter={(v: number) => (v ? Math.round(v) : '')} />
+                    </Bar>
+                  </BarChart>
+                </ChartContainer>
+              </div>
+              <div>
+                <p className="text-sm font-medium mb-2">Protein (g)</p>
+                <ChartContainer config={nutritionChartConfig} className="h-[200px] w-full">
+                  <BarChart data={nutritionTrendData} margin={{ left: 4, right: 4, top: 20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
+                    <YAxis tickLine={false} axisLine={false} fontSize={11} width={42} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="protein" fill="var(--color-protein)" radius={[3, 3, 0, 0]} name="Protein (g)">
+                      <LabelList dataKey="protein" position="top" fontSize={10} formatter={(v: number) => (v ? Number(v).toFixed(1) : '')} />
+                    </Bar>
+                  </BarChart>
+                </ChartContainer>
+              </div>
+              <div>
+                <p className="text-sm font-medium mb-2">Kcal</p>
+                <ChartContainer config={nutritionChartConfig} className="h-[200px] w-full">
+                  <BarChart data={nutritionTrendData} margin={{ left: 4, right: 4, top: 20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
+                    <YAxis tickLine={false} axisLine={false} fontSize={11} width={42} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="kcal" fill="var(--color-kcal)" radius={[3, 3, 0, 0]} name="Kcal">
+                      <LabelList dataKey="kcal" position="top" fontSize={10} formatter={(v: number) => (v ? Math.round(v) : '')} />
+                    </Bar>
+                  </BarChart>
+                </ChartContainer>
               </div>
             </CardContent>
           </Card>
