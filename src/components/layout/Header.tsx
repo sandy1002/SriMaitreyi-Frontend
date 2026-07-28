@@ -22,7 +22,7 @@ export function Header() {
           <div>
             <h1 className="text-lg font-bold text-foreground">Srimai</h1>
             <p className="text-xs text-muted-foreground">
-              {isAdmin ? 'Admin Console' : isStaff ? 'Staff Workspace' : 'Patient Journal'}
+              {isAdmin ? 'Admin Console' : isStaff ? 'Staff Workspace' : 'Patient Medical Journal'}
             </p>
           </div>
         </Link>
