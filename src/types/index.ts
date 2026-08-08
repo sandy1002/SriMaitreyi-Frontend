@@ -485,9 +485,13 @@ export interface FoodPotassiumItem {
   potassiumMgPerServing: number;
   proteinGPerServing?: number | null;
   kcalPerServing?: number | null;
+  sodiumMgPerServing?: number | null;
+  phosphorusMgPerServing?: number | null;
   potassiumMgPer100g?: number | null;
   proteinGPer100g?: number | null;
   kcalPer100g?: number | null;
+  sodiumMgPer100g?: number | null;
+  phosphorusMgPer100g?: number | null;
   aliases?: string;
   isCustom?: boolean;
   patientId?: string | null;

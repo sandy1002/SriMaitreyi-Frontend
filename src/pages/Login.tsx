@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { getHomePath } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import {
   Wrench,
   Stethoscope,
   Utensils,
+  FileScan,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { StaffRole } from '@/types';
@@ -120,7 +121,16 @@ export default function Login() {
   const staffMeta = STAFF_PERSONAS.find((p) => p.id === persona);
 
   return (
-    <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
+    <div className="min-h-screen gradient-hero flex flex-col">
+      <div className="flex justify-end px-4 pt-4">
+        <Button asChild variant="outline" size="sm" className="gap-2 shadow-sm bg-background/80">
+          <Link to="/padoc/login">
+            <FileScan className="h-4 w-4" />
+            PaDoc login
+          </Link>
+        </Button>
+      </div>
+      <div className="flex-1 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl space-y-6 animate-fade-in">
         <div className="text-center">
           <AppLogo size="lg" className="mx-auto" />
@@ -341,6 +351,7 @@ export default function Login() {
             </CardContent>
           </Card>
         )}
+      </div>
       </div>
     </div>
   );

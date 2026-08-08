@@ -26,10 +26,14 @@ function formatNutrients(item: FoodPotassiumItem) {
   const k100 = item.kcalPer100g ?? item.kcalPerServing;
   const p100 = item.proteinGPer100g ?? item.proteinGPerServing;
   const kMg = item.potassiumMgPer100g ?? item.potassiumMgPerServing;
+  const na = item.sodiumMgPer100g ?? item.sodiumMgPerServing;
+  const phos = item.phosphorusMgPer100g ?? item.phosphorusMgPerServing;
   return {
     kcal: k100 != null ? `${Math.round(k100)} kcal/100g` : '—',
     protein: p100 != null ? `${p100} g protein/100g` : '—',
     potassium: kMg != null ? `${kMg} mg K/100g` : `${item.potassiumMgPerServing} mg K`,
+    sodium: na != null ? `${na} mg Na/100g` : '—',
+    phosphorus: phos != null ? `${phos} mg P/100g` : '—',
   };
 }
 
@@ -138,7 +142,13 @@ export function FoodCatalogDialog({
             {item.servingGrams ? ` · ${item.servingGrams} g` : ''}
           </p>
           <p className="text-xs text-muted-foreground">
-            {[n.potassium, n.protein !== '—' ? n.protein : null, n.kcal !== '—' ? n.kcal : null]
+            {[
+              n.potassium,
+              n.protein !== '—' ? n.protein : null,
+              n.kcal !== '—' ? n.kcal : null,
+              n.sodium !== '—' ? n.sodium : null,
+              n.phosphorus !== '—' ? n.phosphorus : null,
+            ]
               .filter(Boolean)
               .join(' · ')}
             {n.protein === '—' && n.kcal === '—' ? (
@@ -173,8 +183,8 @@ export function FoodCatalogDialog({
           <DialogHeader>
             <DialogTitle>Manage food catalog</DialogTitle>
             <DialogDescription>
-              Search, add, or edit potassium, protein, and kcal values. Tap the pencil to update a
-              food.
+              Search, add, or edit potassium, protein, kcal, sodium, and phosphorus values. Tap the
+              pencil to update a food.
               {editGlobal
                 ? ' Staff mode: reference food edits update the global catalog.'
                 : ' Reference food edits save a personal copy for this patient.'}

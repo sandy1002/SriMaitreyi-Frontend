@@ -76,8 +76,10 @@ function sumFoodNutrients(foods: MealFoodSelection[]) {
       potassium: acc.potassium + (f.potassiumMg || 0),
       protein: acc.protein + (f.proteinG || 0),
       kcal: acc.kcal + (f.kcal || 0),
+      sodium: acc.sodium + (f.sodiumMg || 0),
+      phosphorus: acc.phosphorus + (f.phosphorusMg || 0),
     }),
-    { potassium: 0, protein: 0, kcal: 0 }
+    { potassium: 0, protein: 0, kcal: 0, sodium: 0, phosphorus: 0 }
   );
 }
 
@@ -179,6 +181,8 @@ export default function NutritionDiaryPage() {
             potassiumMg: Number(rowNutrients.POTASSIUM ?? 0),
             proteinG: Number(rowNutrients.PROTEIN ?? 0),
             kcal: Number(rowNutrients.ENERGY ?? 0),
+            sodiumMg: Number(rowNutrients.SODIUM ?? 0),
+            phosphorusMg: Number(rowNutrients.PHOSPHORUS ?? 0),
           };
         });
       const foodTotals = sumFoodNutrients(foods);
@@ -190,8 +194,14 @@ export default function NutritionDiaryPage() {
           foods.length > 0
             ? formatNutrientTotal(foodTotals.protein, 1)
             : nutrients.PROTEIN ?? '',
-        sodium: nutrients.SODIUM ?? '',
-        phosphorus: nutrients.PHOSPHORUS ?? '',
+        sodium:
+          foods.length > 0 && foodTotals.sodium > 0
+            ? formatNutrientTotal(foodTotals.sodium, 1)
+            : nutrients.SODIUM ?? '',
+        phosphorus:
+          foods.length > 0 && foodTotals.phosphorus > 0
+            ? formatNutrientTotal(foodTotals.phosphorus, 1)
+            : nutrients.PHOSPHORUS ?? '',
         medicalDetails:
           typeof first.medicalDetails === 'string'
             ? first.medicalDetails
@@ -255,6 +265,9 @@ export default function NutritionDiaryPage() {
     updateMeal(mealKey, {
       foods,
       protein: foods.length > 0 ? formatNutrientTotal(totals.protein, 1) : meals[mealKey].protein,
+      sodium: foods.length > 0 ? formatNutrientTotal(totals.sodium, 1) : meals[mealKey].sodium,
+      phosphorus:
+        foods.length > 0 ? formatNutrientTotal(totals.phosphorus, 1) : meals[mealKey].phosphorus,
     });
   };
 
@@ -290,10 +303,18 @@ export default function NutritionDiaryPage() {
           if (food.kcal != null && !Number.isNaN(Number(food.kcal))) {
             nutrients.push({ nutrient_code: 'ENERGY', amount: Number(food.kcal), unit: 'kcal' });
           }
-          if (index === 0 && m.sodium) {
+          if (food.sodiumMg != null && Number(food.sodiumMg) > 0) {
+            nutrients.push({ nutrient_code: 'SODIUM', amount: Number(food.sodiumMg), unit: 'mg' });
+          } else if (index === 0 && m.sodium) {
             nutrients.push({ nutrient_code: 'SODIUM', amount: Number(m.sodium), unit: 'mg' });
           }
-          if (index === 0 && m.phosphorus) {
+          if (food.phosphorusMg != null && Number(food.phosphorusMg) > 0) {
+            nutrients.push({
+              nutrient_code: 'PHOSPHORUS',
+              amount: Number(food.phosphorusMg),
+              unit: 'mg',
+            });
+          } else if (index === 0 && m.phosphorus) {
             nutrients.push({ nutrient_code: 'PHOSPHORUS', amount: Number(m.phosphorus), unit: 'mg' });
           }
           result.push({
@@ -309,8 +330,18 @@ export default function NutritionDiaryPage() {
               (m.foods.length > 1 ? `${label}: ${food.name}` : food.name || `${label} — not specified`),
             nutrition_facts: {
               protein_g: food.proteinG || undefined,
-              sodium_mg: index === 0 && m.sodium ? Number(m.sodium) : undefined,
-              phosphorus_mg: index === 0 && m.phosphorus ? Number(m.phosphorus) : undefined,
+              sodium_mg:
+                food.sodiumMg && Number(food.sodiumMg) > 0
+                  ? Number(food.sodiumMg)
+                  : index === 0 && m.sodium
+                    ? Number(m.sodium)
+                    : undefined,
+              phosphorus_mg:
+                food.phosphorusMg && Number(food.phosphorusMg) > 0
+                  ? Number(food.phosphorusMg)
+                  : index === 0 && m.phosphorus
+                    ? Number(m.phosphorus)
+                    : undefined,
               potassium_mg: food.potassiumMg || undefined,
               kcal: food.kcal || undefined,
             },
@@ -543,7 +574,9 @@ export default function NutritionDiaryPage() {
                         <span className="text-xs text-muted-foreground">
                           K {formatNutrientTotal(mealFoodTotals.potassium)} mg · Protein{' '}
                           {formatNutrientTotal(mealFoodTotals.protein, 1)} g · Kcal{' '}
-                          {formatNutrientTotal(mealFoodTotals.kcal)}
+                          {formatNutrientTotal(mealFoodTotals.kcal)} · Na{' '}
+                          {formatNutrientTotal(mealFoodTotals.sodium, 1)} mg · P{' '}
+                          {formatNutrientTotal(mealFoodTotals.phosphorus, 1)} mg
                         </span>
                       )}
                     </div>
@@ -585,7 +618,10 @@ export default function NutritionDiaryPage() {
                       />
                     </div>
                     <div>
-                      <Label>Sodium (mg)</Label>
+                      <Label>
+                        Sodium (mg)
+                        {m.foods.length > 0 ? ' — auto from foods (editable)' : ''}
+                      </Label>
                       <Input
                         type="number"
                         value={m.sodium}
@@ -593,7 +629,10 @@ export default function NutritionDiaryPage() {
                       />
                     </div>
                     <div>
-                      <Label>Phosphorus (mg)</Label>
+                      <Label>
+                        Phosphorus (mg)
+                        {m.foods.length > 0 ? ' — auto from foods (editable)' : ''}
+                      </Label>
                       <Input
                         type="number"
                         value={m.phosphorus}

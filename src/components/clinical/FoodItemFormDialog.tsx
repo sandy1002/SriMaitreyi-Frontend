@@ -40,6 +40,8 @@ export function FoodItemFormDialog({
   const [potassium, setPotassium] = useState('');
   const [protein, setProtein] = useState('');
   const [kcal, setKcal] = useState('');
+  const [sodium, setSodium] = useState('');
+  const [phosphorus, setPhosphorus] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -51,6 +53,10 @@ export function FoodItemFormDialog({
       setPotassium(String(food.potassiumMgPerServing ?? ''));
       setProtein(food.proteinGPerServing != null ? String(food.proteinGPerServing) : '');
       setKcal(food.kcalPerServing != null ? String(food.kcalPerServing) : '');
+      setSodium(food.sodiumMgPerServing != null ? String(food.sodiumMgPerServing) : '');
+      setPhosphorus(
+        food.phosphorusMgPerServing != null ? String(food.phosphorusMgPerServing) : ''
+      );
     } else {
       setName('');
       setServingDescription('100 g');
@@ -58,6 +64,8 @@ export function FoodItemFormDialog({
       setPotassium('');
       setProtein('');
       setKcal('');
+      setSodium('');
+      setPhosphorus('');
     }
   }, [open, food]);
 
@@ -81,6 +89,8 @@ export function FoodItemFormDialog({
         potassiumMgPerServing: Number(potassium),
         proteinGPerServing: protein.trim() !== '' ? Number(protein) : undefined,
         kcalPerServing: Number(kcal),
+        sodiumMgPerServing: sodium.trim() !== '' ? Number(sodium) : undefined,
+        phosphorusMgPerServing: phosphorus.trim() !== '' ? Number(phosphorus) : undefined,
         servingDescription: servingDescription.trim() || '100 g',
         servingGrams: grams,
       };
@@ -183,6 +193,26 @@ export function FoodItemFormDialog({
               value={kcal}
               onChange={(e) => setKcal(e.target.value)}
             />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="food-sodium">Sodium (mg {nutrientLabel})</Label>
+              <Input
+                id="food-sodium"
+                type="number"
+                value={sodium}
+                onChange={(e) => setSodium(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="food-phosphorus">Phosphorus (mg {nutrientLabel})</Label>
+              <Input
+                id="food-phosphorus"
+                type="number"
+                value={phosphorus}
+                onChange={(e) => setPhosphorus(e.target.value)}
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>
