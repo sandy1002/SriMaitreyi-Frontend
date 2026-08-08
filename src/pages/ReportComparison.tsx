@@ -8,6 +8,7 @@ import {
   Line,
   LineChart,
   Legend,
+  ReferenceLine,
   XAxis,
   YAxis,
 } from 'recharts';
@@ -63,6 +64,7 @@ const bpChartConfig = {
 const weightChartConfig = {
   pre: { label: 'Pre weight (kg)', color: 'hsl(var(--primary))' },
   post: { label: 'Post weight (kg)', color: 'hsl(var(--chart-2))' },
+  target: { label: 'Target dry weight (kg)', color: 'hsl(var(--muted-foreground))' },
 };
 
 const ufChartConfig = {
@@ -230,6 +232,17 @@ export default function ReportComparison() {
       })
       .filter(Boolean) as { label: string; pre?: number; post?: number }[];
   }, [sessionRows]);
+
+  const targetDryWeightKg = useMemo(() => {
+    if (activePatient?.targetDryWeightKg != null) {
+      return Number(activePatient.targetDryWeightKg);
+    }
+    for (const s of [...sessionRows].reverse()) {
+      const dry = s.preDialysisAssessment?.targetDryWeightKg;
+      if (dry != null) return Number(dry);
+    }
+    return null;
+  }, [activePatient?.targetDryWeightKg, sessionRows]);
 
   const ufData = useMemo(() => {
     return sessionRows
@@ -525,7 +538,13 @@ export default function ReportComparison() {
                   <Scale className="h-5 w-5 text-primary" />
                   Pre &amp; post weight
                 </CardTitle>
-                <CardDescription>Session weight before and after dialysis (kg).</CardDescription>
+                <CardDescription>
+                  Session weight before and after dialysis (kg)
+                  {targetDryWeightKg != null
+                    ? ` · Target dry weight: ${targetDryWeightKg} kg`
+                    : ''}
+                  .
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {weightData.length > 0 ? (
@@ -537,6 +556,19 @@ export default function ReportComparison() {
                         <YAxis tickLine={false} axisLine={false} fontSize={11} unit=" kg" width={48} />
                         <ChartTooltip content={<ChartTooltipContent />} />
                         <Legend />
+                        {targetDryWeightKg != null ? (
+                          <ReferenceLine
+                            y={targetDryWeightKg}
+                            stroke="hsl(var(--muted-foreground))"
+                            strokeDasharray="4 4"
+                            label={{
+                              value: `Target ${targetDryWeightKg} kg`,
+                              position: 'insideTopRight',
+                              fontSize: 11,
+                              fill: 'hsl(var(--muted-foreground))',
+                            }}
+                          />
+                        ) : null}
                         <Line
                           type="monotone"
                           dataKey="pre"
@@ -561,6 +593,14 @@ export default function ReportComparison() {
                       items={[
                         { color: 'hsl(var(--primary))', label: 'Pre weight' },
                         { color: 'hsl(var(--chart-2))', label: 'Post weight' },
+                        ...(targetDryWeightKg != null
+                          ? [
+                              {
+                                color: 'hsl(var(--muted-foreground))',
+                                label: 'Target dry weight',
+                              },
+                            ]
+                          : []),
                       ]}
                     />
                   </>

@@ -4,9 +4,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { PadocAuthProvider } from "@/context/PadocAuthContext";
 import { SessionProvider } from "@/context/SessionContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import PadocLogin from "./pages/PadocLogin";
+import PadocDashboard from "./pages/PadocDashboard";
 import Dashboard from "./pages/Dashboard";
 import NewSession from "./pages/NewSession";
 import SessionDetail from "./pages/SessionDetail";
@@ -29,6 +32,7 @@ import { AdminRoute } from "@/components/auth/AdminRoute";
 import { PatientRoute } from "@/components/auth/PatientRoute";
 import { StaffRoute } from "@/components/auth/StaffRoute";
 import { TechnicianRoute } from "@/components/auth/TechnicianRoute";
+import { PadocProtectedRoute, PadocPublicOnlyRoute } from "@/components/auth/PadocRoute";
 
 const queryClient = new QueryClient();
 
@@ -36,28 +40,45 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <SessionProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route
-                path="/architecture"
-                element={
-                  <AdminRoute>
-                    <Architecture />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/login"
-                element={
-                  <PublicOnlyRoute>
-                    <Login />
-                  </PublicOnlyRoute>
-                }
-              />
+        <PadocAuthProvider>
+          <SessionProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route
+                  path="/padoc/login"
+                  element={
+                    <PadocPublicOnlyRoute>
+                      <PadocLogin />
+                    </PadocPublicOnlyRoute>
+                  }
+                />
+                <Route
+                  path="/padoc/dashboard"
+                  element={
+                    <PadocProtectedRoute>
+                      <PadocDashboard />
+                    </PadocProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/architecture"
+                  element={
+                    <AdminRoute>
+                      <Architecture />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/login"
+                  element={
+                    <PublicOnlyRoute>
+                      <Login />
+                    </PublicOnlyRoute>
+                  }
+                />
               <Route
                 path="/admin"
                 element={
@@ -246,6 +267,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </SessionProvider>
+        </PadocAuthProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

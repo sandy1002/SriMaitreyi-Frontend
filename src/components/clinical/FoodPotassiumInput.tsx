@@ -31,6 +31,8 @@ export type MealFoodSelection = {
   potassiumMg: number;
   proteinG: number;
   kcal: number;
+  sodiumMg: number;
+  phosphorusMg: number;
 };
 
 /** Parse saved portion text back to a numeric quantity. */
@@ -60,6 +62,8 @@ function servingTooltipText(item: FoodPotassiumItem | undefined): string {
   if (item.potassiumMgPerServing != null) nutrients.push(`${item.potassiumMgPerServing} mg K`);
   if (item.proteinGPerServing != null) nutrients.push(`${item.proteinGPerServing} g protein`);
   if (item.kcalPerServing != null) nutrients.push(`${item.kcalPerServing} kcal`);
+  if (item.sodiumMgPerServing != null) nutrients.push(`${item.sodiumMgPerServing} mg Na`);
+  if (item.phosphorusMgPerServing != null) nutrients.push(`${item.phosphorusMgPerServing} mg P`);
   if (nutrients.length) lines.push(`Per portion: ${nutrients.join(' · ')}`);
   lines.push('Qty 2 = twice this portion, 0.5 = half.');
   return lines.join('\n');
@@ -80,6 +84,8 @@ type NutrientCalc = {
   potassiumMg: number;
   proteinG: number | null;
   kcal: number | null;
+  sodiumMg: number | null;
+  phosphorusMg: number | null;
 };
 
 function quantityMultiplier(quantity: string): number {
@@ -110,6 +116,14 @@ function calcNutrientsFromCatalog(item: FoodPotassiumItem, quantity: string): Nu
         : null,
     kcal:
       item.kcalPerServing != null ? Math.round(item.kcalPerServing * mult) : null,
+    sodiumMg:
+      item.sodiumMgPerServing != null
+        ? Math.round(item.sodiumMgPerServing * mult * 10) / 10
+        : null,
+    phosphorusMg:
+      item.phosphorusMgPerServing != null
+        ? Math.round(item.phosphorusMgPerServing * mult * 10) / 10
+        : null,
   };
 }
 
@@ -168,6 +182,8 @@ export function FoodPotassiumInput({
   const totalPotassium = selectedFoods.reduce((sum, f) => sum + (f.potassiumMg || 0), 0);
   const totalProtein = selectedFoods.reduce((sum, f) => sum + (f.proteinG || 0), 0);
   const totalKcal = selectedFoods.reduce((sum, f) => sum + (f.kcal || 0), 0);
+  const totalSodium = selectedFoods.reduce((sum, f) => sum + (f.sodiumMg || 0), 0);
+  const totalPhosphorus = selectedFoods.reduce((sum, f) => sum + (f.phosphorusMg || 0), 0);
 
   const recalcEntrySync = (entry: MealFoodSelection): MealFoodSelection => {
     const meta = resolveFoodMeta(entry, foodMetaById, foodItems);
@@ -179,6 +195,8 @@ export function FoodPotassiumInput({
       potassiumMg: nutrients.potassiumMg,
       proteinG: nutrients.proteinG ?? 0,
       kcal: nutrients.kcal ?? 0,
+      sodiumMg: nutrients.sodiumMg ?? 0,
+      phosphorusMg: nutrients.phosphorusMg ?? 0,
     };
   };
 
@@ -191,6 +209,8 @@ export function FoodPotassiumInput({
       potassiumMg: item.potassiumMgPerServing,
       proteinG: item.proteinGPerServing ?? 0,
       kcal: item.kcalPerServing ?? 0,
+      sodiumMg: item.sodiumMgPerServing ?? 0,
+      phosphorusMg: item.phosphorusMgPerServing ?? 0,
     };
     const scaled = recalcEntrySync(entry);
     onSelectedFoodsChange([...selectedFoods, scaled]);
@@ -234,6 +254,8 @@ export function FoodPotassiumInput({
             : item.kcalPerServing != null
               ? ` · ${item.kcalPerServing} kcal`
               : ''}
+          {item.sodiumMgPerServing != null ? ` · ${item.sodiumMgPerServing} mg Na` : ''}
+          {item.phosphorusMgPerServing != null ? ` · ${item.phosphorusMgPerServing} mg P` : ''}
           {' / '}
           {item.servingDescription}
         </span>
@@ -350,7 +372,7 @@ export function FoodPotassiumInput({
                   </Button>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 sm:col-span-3">
+              <div className="grid grid-cols-2 gap-2 sm:col-span-3 sm:grid-cols-5">
                 <div>
                   <Label className="text-xs text-muted-foreground">K (mg)</Label>
                   <Input
@@ -390,6 +412,32 @@ export function FoodPotassiumInput({
                     }
                   />
                 </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Na (mg)</Label>
+                  <Input
+                    className="mt-1 h-8"
+                    type="number"
+                    value={food.sodiumMg || ''}
+                    onChange={(e) =>
+                      updateEntry(food.key, {
+                        sodiumMg: e.target.value === '' ? 0 : Number(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">P (mg)</Label>
+                  <Input
+                    className="mt-1 h-8"
+                    type="number"
+                    value={food.phosphorusMg || ''}
+                    onChange={(e) =>
+                      updateEntry(food.key, {
+                        phosphorusMg: e.target.value === '' ? 0 : Number(e.target.value),
+                      })
+                    }
+                  />
+                </div>
               </div>
             </div>
           );
@@ -398,6 +446,8 @@ export function FoodPotassiumInput({
             <span>Meal K: {Math.round(totalPotassium * 10) / 10} mg</span>
             <span>Protein: {Math.round(totalProtein * 10) / 10} g</span>
             <span>Kcal: {Math.round(totalKcal)}</span>
+            <span>Na: {Math.round(totalSodium * 10) / 10} mg</span>
+            <span>P: {Math.round(totalPhosphorus * 10) / 10} mg</span>
           </div>
         </div>
       )}

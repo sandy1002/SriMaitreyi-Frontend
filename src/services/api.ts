@@ -416,9 +416,13 @@ function mapFoodPotassiumItem(item: Record<string, unknown>) {
     potassiumMgPerServing: Number(item.potassium_mg_per_serving),
     proteinGPerServing: item.protein_g_per_serving as number | null | undefined,
     kcalPerServing: item.kcal_per_serving as number | null | undefined,
+    sodiumMgPerServing: item.sodium_mg_per_serving as number | null | undefined,
+    phosphorusMgPerServing: item.phosphorus_mg_per_serving as number | null | undefined,
     potassiumMgPer100g: item.potassium_mg_per_100g as number | null | undefined,
     proteinGPer100g: item.protein_g_per_100g as number | null | undefined,
     kcalPer100g: item.kcal_per_100g as number | null | undefined,
+    sodiumMgPer100g: item.sodium_mg_per_100g as number | null | undefined,
+    phosphorusMgPer100g: item.phosphorus_mg_per_100g as number | null | undefined,
     aliases: item.aliases as string | undefined,
     isCustom: Boolean(item.is_custom),
     patientId: (item.patient_id as string) ?? null,
@@ -484,6 +488,8 @@ export async function createCustomFoodPotassiumItem(payload: {
   potassiumMgPerServing: number;
   proteinGPerServing?: number;
   kcalPerServing?: number;
+  sodiumMgPerServing?: number;
+  phosphorusMgPerServing?: number;
   servingDescription?: string;
   servingGrams?: number;
 }): Promise<import('@/types').FoodPotassiumItem> {
@@ -496,6 +502,8 @@ export async function createCustomFoodPotassiumItem(payload: {
       potassium_mg_per_serving: payload.potassiumMgPerServing,
       protein_g_per_serving: payload.proteinGPerServing,
       kcal_per_serving: payload.kcalPerServing,
+      sodium_mg_per_serving: payload.sodiumMgPerServing,
+      phosphorus_mg_per_serving: payload.phosphorusMgPerServing,
       serving_description: payload.servingDescription ?? '100 g',
       serving_grams: payload.servingGrams ?? 100,
       category: 'custom',
@@ -514,6 +522,8 @@ export async function updateFoodPotassiumItem(
     potassiumMgPerServing?: number;
     proteinGPerServing?: number;
     kcalPerServing?: number;
+    sodiumMgPerServing?: number;
+    phosphorusMgPerServing?: number;
     servingDescription?: string;
     servingGrams?: number;
   }
@@ -528,6 +538,8 @@ export async function updateFoodPotassiumItem(
       potassium_mg_per_serving: payload.potassiumMgPerServing,
       protein_g_per_serving: payload.proteinGPerServing,
       kcal_per_serving: payload.kcalPerServing,
+      sodium_mg_per_serving: payload.sodiumMgPerServing,
+      phosphorus_mg_per_serving: payload.phosphorusMgPerServing,
       serving_description: payload.servingDescription,
       serving_grams: payload.servingGrams,
     }),
@@ -546,6 +558,8 @@ export async function calculateFoodPotassium(payload: {
   potassiumMg: number;
   proteinG: number | null;
   kcal: number | null;
+  sodiumMg: number | null;
+  phosphorusMg: number | null;
   servingDescription: string;
 }> {
   const data = await apiRequest('/food-items/calculate-potassium', {
@@ -563,6 +577,8 @@ export async function calculateFoodPotassium(payload: {
     potassiumMg: Number(data.potassium_mg),
     proteinG: data.protein_g != null ? Number(data.protein_g) : null,
     kcal: data.kcal != null ? Number(data.kcal) : null,
+    sodiumMg: data.sodium_mg != null ? Number(data.sodium_mg) : null,
+    phosphorusMg: data.phosphorus_mg != null ? Number(data.phosphorus_mg) : null,
     servingDescription: String(data.serving_description ?? ''),
   };
 }
