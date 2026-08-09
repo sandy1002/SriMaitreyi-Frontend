@@ -4,13 +4,6 @@ import { useAuth } from '@/context/AuthContext';
 import { getHomePath } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import {
@@ -51,11 +44,10 @@ const STAFF_PERSONAS: { id: StaffRole; label: string; description: string; icon:
 
 export default function Login() {
   const [persona, setPersona] = useState<Persona>(null);
-  const [selectedPatient, setSelectedPatient] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [staffUsername, setStaffUsername] = useState('');
-  const [staffPassword, setStaffPassword] = useState('');
-  const { loginAsPatient, loginAsAdmin, loginAsStaff, patients, patientsError } = useAuth();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const { loginAsPatient, loginAsAdmin, loginAsStaff } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -63,13 +55,21 @@ export default function Login() {
     persona === 'technician' || persona === 'doctor' || persona === 'nutrition';
 
   const handlePatientLogin = async () => {
-    if (!selectedPatient) return;
+    if (!username.trim() || !password) {
+      toast({ title: 'Enter username and password', variant: 'destructive' });
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await loginAsPatient(selectedPatient);
-      navigate('/dashboard');
+      const { mustChangePassword } = await loginAsPatient(username.trim(), password);
+      navigate(mustChangePassword ? '/change-password' : '/dashboard');
     } catch (err) {
       console.error('Patient login failed', err);
+      toast({
+        title: 'Login failed',
+        description: 'Invalid username or password.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -77,13 +77,13 @@ export default function Login() {
 
   const handleStaffLogin = async () => {
     if (!isStaffPersona) return;
-    if (!staffUsername.trim() || !staffPassword) {
+    if (!username.trim() || !password) {
       toast({ title: 'Enter username and password', variant: 'destructive' });
       return;
     }
     setIsSubmitting(true);
     try {
-      await loginAsStaff(persona, staffUsername.trim(), staffPassword);
+      await loginAsStaff(persona, username.trim(), password);
       navigate(getHomePath(persona));
     } catch (err) {
       console.error('Staff login failed', err);
@@ -98,13 +98,13 @@ export default function Login() {
   };
 
   const handleAdminLogin = async () => {
-    if (!staffUsername.trim() || !staffPassword) {
+    if (!username.trim() || !password) {
       toast({ title: 'Enter username and password', variant: 'destructive' });
       return;
     }
     setIsSubmitting(true);
     try {
-      await loginAsAdmin(staffUsername.trim(), staffPassword);
+      await loginAsAdmin(username.trim(), password);
       navigate('/admin');
     } catch (err) {
       console.error('Admin login failed', err);
@@ -117,6 +117,22 @@ export default function Login() {
       setIsSubmitting(false);
     }
   };
+
+  const resetCredentials = () => {
+    setUsername('');
+    setPassword('');
+  };
+
+  const loginPlaceholder =
+    persona === 'patient'
+      ? 'your username'
+      : persona === 'technician'
+        ? 'techadmin'
+        : persona === 'doctor'
+          ? 'docadmin'
+          : persona === 'nutrition'
+            ? 'nutritionadmin'
+            : 'Admin';
 
   const staffMeta = STAFF_PERSONAS.find((p) => p.id === persona);
 
@@ -196,7 +212,15 @@ export default function Login() {
         {persona === 'patient' && (
           <Card className="shadow-clinical-lg">
             <CardHeader>
-              <Button variant="ghost" size="sm" className="w-fit -ml-2 mb-2" onClick={() => setPersona(null)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-fit -ml-2 mb-2"
+                onClick={() => {
+                  setPersona(null);
+                  resetCredentials();
+                }}
+              >
                 <ArrowLeft className="h-4 w-4 mr-1" />
                 Back
               </Button>
@@ -204,31 +228,34 @@ export default function Login() {
                 <User className="h-5 w-5 text-primary" />
                 Patient sign-in
               </CardTitle>
-              <CardDescription>Select your account to open your personal dashboard.</CardDescription>
+              <CardDescription>
+                Sign in with the username and password set for your account.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Your account</Label>
-                <Select value={selectedPatient} onValueChange={setSelectedPatient}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose your name..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {patients.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <span className="font-medium">{p.name}</span>
-                        <span className="text-muted-foreground text-xs ml-2">
-                          ({p.medicalRecordNumber})
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {patientsError && <p className="text-sm text-destructive">{patientsError}</p>}
+                <Label htmlFor="patientUser">Username</Label>
+                <Input
+                  id="patientUser"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="e.g. anita_sharma_abc123"
+                  autoComplete="username"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="patientPass">Password</Label>
+                <Input
+                  id="patientPass"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
               </div>
               <Button
                 onClick={handlePatientLogin}
-                disabled={!selectedPatient || isSubmitting}
+                disabled={isSubmitting || !username.trim() || !password}
                 className="w-full"
                 size="lg"
               >
@@ -247,8 +274,7 @@ export default function Login() {
                 className="w-fit -ml-2 mb-2"
                 onClick={() => {
                   setPersona(null);
-                  setStaffUsername('');
-                  setStaffPassword('');
+                  resetCredentials();
                 }}
               >
                 <ArrowLeft className="h-4 w-4 mr-1" />
@@ -265,15 +291,9 @@ export default function Login() {
                 <Label htmlFor="staffUser">Username</Label>
                 <Input
                   id="staffUser"
-                  value={staffUsername}
-                  onChange={(e) => setStaffUsername(e.target.value)}
-                  placeholder={
-                    persona === 'technician'
-                      ? 'techadmin'
-                      : persona === 'doctor'
-                        ? 'docadmin'
-                        : 'Admin'
-                  }
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder={loginPlaceholder}
                   autoComplete="username"
                 />
               </div>
@@ -282,14 +302,14 @@ export default function Login() {
                 <Input
                   id="staffPass"
                   type="password"
-                  value={staffPassword}
-                  onChange={(e) => setStaffPassword(e.target.value)}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
                 />
               </div>
               <Button
                 onClick={handleStaffLogin}
-                disabled={isSubmitting || !staffUsername.trim() || !staffPassword}
+                disabled={isSubmitting || !username.trim() || !password}
                 className="w-full"
                 size="lg"
               >
@@ -308,8 +328,7 @@ export default function Login() {
                 className="w-fit -ml-2 mb-2"
                 onClick={() => {
                   setPersona(null);
-                  setStaffUsername('');
-                  setStaffPassword('');
+                  resetCredentials();
                 }}
               >
                 <ArrowLeft className="h-4 w-4 mr-1" />
@@ -326,9 +345,10 @@ export default function Login() {
                 <Label htmlFor="adminUser">Username</Label>
                 <Input
                   id="adminUser"
-                  value={staffUsername}
-                  onChange={(e) => setStaffUsername(e.target.value)}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   placeholder="Admin"
+                  autoComplete="username"
                 />
               </div>
               <div className="space-y-2">
@@ -336,13 +356,14 @@ export default function Login() {
                 <Input
                   id="adminPass"
                   type="password"
-                  value={staffPassword}
-                  onChange={(e) => setStaffPassword(e.target.value)}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
                 />
               </div>
               <Button
                 onClick={handleAdminLogin}
-                disabled={isSubmitting || !staffUsername.trim() || !staffPassword}
+                disabled={isSubmitting || !username.trim() || !password}
                 className="w-full"
                 size="lg"
               >

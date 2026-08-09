@@ -3,6 +3,7 @@ export interface Patient {
   name: string;
   age: number | string;
   gender: 'Male' | 'Female' | 'Other' | string;
+  email?: string;
   medicalRecordNumber: string;
   targetDryWeightKg?: number | null;
   dialysisStartDate?: string;
@@ -11,6 +12,8 @@ export interface Patient {
 }
 
 export interface PatientOverview extends Patient {
+  loginUsername?: string;
+  mustChangePassword?: boolean;
   sessionCount: number;
   noteCount: number;
   attachmentCount: number;
@@ -162,6 +165,8 @@ export interface User {
   role: UserRole;
   patientId?: string;
   name: string;
+  username?: string;
+  mustChangePassword?: boolean;
 }
 
 export interface ChatMessage {
