@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { fetchPatientsOverview, deleteSession, createPatient, deletePatient } from '@/services/api';
+import { fetchPatientsOverview, deleteSession, createPatient, deletePatient, updatePatientPortalCredentials } from '@/services/api';
 import { MedicalReportDownload } from '@/components/clinical/MedicalReportDownload';
 import type { PatientOverview } from '@/types';
 import {
@@ -36,6 +36,7 @@ import {
   UserPlus,
   ClipboardList,
   BookOpen,
+  KeyRound,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatISTDate } from '@/lib/datetime';
@@ -70,8 +71,15 @@ export default function AdminDashboard() {
   const [newName, setNewName] = useState('');
   const [newAge, setNewAge] = useState('');
   const [newGender, setNewGender] = useState<string>('');
+  const [newLoginUsername, setNewLoginUsername] = useState('');
+  const [newLoginPassword, setNewLoginPassword] = useState('');
+  const [newEmail, setNewEmail] = useState('');
   const [addingPatient, setAddingPatient] = useState(false);
   const [reportPatientId, setReportPatientId] = useState('');
+  const [credPatient, setCredPatient] = useState<PatientOverview | null>(null);
+  const [credUsername, setCredUsername] = useState('');
+  const [credPassword, setCredPassword] = useState('');
+  const [savingCreds, setSavingCreds] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -102,17 +110,36 @@ export default function AdminDashboard() {
       toast({ title: 'Name required', variant: 'destructive' });
       return;
     }
+    if (newLoginPassword && newLoginPassword.length < 4) {
+      toast({ title: 'Password must be at least 4 characters', variant: 'destructive' });
+      return;
+    }
     setAddingPatient(true);
     try {
-      await createPatient({
+      const created = await createPatient({
         name: newName.trim(),
         age: newAge ? Number(newAge) : undefined,
         gender: newGender || undefined,
+        email: newEmail.trim() || undefined,
+        login_username: newLoginUsername.trim() || undefined,
+        login_password: newLoginPassword || undefined,
       });
-      toast({ title: 'Patient added', description: `${newName} is now registered.` });
+      const loginHint = created.loginUsername
+        ? ` Login username: ${created.loginUsername}`
+        : '';
+      const pwHint = created.mustChangePassword
+        ? ' Patient must change password on first login.'
+        : '';
+      toast({
+        title: 'Patient added',
+        description: `${newName} is now registered.${loginHint}${pwHint}`,
+      });
       setNewName('');
       setNewAge('');
       setNewGender('');
+      setNewEmail('');
+      setNewLoginUsername('');
+      setNewLoginPassword('');
       setAddDialogOpen(false);
       await refreshPatients();
       await load();
@@ -142,6 +169,43 @@ export default function AdminDashboard() {
       toast({ title: 'Failed to delete patient', variant: 'destructive' });
     } finally {
       setDeletingPatientId(null);
+    }
+  };
+
+  const openCredDialog = (patient: PatientOverview) => {
+    setCredPatient(patient);
+    setCredUsername(patient.loginUsername ?? '');
+    setCredPassword('');
+  };
+
+  const handleSaveCredentials = async () => {
+    if (!credPatient) return;
+    if (!credUsername.trim() && !credPassword) {
+      toast({ title: 'Enter a username and/or password', variant: 'destructive' });
+      return;
+    }
+    if (credPassword && credPassword.length < 4) {
+      toast({ title: 'Password must be at least 4 characters', variant: 'destructive' });
+      return;
+    }
+    setSavingCreds(true);
+    try {
+      const result = await updatePatientPortalCredentials(credPatient.id, {
+        username: credUsername.trim() || undefined,
+        password: credPassword || undefined,
+      });
+      toast({
+        title: 'Login updated',
+        description: `Username for ${credPatient.name}: ${result.loginUsername}`,
+      });
+      setCredPatient(null);
+      setCredPassword('');
+      await load();
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Failed to update login', variant: 'destructive' });
+    } finally {
+      setSavingCreds(false);
     }
   };
 
@@ -196,7 +260,9 @@ export default function AdminDashboard() {
                 <DialogHeader>
                   <DialogTitle>Add new patient</DialogTitle>
                   <DialogDescription>
-                    Register a patient so they can sign in from the Patient persona on the login page.
+                    Register a patient with portal login credentials for the Patient sign-in page.
+                    If username/password are left blank, a username is auto-generated and the
+                    default password is used.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-2">
@@ -233,6 +299,38 @@ export default function AdminDashboard() {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pemail">Email</Label>
+                    <Input
+                      id="pemail"
+                      type="email"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      placeholder="Optional — patient contact email"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ploginUser">Login username</Label>
+                    <Input
+                      id="ploginUser"
+                      value={newLoginUsername}
+                      onChange={(e) => setNewLoginUsername(e.target.value)}
+                      placeholder="Optional — auto if blank"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ploginPass">Login password</Label>
+                    <Input
+                      id="ploginPass"
+                      type="password"
+                      value={newLoginPassword}
+                      onChange={(e) => setNewLoginPassword(e.target.value)}
+                      placeholder="Optional — default patient123"
+                      autoComplete="new-password"
+                    />
                   </div>
                 </div>
                 <DialogFooter>
@@ -333,6 +431,9 @@ export default function AdminDashboard() {
                       <p className="font-semibold text-base">{p.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {p.medicalRecordNumber} · {p.gender} · Age {p.age ?? '—'}
+                        {p.email ? ` · ${p.email}` : ''}
+                        {p.loginUsername ? ` · login: ${p.loginUsername}` : ''}
+                        {p.mustChangePassword ? ' · must change password' : ''}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2 ml-auto mr-4">
@@ -357,6 +458,10 @@ export default function AdminDashboard() {
                         {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'}
                       </p>
                     </div>
+                    <Button variant="outline" size="sm" onClick={() => openCredDialog(p)}>
+                      <KeyRound className="h-3 w-3 mr-1" />
+                      Login
+                    </Button>
                     <Button variant="outline" size="sm" asChild>
                       <Link to={`/health-history/${p.id}`}>
                         <ClipboardList className="h-3 w-3 mr-1" />
@@ -468,6 +573,56 @@ export default function AdminDashboard() {
           </Accordion>
         )}
       </main>
+
+      <Dialog
+        open={!!credPatient}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCredPatient(null);
+            setCredPassword('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Patient login — {credPatient?.name}</DialogTitle>
+            <DialogDescription>
+              Set or reset this patient&apos;s portal username and password. Leave password blank to
+              keep the current one.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="cred-username">Username</Label>
+              <Input
+                id="cred-username"
+                value={credUsername}
+                onChange={(e) => setCredUsername(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="cred-password">New password</Label>
+              <Input
+                id="cred-password"
+                type="password"
+                value={credPassword}
+                onChange={(e) => setCredPassword(e.target.value)}
+                placeholder="Leave blank to keep current"
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCredPatient(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveCredentials} disabled={savingCreds}>
+              {savingCreds ? 'Saving…' : 'Save login'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import PadocLogin from "./pages/PadocLogin";
 import PadocDashboard from "./pages/PadocDashboard";
 import Dashboard from "./pages/Dashboard";
+import ChangePassword from "./pages/ChangePassword";
 import NewSession from "./pages/NewSession";
 import SessionDetail from "./pages/SessionDetail";
 import Architecture from "./pages/Architecture";
@@ -30,6 +31,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { PatientRoute } from "@/components/auth/PatientRoute";
+import { PatientScopeRoute } from "@/components/auth/PatientScopeRoute";
 import { StaffRoute } from "@/components/auth/StaffRoute";
 import { TechnicianRoute } from "@/components/auth/TechnicianRoute";
 import { PadocProtectedRoute, PadocPublicOnlyRoute } from "@/components/auth/PadocRoute";
@@ -99,7 +101,9 @@ const App = () => (
                 path="/health-history/:patientId"
                 element={
                   <ProtectedRoute>
-                    <HealthHistory />
+                    <PatientScopeRoute>
+                      <HealthHistory />
+                    </PatientScopeRoute>
                   </ProtectedRoute>
                 }
               />
@@ -123,7 +127,9 @@ const App = () => (
                 path="/cbp/:patientId"
                 element={
                   <ProtectedRoute>
-                    <CbpDiary />
+                    <PatientScopeRoute>
+                      <CbpDiary />
+                    </PatientScopeRoute>
                   </ProtectedRoute>
                 }
               />
@@ -143,6 +149,7 @@ const App = () => (
                   </PatientRoute>
                 }
               />
+              <Route path="/change-password" element={<ChangePassword />} />
               <Route
                 path="/allergy-diary"
                 element={
@@ -155,7 +162,9 @@ const App = () => (
                 path="/allergy-diary/:patientId"
                 element={
                   <ProtectedRoute>
-                    <AllergyDiary />
+                    <PatientScopeRoute>
+                      <AllergyDiary />
+                    </PatientScopeRoute>
                   </ProtectedRoute>
                 }
               />
@@ -171,7 +180,9 @@ const App = () => (
                 path="/nutrition-diary/:patientId"
                 element={
                   <ProtectedRoute>
-                    <NutritionDiary />
+                    <PatientScopeRoute>
+                      <NutritionDiary />
+                    </PatientScopeRoute>
                   </ProtectedRoute>
                 }
               />
@@ -187,7 +198,9 @@ const App = () => (
                 path="/fluid-diary/:patientId"
                 element={
                   <ProtectedRoute>
-                    <RenalFluidDiary />
+                    <PatientScopeRoute>
+                      <RenalFluidDiary />
+                    </PatientScopeRoute>
                   </ProtectedRoute>
                 }
               />
@@ -203,7 +216,9 @@ const App = () => (
                 path="/medication-diary/:patientId"
                 element={
                   <ProtectedRoute>
-                    <MedicationDiary />
+                    <PatientScopeRoute>
+                      <MedicationDiary />
+                    </PatientScopeRoute>
                   </ProtectedRoute>
                 }
               />
@@ -219,7 +234,9 @@ const App = () => (
                 path="/vaccine-diary/:patientId"
                 element={
                   <ProtectedRoute>
-                    <VaccineDiary />
+                    <PatientScopeRoute>
+                      <VaccineDiary />
+                    </PatientScopeRoute>
                   </ProtectedRoute>
                 }
               />
@@ -235,7 +252,9 @@ const App = () => (
                 path="/report-comparison/:patientId"
                 element={
                   <ProtectedRoute>
-                    <ReportComparison />
+                    <PatientScopeRoute>
+                      <ReportComparison />
+                    </PatientScopeRoute>
                   </ProtectedRoute>
                 }
               />

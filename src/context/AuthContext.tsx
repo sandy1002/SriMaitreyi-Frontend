@@ -1,31 +1,13 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User, Patient, UserRole, StaffRole } from '@/types';
-import { fetchPatients, loginApi } from '@/services/api';
+import { fetchPatients, loginApi, setAuthToken } from '@/services/api';
 
 const AUTH_STORAGE_KEY = 'srimai_auth';
-
-const DEMO_PATIENTS: Patient[] = [
-  {
-    id: '00000000-0000-0000-0000-000000000001',
-    name: 'Anita Sharma',
-    age: 52,
-    gender: 'Female',
-    medicalRecordNumber: 'MRN-DEMO-001',
-    dialysisStartDate: '2023-01-01',
-  },
-  {
-    id: '00000000-0000-0000-0000-000000000002',
-    name: 'Ravi Kumar',
-    age: 47,
-    gender: 'Male',
-    medicalRecordNumber: 'MRN-DEMO-002',
-    dialysisStartDate: '2022-08-15',
-  },
-];
 
 interface StoredAuth {
   user: User;
   patient: Patient | null;
+  token?: string;
 }
 
 function normalizePatient(raw: Record<string, unknown> | null | undefined): Patient | null {
@@ -35,6 +17,7 @@ function normalizePatient(raw: Record<string, unknown> | null | undefined): Pati
     name: String(raw.name ?? ''),
     age: (raw.age as number | string) ?? '',
     gender: (raw.gender as Patient['gender']) ?? 'Other',
+    email: raw.email ? String(raw.email) : undefined,
     medicalRecordNumber: String(
       raw.medicalRecordNumber ?? raw.medical_record_number ?? `MRN-${String(raw.id).slice(0, 8)}`
     ),
@@ -54,11 +37,16 @@ function normalizeUser(raw: Record<string, unknown>): User {
   if (rawRole === 'admin' || rawRole === 'clinician') role = 'admin';
   else if (STAFF_ROLES.includes(rawRole as StaffRole)) role = rawRole as StaffRole;
   else if (rawRole === 'patient') role = 'patient';
+  const mustChange =
+    raw.mustChangePassword === true ||
+    raw.must_change_password === true;
   return {
     id: String(raw.id),
     role,
     patientId: raw.patientId ? String(raw.patientId) : raw.patient_id ? String(raw.patient_id) : undefined,
     name: String(raw.name ?? ''),
+    username: raw.username ? String(raw.username) : undefined,
+    mustChangePassword: role === 'patient' ? mustChange : false,
   };
 }
 
@@ -67,9 +55,15 @@ interface AuthContextType {
   patient: Patient | null;
   patients: Patient[];
   patientsError: string | null;
-  loginAsPatient: (patientId: string) => Promise<void>;
+  loginAsPatient: (username: string, password: string) => Promise<{ mustChangePassword: boolean }>;
   loginAsAdmin: (username: string, password: string) => Promise<void>;
   loginAsStaff: (role: StaffRole, username: string, password: string) => Promise<void>;
+  applyPasswordChange: (response: {
+    user?: Record<string, unknown>;
+    patient?: Record<string, unknown> | null;
+    token?: string;
+    mustChangePassword?: boolean;
+  }) => void;
   refreshPatients: () => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -99,64 +93,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ? normalizePatient(stored.patient as unknown as Record<string, unknown>)
             : null
         );
+        if (stored.token) setAuthToken(stored.token);
       }
     } catch (e) {
       console.error('Failed to restore auth session', e);
       sessionStorage.removeItem(AUTH_STORAGE_KEY);
+      setAuthToken(null);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   const refreshPatients = async () => {
+    // Only staff/admin should load the full patient directory.
+    if (user?.role === 'patient') {
+      setPatients(patient ? [patient] : []);
+      setPatientsError(null);
+      return;
+    }
+    if (!user || (user.role !== 'admin' && !STAFF_ROLES.includes(user.role as StaffRole))) {
+      setPatients([]);
+      setPatientsError(null);
+      return;
+    }
     try {
       const patientList = await fetchPatients();
       setPatients(patientList);
       setPatientsError(null);
     } catch (error) {
       console.error('Failed to fetch patients', error);
-      setPatients(DEMO_PATIENTS);
-      setPatientsError(null);
+      setPatients([]);
+      setPatientsError('Failed to load patients');
     }
   };
 
   useEffect(() => {
-    refreshPatients();
-  }, []);
+    if (isLoading) return;
+    void refreshPatients();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh when role/session changes
+  }, [isLoading, user?.role, user?.id, patient?.id]);
 
-  const persistAuth = (nextUser: User, nextPatient: Patient | null) => {
+  const persistAuth = (nextUser: User, nextPatient: Patient | null, token?: string | null) => {
     sessionStorage.setItem(
       AUTH_STORAGE_KEY,
-      JSON.stringify({ user: nextUser, patient: nextPatient })
+      JSON.stringify({ user: nextUser, patient: nextPatient, token: token || undefined })
     );
   };
 
-  const applyLoginResponse = (response: { user: Record<string, unknown>; patient?: Record<string, unknown> | null }) => {
-    const nextUser = normalizeUser(response.user);
+  const applyLoginResponse = (response: {
+    user: Record<string, unknown>;
+    patient?: Record<string, unknown> | null;
+    token?: string;
+    mustChangePassword?: boolean;
+  }) => {
+    const userRaw = {
+      ...response.user,
+      mustChangePassword:
+        response.mustChangePassword ??
+        response.user.mustChangePassword ??
+        response.user.must_change_password,
+    };
+    const nextUser = normalizeUser(userRaw);
     const nextPatient = normalizePatient(response.patient ?? null);
+    const token = response.token ? String(response.token) : null;
+    setAuthToken(token);
     setUser(nextUser);
     setPatient(nextPatient);
-    persistAuth(nextUser, nextPatient);
+    persistAuth(nextUser, nextPatient, token);
+    return nextUser;
   };
 
-  const loginAsPatient = async (patientId: string) => {
-    try {
-      const response = await loginApi('patient', { patientId });
-      applyLoginResponse(response);
-    } catch (error) {
-      console.error('Login API unavailable, using local fallback', error);
-      const selected = patients.find((p) => p.id === patientId) ?? null;
-      if (!selected) throw new Error('Patient not found');
-      const nextUser: User = {
-        id: `local-user-${patientId}`,
-        role: 'patient',
-        patientId,
-        name: selected.name,
-      };
-      setUser(nextUser);
-      setPatient(selected);
-      persistAuth(nextUser, selected);
-    }
+  const loginAsPatient = async (username: string, password: string) => {
+    const response = await loginApi('patient', { username, password });
+    const nextUser = applyLoginResponse(response);
+    return { mustChangePassword: !!nextUser.mustChangePassword };
   };
 
   const loginAsAdmin = async (username: string, password: string) => {
@@ -169,9 +179,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     applyLoginResponse(response);
   };
 
+  const applyPasswordChange = (response: {
+    user?: Record<string, unknown>;
+    patient?: Record<string, unknown> | null;
+    token?: string;
+    mustChangePassword?: boolean;
+  }) => {
+    if (response.user) {
+      applyLoginResponse({
+        user: { ...response.user, mustChangePassword: false },
+        patient: response.patient,
+        token: response.token,
+        mustChangePassword: false,
+      });
+      return;
+    }
+    if (user) {
+      const nextUser = { ...user, mustChangePassword: false };
+      setUser(nextUser);
+      persistAuth(nextUser, patient, undefined);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     setPatient(null);
+    setPatients([]);
+    setAuthToken(null);
     sessionStorage.removeItem(AUTH_STORAGE_KEY);
   };
 
@@ -190,6 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginAsPatient,
         loginAsAdmin,
         loginAsStaff,
+        applyPasswordChange,
         refreshPatients,
         logout,
         isAuthenticated: !!user,

@@ -1,4 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://168.144.93.105:31175";
+const AUTH_TOKEN_KEY = 'srimai_auth_token';
 
 import type {
   ClinicalAlert,
@@ -10,13 +11,44 @@ import type {
   SessionNote,
 } from '@/types';
 
+export function getAuthToken(): string | null {
+  try {
+    return sessionStorage.getItem(AUTH_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setAuthToken(token: string | null) {
+  try {
+    if (token) sessionStorage.setItem(AUTH_TOKEN_KEY, token);
+    else sessionStorage.removeItem(AUTH_TOKEN_KEY);
+  } catch {
+    /* ignore storage errors */
+  }
+}
+
 async function apiRequest(path: string, options?: RequestInit) {
-  const res = await fetch(`${API_BASE}${path}`, options);
+  const headers = new Headers(options?.headers ?? undefined);
+  const token = getAuthToken();
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (!res.ok) {
     const message = await res.text();
     throw new Error(`API ${res.status} ${res.statusText}: ${message}`);
   }
   return res.json();
+}
+
+function authHeaders(extra?: HeadersInit): Headers {
+  const headers = new Headers(extra);
+  const token = getAuthToken();
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  return headers;
 }
 
 function mapPreAssessment(raw: Record<string, unknown> | null | undefined) {
@@ -220,7 +252,9 @@ export async function fetchMedicalReportPdf(
   reportType: MedicalReportType = 'detailed',
   disposition: MedicalReportDisposition = 'inline'
 ): Promise<Blob> {
-  const res = await fetch(medicalReportUrl(patientId, days, reportType, disposition));
+  const res = await fetch(medicalReportUrl(patientId, days, reportType, disposition), {
+    headers: authHeaders(),
+  });
   if (!res.ok) {
     const message = await res.text();
     throw new Error(`Report ${res.status}: ${message}`);
@@ -292,7 +326,10 @@ export async function fetchPatientsOverview(): Promise<{
       name: String(p.name),
       age: p.age as number | string,
       gender: String(p.gender ?? ''),
+      email: p.email ? String(p.email) : undefined,
       medicalRecordNumber: String(p.medicalRecordNumber ?? ''),
+      loginUsername: p.loginUsername ? String(p.loginUsername) : undefined,
+      mustChangePassword: Boolean(p.mustChangePassword),
       createdAt: p.createdAt as string | undefined,
       sessionCount: Number(p.sessionCount ?? 0),
       noteCount: Number(p.noteCount ?? 0),
@@ -311,9 +348,54 @@ export async function createPatient(payload: {
   name: string;
   age?: number;
   gender?: string;
-}) {
+  email?: string;
+  login_username?: string;
+  login_password?: string;
+}): Promise<{
+  id: string;
+  name: string;
+  email?: string;
+  loginUsername?: string;
+  mustChangePassword?: boolean;
+}> {
   return apiRequest('/patients/', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: payload.name,
+      age: payload.age,
+      gender: payload.gender,
+      email: payload.email,
+      login_username: payload.login_username,
+      login_password: payload.login_password,
+    }),
+  });
+}
+
+export async function changePasswordApi(payload: {
+  current_password: string;
+  new_password: string;
+  username?: string;
+}): Promise<{
+  message: string;
+  mustChangePassword: boolean;
+  user: Record<string, unknown>;
+  patient?: Record<string, unknown> | null;
+  token?: string;
+}> {
+  return apiRequest('/auth/change-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updatePatientPortalCredentials(
+  patientId: string,
+  payload: { username?: string; password?: string }
+): Promise<{ loginUsername: string; message: string }> {
+  return apiRequest(`/patients/${patientId}/portal-credentials`, {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
@@ -796,6 +878,7 @@ export async function uploadAttachment(
   const res = await fetch(`${API_BASE}/sessions/${sessionId}/attachment`, {
     method: 'POST',
     body: formData,
+    headers: authHeaders(),
   });
   if (!res.ok) {
     const message = await res.text();
@@ -1186,6 +1269,7 @@ export async function uploadHealthHistoryDocument(
   const res = await fetch(`${API_BASE}/patients/${patientId}/health-history/upload`, {
     method: 'POST',
     body: formData,
+    headers: authHeaders(),
   });
   if (!res.ok) {
     const message = await res.text();
