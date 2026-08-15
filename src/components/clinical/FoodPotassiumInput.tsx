@@ -65,6 +65,7 @@ function servingTooltipText(item: FoodPotassiumItem | undefined): string {
   if (item.sodiumMgPerServing != null) nutrients.push(`${item.sodiumMgPerServing} mg Na`);
   if (item.phosphorusMgPerServing != null) nutrients.push(`${item.phosphorusMgPerServing} mg P`);
   if (nutrients.length) lines.push(`Per portion: ${nutrients.join(' · ')}`);
+  if (item.preparationNotes) lines.push(item.preparationNotes);
   lines.push('Qty 2 = twice this portion, 0.5 = half.');
   return lines.join('\n');
 }
@@ -246,6 +247,9 @@ export function FoodPotassiumInput({
       <span className="flex-1 truncate">
         <span className="font-medium">{item.name}</span>
         {item.isCustom && <span className="text-xs text-primary ml-1">(yours)</span>}
+        {!item.isCustom && item.preparationNotes?.includes('Ready to eat') && (
+          <span className="text-xs text-muted-foreground ml-1">(ready to eat)</span>
+        )}
         <span className="text-muted-foreground ml-2 text-xs">
           {item.potassiumMgPerServing} mg K
           {item.proteinGPerServing != null ? ` · ${item.proteinGPerServing} g protein` : ''}
