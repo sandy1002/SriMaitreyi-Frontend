@@ -506,6 +506,7 @@ function mapFoodPotassiumItem(item: Record<string, unknown>) {
     sodiumMgPer100g: item.sodium_mg_per_100g as number | null | undefined,
     phosphorusMgPer100g: item.phosphorus_mg_per_100g as number | null | undefined,
     aliases: item.aliases as string | undefined,
+    preparationNotes: item.preparation_notes as string | null | undefined,
     isCustom: Boolean(item.is_custom),
     patientId: (item.patient_id as string) ?? null,
   };
