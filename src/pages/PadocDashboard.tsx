@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileScan,
+  FileSpreadsheet,
   FileText,
   Loader2,
   LogOut,
@@ -17,14 +18,34 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { PadocIngestPreviewPanel } from '@/components/padoc/PadocIngestPreview';
 import {
+  PADOC_INGEST_ACCEPT,
+  PADOC_INGEST_MAX_BYTES,
   createPadocDocument,
   deletePadocDocument,
   fetchPadocDocuments,
   padocFileAbsoluteUrl,
-  scanPadocDocument,
+  padocIngestFileError,
+  previewPadocIngest,
   type PadocDocument,
+  type PadocIngestPreview,
 } from '@/services/padocApi';
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function fileKind(file: File): 'pdf' | 'image' | 'spreadsheet' | 'doc' | 'other' {
+  const name = file.name.toLowerCase();
+  if (file.type.startsWith('image/') || /\.(jpe?g|png|gif|webp)$/.test(name)) return 'image';
+  if (file.type === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
+  if (/\.(xlsx|xls|csv)$/.test(name)) return 'spreadsheet';
+  if (/\.(docx|doc)$/.test(name)) return 'doc';
+  return 'other';
+}
 
 export default function PadocDashboard() {
   const { doctor, logout } = usePadocAuth();
@@ -32,9 +53,9 @@ export default function PadocDashboard() {
   const [docs, setDocs] = useState<PadocDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
-  const [scanTitle, setScanTitle] = useState('');
-  const [fieldHints, setFieldHints] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+  const [ingestPreview, setIngestPreview] = useState<PadocIngestPreview | null>(null);
   const [noteTitle, setNoteTitle] = useState('');
   const [noteBody, setNoteBody] = useState('');
   const [structuredJson, setStructuredJson] = useState('');
@@ -62,27 +83,56 @@ export default function PadocDashboard() {
     loadDocs();
   }, [loadDocs]);
 
+  useEffect(() => {
+    if (!selectedFile) {
+      setLocalPreviewUrl(null);
+      return;
+    }
+    const kind = fileKind(selectedFile);
+    if (kind !== 'image' && kind !== 'pdf') {
+      setLocalPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(selectedFile);
+    setLocalPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [selectedFile]);
+
+  const selectedKind = useMemo(() => (selectedFile ? fileKind(selectedFile) : null), [selectedFile]);
+
+  const handleFileChange = (file: File | null) => {
+    setIngestPreview(null);
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+    const error = padocIngestFileError(file);
+    if (error) {
+      toast({ title: 'Cannot use this file', description: error, variant: 'destructive' });
+      setSelectedFile(null);
+      return;
+    }
+    setSelectedFile(file);
+  };
+
   const handleScan = async () => {
-    if (!doctor?.id || !selectedFile) {
-      toast({ title: 'Choose a PDF or image to scan', variant: 'destructive' });
+    if (!selectedFile) {
+      toast({ title: 'Choose a file to classify', variant: 'destructive' });
+      return;
+    }
+    const error = padocIngestFileError(selectedFile);
+    if (error) {
+      toast({ title: 'Cannot use this file', description: error, variant: 'destructive' });
       return;
     }
     setScanning(true);
     try {
-      const item = await scanPadocDocument(doctor.id, selectedFile, {
-        title: scanTitle.trim() || undefined,
-        fieldHints: fieldHints.trim() || undefined,
-      });
+      const result = await previewPadocIngest(selectedFile);
+      setIngestPreview(result);
       toast({
-        title: 'Document scanned',
-        description: item.extractionWarning
-          ? 'File saved; extraction service reported an issue.'
-          : 'Stored in your PaDoc vault (not linked to SriMai patients).',
+        title: 'Preview ready',
+        description: 'Classification complete. Nothing was saved.',
       });
-      setSelectedFile(null);
-      setScanTitle('');
-      await loadDocs();
-      setSelectedDoc(item);
     } catch (e) {
       toast({
         title: 'Scan failed',
@@ -184,8 +234,8 @@ export default function PadocDashboard() {
         <div>
           <h1 className="text-2xl font-bold">Doctor vault</h1>
           <p className="text-sm text-slate-400 mt-1">
-            Scan PDFs/images and store structured or free-form data. Not connected to SriMai
-            dialysis patients.
+            Classify PDFs, spreadsheets, Word files, and images. Scan preview is not saved to
+            Postgres or the knowledge graph.
           </p>
         </div>
 
@@ -194,44 +244,60 @@ export default function PadocDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg text-slate-50">
                 <Upload className="h-5 w-5 text-emerald-400" />
-                Document scanner
+                Document intake
               </CardTitle>
               <CardDescription className="text-slate-400">
-                Upload a PDF or image. Extraction uses the PaDoc service when available; the file is
-                always kept in your vault.
+                Choose a file first. Upload happens only when you click Scan / Classify.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="scan-title">Title (optional)</Label>
-                <Input
-                  id="scan-title"
-                  value={scanTitle}
-                  onChange={(e) => setScanTitle(e.target.value)}
-                  placeholder="e.g. Lab report 12 Aug"
-                  className="bg-slate-950 border-slate-700"
-                />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="scan-file">File</Label>
                 <Input
                   id="scan-file"
                   type="file"
-                  accept=".pdf,image/*"
+                  accept={PADOC_INGEST_ACCEPT}
                   className="bg-slate-950 border-slate-700"
-                  onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+                  onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
                 />
+                <p className="text-xs text-slate-500">
+                  PDF, Excel, Word, CSV, or jpeg/png/gif/webp. Max {formatFileSize(PADOC_INGEST_MAX_BYTES)}.
+                </p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="scan-hints">Field hints (optional, comma-separated)</Label>
-                <Input
-                  id="scan-hints"
-                  value={fieldHints}
-                  onChange={(e) => setFieldHints(e.target.value)}
-                  placeholder="hemoglobin, creatinine"
-                  className="bg-slate-950 border-slate-700"
-                />
-              </div>
+
+              {selectedFile ? (
+                <div className="rounded-md border border-slate-800 bg-slate-950 p-3 space-y-2">
+                  <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+                  <p className="text-xs text-slate-400">{formatFileSize(selectedFile.size)}</p>
+                  {selectedKind === 'image' && localPreviewUrl ? (
+                    <img
+                      src={localPreviewUrl}
+                      alt="Selected file preview"
+                      className="max-h-48 rounded-md border border-slate-800 object-contain bg-slate-900"
+                    />
+                  ) : null}
+                  {selectedKind === 'pdf' && localPreviewUrl ? (
+                    <iframe
+                      title="PDF preview"
+                      src={localPreviewUrl}
+                      className="h-48 w-full rounded-md border border-slate-800 bg-slate-900"
+                    />
+                  ) : null}
+                  {selectedKind === 'spreadsheet' ? (
+                    <div className="flex items-center gap-2 text-sm text-slate-300">
+                      <FileSpreadsheet className="h-8 w-8 text-emerald-400" />
+                      Spreadsheet selected
+                    </div>
+                  ) : null}
+                  {selectedKind === 'doc' ? (
+                    <div className="flex items-center gap-2 text-sm text-slate-300">
+                      <FileText className="h-8 w-8 text-emerald-400" />
+                      Word document selected
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
               <Button type="button" onClick={handleScan} disabled={scanning || !selectedFile}>
                 {scanning ? (
                   <>
@@ -241,7 +307,7 @@ export default function PadocDashboard() {
                 ) : (
                   <>
                     <FileScan className="h-4 w-4 mr-2" />
-                    Scan &amp; store
+                    Scan / Classify
                   </>
                 )}
               </Button>
@@ -303,6 +369,29 @@ export default function PadocDashboard() {
           </Card>
         </div>
 
+        {scanning ? (
+          <Card className="border-slate-800 bg-slate-900">
+            <CardContent className="py-10 flex items-center justify-center gap-2 text-slate-300">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Classifying document…
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {ingestPreview && !scanning ? (
+          <Card className="border-slate-800 bg-slate-900">
+            <CardHeader>
+              <CardTitle className="text-lg text-slate-50">Intake preview</CardTitle>
+              <CardDescription className="text-slate-400">
+                Result of /ingest/preview. Not written to storage.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PadocIngestPreviewPanel preview={ingestPreview} />
+            </CardContent>
+          </Card>
+        ) : null}
+
         <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
           <Card className="border-slate-800 bg-slate-900">
             <CardHeader>
@@ -313,7 +402,7 @@ export default function PadocDashboard() {
             </CardHeader>
             <CardContent className="space-y-2 max-h-[480px] overflow-y-auto">
               {!loading && docs.length === 0 && (
-                <p className="text-sm text-slate-500">No documents yet. Scan a file or add a note.</p>
+                <p className="text-sm text-slate-500">No documents yet. Add a note to the vault.</p>
               )}
               {docs.map((doc) => (
                 <div
@@ -363,14 +452,14 @@ export default function PadocDashboard() {
 
           <Card className="border-slate-800 bg-slate-900">
             <CardHeader>
-              <CardTitle className="text-lg text-slate-50">Preview</CardTitle>
+              <CardTitle className="text-lg text-slate-50">Vault item</CardTitle>
               <CardDescription className="text-slate-400">
-                Selected document details and extraction output.
+                Saved notes from this portal (separate from intake preview).
               </CardDescription>
             </CardHeader>
             <CardContent>
               {!selectedDoc ? (
-                <p className="text-sm text-slate-500">Select a document to preview.</p>
+                <p className="text-sm text-slate-500">Select a saved document.</p>
               ) : (
                 <div className="space-y-3 text-sm">
                   <div>
