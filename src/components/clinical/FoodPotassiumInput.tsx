@@ -19,6 +19,7 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { preparationLabel } from '@/lib/foodPreparation';
 import * as api from '@/services/api';
 import type { FoodPotassiumItem } from '@/types';
 
@@ -56,7 +57,8 @@ function servingTooltipText(item: FoodPotassiumItem | undefined): string {
   if (!item) {
     return '1 portion = one catalog serving. Enter a number to multiply (e.g. 2 = double).';
   }
-  const lines = [`1 portion = ${item.servingDescription}`];
+  const prep = preparationLabel(item.preparation);
+  const lines = [`1 portion = ${item.servingDescription}${prep ? ` (${prep.toLowerCase()})` : ''}`];
   if (item.servingGrams) lines.push(`Weight: ${item.servingGrams} g`);
   const nutrients: string[] = [];
   if (item.potassiumMgPerServing != null) nutrients.push(`${item.potassiumMgPerServing} mg K`);
@@ -238,7 +240,7 @@ export function FoodPotassiumInput({
   const renderFoodOption = (item: FoodPotassiumItem) => (
     <CommandItem
       key={item.id}
-      value={`${item.name} ${item.servingDescription} ${item.category}`}
+      value={`${item.name} ${preparationLabel(item.preparation) ?? ''} ${item.servingDescription} ${item.category}`}
       onSelect={() => addFoodItem(item)}
     >
       <Check
@@ -247,8 +249,10 @@ export function FoodPotassiumInput({
       <span className="flex-1 truncate">
         <span className="font-medium">{item.name}</span>
         {item.isCustom && <span className="text-xs text-primary ml-1">(yours)</span>}
-        {!item.isCustom && item.preparationNotes?.includes('Ready to eat') && (
-          <span className="text-xs text-muted-foreground ml-1">(ready to eat)</span>
+        {!item.isCustom && preparationLabel(item.preparation) && (
+          <span className="ml-1.5 rounded-sm bg-muted px-1 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground align-middle">
+            {preparationLabel(item.preparation)}
+          </span>
         )}
         <span className="text-muted-foreground ml-2 text-xs">
           {item.potassiumMgPerServing} mg K

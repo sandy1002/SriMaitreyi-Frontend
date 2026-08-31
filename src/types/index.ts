@@ -481,6 +481,8 @@ export interface SessionStartDefaults {
   }[];
 }
 
+export type FoodPreparation = 'cooked' | 'ready_to_eat';
+
 export interface FoodPotassiumItem {
   id: string;
   name: string;
@@ -498,6 +500,7 @@ export interface FoodPotassiumItem {
   sodiumMgPer100g?: number | null;
   phosphorusMgPer100g?: number | null;
   aliases?: string;
+  preparation?: FoodPreparation | null;
   preparationNotes?: string | null;
   isCustom?: boolean;
   patientId?: string | null;

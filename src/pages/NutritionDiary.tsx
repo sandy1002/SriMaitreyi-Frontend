@@ -668,7 +668,7 @@ export default function NutritionDiaryPage() {
 
             <Button className="w-full" size="lg" onClick={handleSave} disabled={saving}>
               <Save className="h-4 w-4 mr-2" />
-              {saving ? 'Saving…' : 'Save diary (Postgres + graphs)'}
+              {saving ? 'Saving…' : 'Save diary'}
             </Button>
           </CardContent>
         </Card>
