@@ -144,9 +144,6 @@ export function PatientTrends({ patientId, compact }: PatientTrendsProps) {
           <CardTitle className="flex items-center gap-2 text-base">
             <Network className="h-4 w-4 text-primary" />
             Property graph insights
-            <Badge variant={neo4jOn ? 'default' : 'secondary'} className="ml-2 text-xs">
-              {neo4jOn ? 'Neo4j connected' : 'Neo4j offline'}
-            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm space-y-3">

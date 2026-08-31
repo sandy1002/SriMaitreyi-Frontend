@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Pencil, Plus, RefreshCw, Search } from 'lucide-react';
 import { fetchAllFoodPotassiumList } from '@/services/api';
 import { FoodItemFormDialog } from '@/components/clinical/FoodItemFormDialog';
+import { preparationLabel } from '@/lib/foodPreparation';
 import type { FoodPotassiumItem } from '@/types';
 
 type FoodCatalogDialogProps = {
@@ -96,6 +97,7 @@ export function FoodCatalogDialog({
       (f) =>
         f.name.toLowerCase().includes(q) ||
         (f.aliases ?? '').toLowerCase().includes(q) ||
+        (preparationLabel(f.preparation) ?? '').toLowerCase().includes(q) ||
         f.category.toLowerCase().includes(q)
     );
   }, [foods, query, debouncedQuery]);
@@ -131,6 +133,11 @@ export function FoodCatalogDialog({
         <div className="min-w-0 space-y-0.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium text-sm">{item.name}</span>
+            {preparationLabel(item.preparation) && (
+              <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
+                {preparationLabel(item.preparation)}
+              </Badge>
+            )}
             {item.isCustom && (
               <Badge variant="secondary" className="text-xs">
                 Yours
