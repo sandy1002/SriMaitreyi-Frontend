@@ -47,7 +47,7 @@ export default function PadocLogin() {
         <Button asChild variant="ghost" size="sm" className="text-slate-300 hover:text-white">
           <Link to="/login">
             <ArrowLeft className="h-4 w-4 mr-1" />
-            SriMai dialysis login
+            Srimae dialysis login
           </Link>
         </Button>
       </div>
@@ -57,7 +57,7 @@ export default function PadocLogin() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">PaDoc doctor login</CardTitle>
             <CardDescription className="text-slate-400">
-              Separate from SriMai dialysis. Store structured or unstructured documents for your
+              Separate from Srimae dialysis. Store structured or unstructured documents for your
               practice.
             </CardDescription>
           </CardHeader>

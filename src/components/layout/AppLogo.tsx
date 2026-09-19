@@ -12,12 +12,12 @@ type AppLogoProps = {
   alt?: string;
 };
 
-export function AppLogo({ size = 'md', className, alt = 'SriMai dialysis care' }: AppLogoProps) {
+export function AppLogo({ size = 'md', className, alt = 'Srimae dialysis care' }: AppLogoProps) {
   return (
     <img
       src="/logo.png"
       alt={alt}
-      className={cn('object-contain shadow-glow bg-card', SIZES[size], className)}
+      className={cn('object-contain', SIZES[size], className)}
     />
   );
 }

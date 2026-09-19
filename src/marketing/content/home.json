@@ -1,0 +1,206 @@
+{
+  "hero": {
+    "eyebrow": "AI-powered clinical intelligence",
+    "heading": "Empowering Doctors with Smart Health Data",
+    "subheading": "Srimae enables healthcare professionals across all medical domains to derive deep, rapid insights — enabling faster, more precise diagnosis and proactive prevention.",
+    "primaryCta": "Request a Demo",
+    "secondaryCta": "Learn More"
+  },
+  "stats": [
+    {
+      "id": "s1",
+      "value": "50+",
+      "label": "Medical domains supported"
+    },
+    {
+      "id": "s2",
+      "value": "3x",
+      "label": "Faster diagnosis time"
+    },
+    {
+      "id": "s3",
+      "value": "98%",
+      "label": "Clinician satisfaction"
+    },
+    {
+      "id": "s4",
+      "value": "10M+",
+      "label": "Patient records analyzed"
+    }
+  ],
+  "features": {
+    "heading": "Built for Every Medical Domain",
+    "subheading": "From Nephrology to Cardiology, Srimae surfaces the right insights at the right time — within and across specialties.",
+    "items": [
+      {
+        "id": "f1",
+        "icon": "brain",
+        "title": "Cross-Domain Intelligence",
+        "description": "Identify patterns that span multiple specialties, enabling holistic diagnosis that single-domain tools miss."
+      },
+      {
+        "id": "f2",
+        "icon": "activity",
+        "title": "Real-Time Clinical Insights",
+        "description": "Analyze patient data instantly and surface actionable insights during consultations, not after."
+      },
+      {
+        "id": "f3",
+        "icon": "shield-check",
+        "title": "Preventive Pattern Detection",
+        "description": "Detect early warning signals before conditions escalate, shifting care from reactive to preventive."
+      },
+      {
+        "id": "f4",
+        "icon": "users",
+        "title": "Multi-Specialty Collaboration",
+        "description": "Share insights across care teams seamlessly, ensuring every specialist has the full clinical picture."
+      },
+      {
+        "id": "f5",
+        "icon": "bar-chart-2",
+        "title": "Deep Data Analytics",
+        "description": "Leverage structured and unstructured health data to uncover trends invisible to traditional tools."
+      },
+      {
+        "id": "f6",
+        "icon": "lock",
+        "title": "Secure & Compliant",
+        "description": "Built with healthcare-grade security and compliance standards to protect patient data at every step."
+      }
+    ]
+  },
+  "services": {
+    "heading": "Our Services",
+    "subheading": "From individual clinicians to large hospital networks, Srimae offers tailored solutions that fit the way you work.",
+    "items": [
+      {
+        "id": "sv1",
+        "tag": "For Clinicians",
+        "title": "Clinical Decision Support",
+        "description": "Get AI-powered second opinions and differential diagnosis suggestions at the point of care.",
+        "highlights": [
+          "Real-time insight delivery",
+          "Domain-specific recommendations",
+          "Evidence-backed suggestions"
+        ]
+      },
+      {
+        "id": "sv2",
+        "tag": "For Hospitals",
+        "title": "Population Health Analytics",
+        "description": "Monitor patient cohorts, track outcomes, and identify at-risk populations before conditions escalate.",
+        "highlights": [
+          "Cohort monitoring dashboards",
+          "Early warning alerts",
+          "Outcome trend analysis"
+        ]
+      },
+      {
+        "id": "sv3",
+        "tag": "For Researchers",
+        "title": "Cross-Domain Research Intelligence",
+        "description": "Discover hidden correlations across specialties and patient populations.",
+        "highlights": [
+          "Multi-specialty data access",
+          "Pattern discovery engine",
+          "Exportable insights & reports"
+        ]
+      }
+    ]
+  },
+  "howItWorks": {
+    "heading": "How Srimae Works",
+    "subheading": "A simple, powerful workflow designed to fit into your clinical practice.",
+    "steps": [
+      {
+        "id": "h1",
+        "step": "01",
+        "title": "Connect Patient Data",
+        "description": "Securely integrate EHR records, lab results, imaging, and wearable data into a unified patient profile."
+      },
+      {
+        "id": "h2",
+        "step": "02",
+        "title": "AI Analyzes Patterns",
+        "description": "Srimae's engine processes data across domains, identifying correlations and anomalies in real time."
+      },
+      {
+        "id": "h3",
+        "step": "03",
+        "title": "Insights Delivered to You",
+        "description": "Receive clear, prioritized clinical insights directly in your workflow — no data science expertise required."
+      }
+    ]
+  },
+  "testimonials": [
+    {
+      "id": "t1",
+      "quote": "Srimae helped me to stabilize the dry weight and manage potassium for patients otherwise it would  taken very long time and may miss the correction window",
+      "name": "Dr. Jaswant Challa",
+      "role": "Nephrologist"
+    },
+    {
+      "id": "t2",
+      "quote": "The speed at which I can now review patient histories and get actionable insights has transformed my practice.",
+      "name": "Dr. Muralidhar Joshi",
+      "role": "Anesthesiologist"
+    },
+    {
+      "id": "t3",
+      "quote": "Finally, a tool that understands the complexity of multi-specialty cases. Srimae is a game-changer for my team.",
+      "name": "Dr. Gulla SuryaPrakash",
+      "role": "Cardiologist"
+    }
+  ],
+  "dialysisApp": {
+    "eyebrow": "Live product",
+    "heading": "Dialysis Companion App",
+    "subheading": "Already in production and improving quality of life for dialysis patients every day. Our app gives patients and care teams a complete picture of what matters most.",
+    "features": [
+      {
+        "id": "da1",
+        "title": "Potassium Tracking",
+        "description": "Log and monitor potassium levels with trend analysis to stay within safe clinical ranges."
+      },
+      {
+        "id": "da2",
+        "title": "Protein Monitoring",
+        "description": "Track daily protein intake to support muscle health and meet dialysis dietary requirements."
+      },
+      {
+        "id": "da3",
+        "title": "Intradialytic Fluid Tracking",
+        "description": "Record fluid intake during dialysis sessions for accurate clinical review."
+      },
+      {
+        "id": "da4",
+        "title": "Interdialytic Weight Gain",
+        "description": "Monitor fluid accumulation between sessions to reduce complications and hospitalizations."
+      },
+      {
+        "id": "da5",
+        "title": "Nutrition Diary",
+        "description": "A full food and nutrition log tailored to the specific dietary needs of dialysis patients."
+      },
+      {
+        "id": "da6",
+        "title": "Medical Diary",
+        "description": "Document symptoms, medications, and clinical notes in one organized, shareable record."
+      },
+      {
+        "id": "da7",
+        "title": "Smart Reports & Charts",
+        "description": "Auto-generated visual reports that give clinicians and patients clear, actionable health trends."
+      }
+    ],
+    "ctaLabel": "Learn More",
+    "ctaHref": "/contact"
+  },
+  "cta": {
+    "heading": "Ready to Transform Patient Care?",
+    "subheading": "Join leading healthcare professionals using Srimae to deliver smarter, faster, and more precise care.",
+    "buttonLabel": "Request a Demo",
+    "buttonHref": "/contact"
+  }
+}

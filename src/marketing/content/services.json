@@ -1,0 +1,124 @@
+{
+  "hero": {
+    "eyebrow": "What we offer",
+    "heading": "Our Services & Products",
+    "subheading": "From AI-powered clinical decision support to purpose-built patient apps — Srimae delivers intelligent healthcare tools for every need."
+  },
+  "tabs": [
+    {
+      "id": "tab-dialysis",
+      "label": "Dialysis App"
+    },
+    {
+      "id": "tab-services",
+      "label": "AI Clinical Solutions"
+    }
+  ],
+  "clinicalServices": {
+    "heading": "AI-Powered Solutions for Every Healthcare Role",
+    "subheading": "From individual clinicians to large hospital networks, Srimae delivers intelligent AI solutions that fit the way you work.",
+    "items": [
+      {
+        "id": "sv1",
+        "tag": "For Clinicians",
+        "title": "Clinical Decision Support",
+        "description": "Get AI-powered second opinions and differential diagnosis suggestions at the point of care.",
+        "highlights": [
+          "Real-time insight delivery",
+          "Domain-specific recommendations",
+          "Evidence-backed suggestions"
+        ]
+      },
+      {
+        "id": "sv2",
+        "tag": "For Hospitals",
+        "title": "Population Health Analytics",
+        "description": "Monitor patient cohorts, track outcomes, and identify at-risk populations before conditions escalate.",
+        "highlights": [
+          "Cohort monitoring dashboards",
+          "Early warning alerts",
+          "Outcome trend analysis"
+        ]
+      },
+      {
+        "id": "sv3",
+        "tag": "For Researchers",
+        "title": "Cross-Domain Research Intelligence",
+        "description": "Discover hidden correlations across specialties and patient populations to accelerate medical research.",
+        "highlights": [
+          "Multi-specialty data access",
+          "Pattern discovery engine",
+          "Exportable insights & reports"
+        ]
+      }
+    ]
+  },
+  "dialysisApp": {
+    "badge": "Live product",
+    "heading": "Dialysis Companion App",
+    "subheading": "Already Live and improving quality of life for dialysis patients every day. Our app gives patients and care teams a complete picture of what matters most.",
+    "features": [
+      {
+        "id": "da1",
+        "icon": "droplets",
+        "title": "Potassium Tracking",
+        "description": "Log and monitor potassium levels with trend analysis to stay within safe clinical ranges."
+      },
+      {
+        "id": "da2",
+        "icon": "beaker",
+        "title": "Protein Monitoring",
+        "description": "Track daily protein intake to support muscle health and meet dialysis dietary requirements."
+      },
+      {
+        "id": "da3",
+        "icon": "droplets",
+        "title": "Intradialytic Fluid Tracking",
+        "description": "Record fluid intake during dialysis sessions for accurate clinical review."
+      },
+      {
+        "id": "da4",
+        "icon": "weight",
+        "title": "Interdialytic Weight Gain",
+        "description": "Monitor fluid accumulation between sessions to reduce complications and hospitalizations."
+      },
+      {
+        "id": "da5",
+        "icon": "utensils",
+        "title": "Nutrition Diary",
+        "description": "A full food and nutrition log tailored to the specific dietary needs of dialysis patients."
+      },
+      {
+        "id": "da6",
+        "icon": "notebook",
+        "title": "Medical Diary",
+        "description": "Document symptoms, medications, and clinical notes in one organized, shareable record."
+      },
+      {
+        "id": "da7",
+        "icon": "bar-chart",
+        "title": "Smart Reports & Charts",
+        "description": "Auto-generated visual reports that give clinicians and patients clear, actionable health trends."
+      }
+    ],
+    "ctaLabel": "Request a Demo",
+    "ctaHref": "/contact"
+  },
+  "padocApp": {
+    "badge": "Doctor portal",
+    "heading": "PaDoc",
+    "subheading": "A secure document vault for doctors — store, organize, and review structured or unstructured clinical documents separate from the dialysis patient app.",
+    "ctaLabel": "PaDoc login",
+    "ctaHref": "/padoc/login",
+    "highlights": [
+      "Doctor-only secure login",
+      "Structured & unstructured documents",
+      "Separate from dialysis patient data"
+    ]
+  },
+  "cta": {
+    "heading": "Ready to See Srimae in Action?",
+    "subheading": "Request a personalized demo and discover how Srimae can transform your clinical practice.",
+    "buttonLabel": "Request a Demo"
+  }
+}

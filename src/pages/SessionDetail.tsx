@@ -111,6 +111,7 @@ export default function SessionDetail() {
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
   const [closing, setClosing] = useState(false);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+  const endingRef = useRef(false);
 
   // post-dialysis form fields
   const [postWeight, setPostWeight] = useState<string>('');
@@ -414,19 +415,30 @@ export default function SessionDetail() {
               {isInProgress && canManageSession && (
                 <>
                   <Button
+                    type="button"
                     disabled={closing}
-                    onClick={() => setCloseDialogOpen(true)}
+                    onClick={() => {
+                      setFormError(null);
+                      setCloseDialogOpen(true);
+                    }}
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
                     End Dialysis
                   </Button>
 
-                  <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
+                  <Dialog
+                    open={closeDialogOpen}
+                    onOpenChange={(open) => {
+                      if (closing) return;
+                      setCloseDialogOpen(open);
+                      if (!open) setFormError(null);
+                    }}
+                  >
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>End dialysis</DialogTitle>
+                        <DialogTitle>Complete dialysis session</DialogTitle>
                         <DialogDescription>
-                          Enter post weight to complete the session. Other fields are optional.
+                          Enter post weight to finish this session. Other fields are optional.
                         </DialogDescription>
                       </DialogHeader>
 
@@ -505,44 +517,60 @@ export default function SessionDetail() {
 
                       <DialogFooter>
                         <div className="flex gap-2">
-                          <Button variant="outline" onClick={() => setCloseDialogOpen(false)}>Cancel</Button>
-                          <Button onClick={async () => {
-                            if (!postWeight) {
-                              setFormError('Post weight (kg) is required to end dialysis.');
-                              return;
-                            }
-                            setFormError(null);
-                            setClosing(true);
-                            try {
-                              const result = await closeSession(session.id, {
-                                postWeightKg: Number(postWeight),
-                                postBp: postBp || undefined,
-                                totalUfRemoved: totalUf ? Number(totalUf) : undefined,
-                                condition,
-                                technicianName: technicianName.trim() || undefined,
-                                nurseName: nurseName.trim() || undefined,
-                                doctorName: doctorName.trim() || undefined,
-                                postPotassiumMmolL: postPotassium
-                                  ? Number(postPotassium)
-                                  : undefined,
-                                postBloodSugar: postBloodSugar
-                                  ? Number(postBloodSugar)
-                                  : undefined,
-                              });
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={closing}
+                            onClick={() => setCloseDialogOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="button"
+                            disabled={closing}
+                            onClick={async () => {
+                              if (endingRef.current || closing) return;
+                              if (!postWeight) {
+                                setFormError('Post weight (kg) is required to end dialysis.');
+                                return;
+                              }
+                              endingRef.current = true;
+                              setFormError(null);
+                              setClosing(true);
+                              try {
+                                await closeSession(session.id, {
+                                  postWeightKg: Number(postWeight),
+                                  postBp: postBp || undefined,
+                                  totalUfRemoved: totalUf ? Number(totalUf) : undefined,
+                                  condition,
+                                  technicianName: technicianName.trim() || undefined,
+                                  nurseName: nurseName.trim() || undefined,
+                                  doctorName: doctorName.trim() || undefined,
+                                  postPotassiumMmolL: postPotassium
+                                    ? Number(postPotassium)
+                                    : undefined,
+                                  postBloodSugar: postBloodSugar
+                                    ? Number(postBloodSugar)
+                                    : undefined,
+                                });
 
-                              await loadSessionDetails(session.id);
-                              toast({
-                                title: 'Session completed',
-                                description: 'Dialysis ended and session is complete.',
-                              });
-                              setCloseDialogOpen(false);
-                            } catch (err) {
-                              console.error(err);
-                              toast({ title: 'Error', description: 'Failed to close session.', variant: 'destructive' });
-                            } finally {
-                              setClosing(false);
-                            }
-                          }} disabled={closing}>{closing ? 'Saving...' : 'End dialysis'}</Button>
+                                await loadSessionDetails(session.id);
+                                toast({
+                                  title: 'Session completed',
+                                  description: 'Dialysis ended and session is complete.',
+                                });
+                                setCloseDialogOpen(false);
+                              } catch (err) {
+                                console.error(err);
+                                toast({ title: 'Error', description: 'Failed to close session.', variant: 'destructive' });
+                              } finally {
+                                endingRef.current = false;
+                                setClosing(false);
+                              }
+                            }}
+                          >
+                            {closing ? 'Saving…' : 'Save & complete'}
+                          </Button>
                         </div>
                       </DialogFooter>
                     </DialogContent>

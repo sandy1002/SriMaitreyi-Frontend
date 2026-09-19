@@ -1,0 +1,39 @@
+/* Marketing site theme — scoped so clinical app styles stay unchanged. */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@600;700&family=Inter:wght@400;500&display=swap');
+
+.marketing-site {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 4%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 4%;
+  --primary: 214 52% 25%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 244 52% 25%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 214 23% 65%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 34 52% 25%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 85%;
+  --input: 0 0% 85%;
+  --ring: 214 52% 25%;
+  --radius: 0.5rem;
+  --radius-button: calc(var(--radius) - 2px);
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  font-family: var(--font-sans);
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.marketing-site h1,
+.marketing-site h2,
+.marketing-site h3,
+.marketing-site h4 {
+  font-family: var(--font-heading);
+}
