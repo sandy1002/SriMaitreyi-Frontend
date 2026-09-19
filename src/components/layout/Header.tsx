@@ -20,7 +20,7 @@ export function Header() {
         <Link to={isAdmin ? '/admin' : isStaff ? '/staff' : user ? '/dashboard' : '/login'} className="flex items-center gap-3">
           <AppLogo size="md" />
           <div>
-            <h1 className="text-lg font-bold text-foreground">Srimai</h1>
+            <h1 className="text-lg font-bold text-foreground">Srimae</h1>
             <p className="text-xs text-muted-foreground">
               {isAdmin ? 'Admin Console' : isStaff ? 'Staff Workspace' : 'Patient Medical Journal'}
             </p>

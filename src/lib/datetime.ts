@@ -8,6 +8,29 @@ const IST_OPTIONS: Intl.DateTimeFormatOptions = {
   timeStyle: 'short',
 };
 
+/** Today's calendar date in IST as `YYYY-MM-DD` (for `<input type="date">`). */
+export function todayISTDate(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: IST_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '00';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
+/** Short chart tick label, e.g. `19 Sep` — avoids crowded ISO strings like `2026-01-05`. */
+export function formatISTChartTick(value?: string | Date | null): string {
+  const date = parseApiDateTime(value);
+  if (!date) return '—';
+  return date.toLocaleString('en-GB', {
+    timeZone: IST_TZ,
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
 /** Parse API datetime: naive strings are UTC; Z or offset strings are respected. */
 export function parseApiDateTime(value?: string | Date | null): Date | null {
   if (value == null || value === '') return null;

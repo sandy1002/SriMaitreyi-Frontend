@@ -2,11 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import { PadocAuthProvider } from "@/context/PadocAuthContext";
 import { SessionProvider } from "@/context/SessionContext";
-import Index from "./pages/Index";
 import Login from "./pages/Login";
 import PadocLogin from "./pages/PadocLogin";
 import PadocDashboard from "./pages/PadocDashboard";
@@ -35,10 +35,17 @@ import { PatientScopeRoute } from "@/components/auth/PatientScopeRoute";
 import { StaffRoute } from "@/components/auth/StaffRoute";
 import { TechnicianRoute } from "@/components/auth/TechnicianRoute";
 import { PadocProtectedRoute, PadocPublicOnlyRoute } from "@/components/auth/PadocRoute";
+import { MarketingLayout } from "@/marketing/layouts/MarketingLayout";
+import { HomeRoute } from "@/marketing/components/HomeRoute";
+import { AboutPage } from "@/marketing/pages/AboutPage";
+import { ServicesPage } from "@/marketing/pages/ServicesPage";
+import { ContactPage } from "@/marketing/pages/ContactPage";
+import { PricingPage } from "@/marketing/pages/PricingPage";
 
 const queryClient = new QueryClient();
 
 const App = () => (
+  <HelmetProvider>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
@@ -48,7 +55,13 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<Index />} />
+                <Route element={<MarketingLayout />}>
+                  <Route path="/" element={<HomeRoute />} />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/services" element={<ServicesPage />} />
+                  <Route path="/contact" element={<ContactPage />} />
+                  <Route path="/pricing" element={<PricingPage />} />
+                </Route>
                 <Route
                   path="/padoc/login"
                   element={
@@ -290,6 +303,7 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;

@@ -214,7 +214,7 @@ export default function PadocDashboard() {
           </div>
           <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm" className="border-slate-700 bg-transparent">
-              <Link to="/login">SriMai dialysis</Link>
+              <Link to="/login">Srimae dialysis</Link>
             </Button>
             <Button
               type="button"

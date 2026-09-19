@@ -1,0 +1,42 @@
+{
+  "name": "Srimae",
+  "tagline": "Smarter Insights. Better Outcomes.",
+  "description": "Srimae empowers doctors and healthcare professionals with AI-driven data insights for faster, more precise diagnosis and prevention.",
+  "nav": [
+    {
+      "label": "Home",
+      "href": "/services",
+      "id": "eE2GjZV1BiWy1p2gDd_fz"
+    },
+    {
+      "label": "About",
+      "href": "/about",
+      "id": "MMfsOU6MFGEcMDfDEi07x"
+    },
+    {
+      "label": "Pricing",
+      "href": "/pricing",
+      "id": "pricing_nav_001"
+    },
+    {
+      "label": "Contact",
+      "href": "/contact",
+      "id": "1618mESmDRlU9beExLh7T"
+    }
+  ],
+  "footer": {
+    "copyright": "Srimae. All rights reserved.",
+    "links": [
+      {
+        "label": "Privacy Policy",
+        "href": "/privacy",
+        "id": "KwbEcjuECYoa9Bl7-pZGG"
+      },
+      {
+        "label": "Terms of Use",
+        "href": "/terms",
+        "id": "FOVPYP3oHpilbEMyVDaCX"
+      }
+    ]
+  }
+}

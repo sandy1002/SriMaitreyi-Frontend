@@ -44,7 +44,7 @@ import * as api from '@/services/api';
 import { formatUfGoal } from '@/lib/clinicalUnits';
 import { UfGoalFormulaHint } from '@/components/clinical/UfGoalFormulaHint';
 import { InterdialyticSessionSummary } from '@/components/clinical/InterdialyticSessionSummary';
-import { nowISTClock } from '@/lib/datetime';
+import { nowISTClock, todayISTDate } from '@/lib/datetime';
 import type {
   DialysisSession,
   InterdialyticFluidsSummary,
@@ -71,7 +71,7 @@ export default function NewSession() {
     return null;
   }, [isPatientStart, isTechnicianStart, authPatient, routePatientId, patients]);
 
-  const [sessionDate, setSessionDate] = useState(new Date().toISOString().split('T')[0]);
+  const [sessionDate, setSessionDate] = useState(todayISTDate);
   const [hospitalName, setHospitalName] = useState('');
   const [openSession, setOpenSession] = useState<DialysisSession | null>(null);
   const [loadingOpen, setLoadingOpen] = useState(true);

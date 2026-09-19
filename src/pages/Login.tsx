@@ -150,7 +150,7 @@ export default function Login() {
       <div className="w-full max-w-2xl space-y-6 animate-fade-in">
         <div className="text-center">
           <AppLogo size="lg" className="mx-auto" />
-          <h1 className="mt-4 text-3xl font-bold text-foreground">SriMai</h1>
+          <h1 className="mt-4 text-3xl font-bold text-foreground">Srimae</h1>
           <p className="mt-3 text-muted-foreground">Dialysis App</p>
         </div>
 

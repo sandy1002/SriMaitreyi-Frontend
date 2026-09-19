@@ -1,0 +1,33 @@
+{
+  "hero": {
+    "heading": "Get in Touch",
+    "subheading": "Have questions about Srimae? Want to see a demo? We'd love to hear from you."
+  },
+  "form": {
+    "namePlaceholder": "Your full name",
+    "emailPlaceholder": "Your email address",
+    "rolePlaceholder": "e.g. Cardiologist, Hospital Administrator",
+    "messagePlaceholder": "Tell us about your practice or what you'd like to know...",
+    "submitLabel": "Send Message"
+  },
+  "info": [
+    {
+      "id": "i1",
+      "icon": "mail",
+      "label": "Email",
+      "value": "Hello@srimae.com"
+    },
+    {
+      "id": "i2",
+      "icon": "map-pin",
+      "label": "Headquarters",
+      "value": "Atlanta, USA"
+    },
+    {
+      "id": "i3",
+      "icon": "clock",
+      "label": "Response time",
+      "value": "Within 24 hours"
+    }
+  ]
+}
