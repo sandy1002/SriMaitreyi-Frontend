@@ -1,0 +1,181 @@
+{
+  "hero": {
+    "eyebrow": "Transparent Pricing",
+    "heading": "Plans Built for Every Care Team",
+    "subheading": "Simple, predictable pricing for the Dialysis Companion App and AI Clinical Solutions. No hidden fees — scale as your practice grows."
+  },
+  "toggle": {
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "annualBadge": "Save 20%"
+  },
+  "dialysis": {
+    "heading": "Dialysis Companion App",
+    "subheading": "Empowering dialysis patients and care teams with intelligent tracking and reporting.",
+    "plans": [
+      {
+        "id": "dp1",
+        "name": "Free",
+        "price": {
+          "monthly": "0",
+          "annual": "0"
+        },
+        "description": "Get started at no cost — ideal for individual patients managing their own care.",
+        "cta": "Get Started Free",
+        "ctaHref": "https://ui.srimaitreyi.com/login",
+        "ctaExternal": true,
+        "highlighted": false,
+        "features": [
+          "Potassium & protein tracking",
+          "Fluid & weight monitoring",
+          "Nutrition diary (up to 30 entries/mo)",
+          "Basic smart reports",
+          "Mobile-friendly interface"
+        ]
+      },
+      {
+        "id": "dp2",
+        "name": "Pro",
+        "price": {
+          "monthly": "29",
+          "annual": "23"
+        },
+        "description": "Advanced tools for patients and small care teams who need deeper insights.",
+        "cta": "Start Free Trial",
+        "ctaHref": "https://ui.srimaitreyi.com/login",
+        "ctaExternal": true,
+        "highlighted": true,
+        "badge": "Most Popular",
+        "features": [
+          "Everything in Free",
+          "Unlimited nutrition diary entries",
+          "Medical diary & care notes",
+          "Advanced smart reports & trends",
+          "PDF export & sharing",
+          "Priority email support"
+        ]
+      },
+      {
+        "id": "dp3",
+        "name": "Enterprise",
+        "price": {
+          "monthly": "Custom",
+          "annual": "Custom"
+        },
+        "description": "Tailored for dialysis centers, hospitals, and multi-site care networks.",
+        "cta": "Contact Sales",
+        "ctaHref": "/contact",
+        "ctaExternal": false,
+        "highlighted": false,
+        "features": [
+          "Everything in Pro",
+          "Multi-patient dashboard",
+          "EHR / EMR integration",
+          "Custom branding",
+          "Dedicated account manager",
+          "SLA & compliance support"
+        ]
+      }
+    ]
+  },
+  "clinical": {
+    "heading": "AI Clinical Solutions",
+    "subheading": "AI-powered decision support and population health analytics for clinicians and health systems.",
+    "plans": [
+      {
+        "id": "cp1",
+        "name": "Starter",
+        "price": {
+          "monthly": "25",
+          "annual": "20"
+        },
+        "description": "Perfect for solo practitioners and small clinics exploring AI-assisted care.",
+        "cta": "Request a Demo",
+        "ctaHref": "/contact",
+        "ctaExternal": false,
+        "highlighted": false,
+        "features": [
+          "Clinical decision support",
+          "Up to 3 provider seats",
+          "Basic population health dashboard",
+          "Standard analytics reports",
+          "Email support"
+        ]
+      },
+      {
+        "id": "cp2",
+        "name": "Professional",
+        "price": {
+          "monthly": "299",
+          "annual": "239"
+        },
+        "description": "For growing practices and specialty groups that need full AI capabilities.",
+        "cta": "Request a Demo",
+        "ctaHref": "/contact",
+        "ctaExternal": false,
+        "highlighted": true,
+        "badge": "Most Popular",
+        "features": [
+          "Everything in Starter",
+          "Up to 20 provider seats",
+          "Advanced population health analytics",
+          "Cross-domain research intelligence",
+          "Custom alert thresholds",
+          "Priority support & onboarding"
+        ]
+      },
+      {
+        "id": "cp3",
+        "name": "Enterprise",
+        "price": {
+          "monthly": "Custom",
+          "annual": "Custom"
+        },
+        "description": "For health systems, ACOs, and large networks requiring enterprise-grade AI.",
+        "cta": "Contact Sales",
+        "ctaHref": "/contact",
+        "ctaExternal": false,
+        "highlighted": false,
+        "features": [
+          "Everything in Professional",
+          "Unlimited provider seats",
+          "EHR / EMR deep integration",
+          "Custom AI model fine-tuning",
+          "Dedicated infrastructure",
+          "HIPAA BAA & compliance package"
+        ]
+      }
+    ]
+  },
+  "faq": {
+    "heading": "Frequently Asked Questions",
+    "items": [
+      {
+        "id": "fq1",
+        "question": "Can I switch plans at any time?",
+        "answer": "Yes. You can upgrade or downgrade your plan at any time. Changes take effect at the start of your next billing cycle."
+      },
+      {
+        "id": "fq2",
+        "question": "Is there a free trial for paid plans?",
+        "answer": "The Dialysis App Pro plan includes a 14-day free trial. AI Clinical Solutions plans include a guided demo and a 30-day pilot period for qualifying practices."
+      },
+      {
+        "id": "fq3",
+        "question": "Are your products HIPAA compliant?",
+        "answer": "Yes. Srimae is built with HIPAA compliance in mind. Enterprise plans include a Business Associate Agreement (BAA) and dedicated compliance support."
+      },
+      {
+        "id": "fq4",
+        "question": "What payment methods do you accept?",
+        "answer": "We accept all major credit cards. Enterprise customers may also pay via ACH bank transfer or invoice."
+      }
+    ]
+  },
+  "cta": {
+    "heading": "Not Sure Which Plan Is Right for You?",
+    "subheading": "Our team is happy to walk you through the options and find the best fit for your practice.",
+    "buttonLabel": "Talk to Our Team",
+    "buttonHref": "/contact"
+  }
+}

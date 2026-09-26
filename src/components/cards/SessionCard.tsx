@@ -18,6 +18,7 @@ export function SessionCard({ session }: SessionCardProps) {
         weekday: 'long',
         month: 'short',
         day: 'numeric',
+        year: 'numeric',
       })
     : null;
 

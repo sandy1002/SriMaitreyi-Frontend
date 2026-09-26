@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { TrendingUp, AlertTriangle, Network, ChevronDown } from 'lucide-react';
+import { formatISTChartTick } from '@/lib/datetime';
 import { AlertsPanel } from '@/components/clinical/AlertsPanel';
 import { cn } from '@/lib/utils';
 
@@ -68,7 +69,7 @@ export function PatientTrends({ patientId, compact }: PatientTrendsProps) {
   const chartData = trends.weightTrend
     .filter((w) => w.preWeightKg != null || w.postWeightKg != null)
     .map((w) => ({
-      label: w.sessionDate.slice(0, 10),
+      label: formatISTChartTick(w.sessionDate),
       pre: w.preWeightKg ?? undefined,
       post: w.postWeightKg ?? undefined,
     }));
@@ -144,9 +145,6 @@ export function PatientTrends({ patientId, compact }: PatientTrendsProps) {
           <CardTitle className="flex items-center gap-2 text-base">
             <Network className="h-4 w-4 text-primary" />
             Property graph insights
-            <Badge variant={neo4jOn ? 'default' : 'secondary'} className="ml-2 text-xs">
-              {neo4jOn ? 'Neo4j connected' : 'Neo4j offline'}
-            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm space-y-3">

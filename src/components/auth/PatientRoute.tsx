@@ -2,7 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
 export function PatientRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isPatient, isStaff, isLoading, patient } = useAuth();
+  const { isAuthenticated, isPatient, isStaff, isLoading, patient, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -18,6 +18,10 @@ export function PatientRoute({ children }: { children: React.ReactNode }) {
 
   if (!isPatient || !patient) {
     return <Navigate to={isStaff ? '/staff' : '/admin'} replace />;
+  }
+
+  if (user?.mustChangePassword) {
+    return <Navigate to="/change-password" replace />;
   }
 
   return <>{children}</>;

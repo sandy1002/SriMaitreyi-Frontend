@@ -3,6 +3,7 @@ export interface Patient {
   name: string;
   age: number | string;
   gender: 'Male' | 'Female' | 'Other' | string;
+  email?: string;
   medicalRecordNumber: string;
   targetDryWeightKg?: number | null;
   dialysisStartDate?: string;
@@ -11,6 +12,8 @@ export interface Patient {
 }
 
 export interface PatientOverview extends Patient {
+  loginUsername?: string;
+  mustChangePassword?: boolean;
   sessionCount: number;
   noteCount: number;
   attachmentCount: number;
@@ -162,6 +165,8 @@ export interface User {
   role: UserRole;
   patientId?: string;
   name: string;
+  username?: string;
+  mustChangePassword?: boolean;
 }
 
 export interface ChatMessage {
@@ -476,6 +481,8 @@ export interface SessionStartDefaults {
   }[];
 }
 
+export type FoodPreparation = 'cooked' | 'ready_to_eat';
+
 export interface FoodPotassiumItem {
   id: string;
   name: string;
@@ -493,6 +500,8 @@ export interface FoodPotassiumItem {
   sodiumMgPer100g?: number | null;
   phosphorusMgPer100g?: number | null;
   aliases?: string;
+  preparation?: FoodPreparation | null;
+  preparationNotes?: string | null;
   isCustom?: boolean;
   patientId?: string | null;
 }

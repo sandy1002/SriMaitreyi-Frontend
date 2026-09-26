@@ -1,0 +1,77 @@
+{
+  "hero": {
+    "eyebrow": "Our mission",
+    "heading": "Transforming Healthcare Through Intelligent Data",
+    "subheading": "Srimae was founded on a simple belief: every patient deserves the full power of medical knowledge applied to their care."
+  },
+  "story": {
+    "heading": "Why We Built Srimae",
+    "paragraphs": [
+      "Healthcare generates enormous amounts of data — but most of it goes underutilized. Doctors are overwhelmed, time is scarce, and critical patterns that span multiple specialties often go undetected until it's too late.",
+      "Srimae was created to change that. By combining advanced AI with deep clinical domain knowledge, we give healthcare professionals the tools to see further, act faster, and deliver better outcomes for every patient they serve.",
+      "Our platform is built by a team of clinicians, data scientists, and engineers who understand both the complexity of medicine and the power of modern AI — and are committed to making that power accessible to every doctor, in every domain."
+    ]
+  },
+  "values": [
+    {
+      "id": "v1",
+      "icon": "heart-pulse",
+      "title": "Patient-Centered",
+      "description": "Every feature we build starts with one question: does this improve patient outcomes?"
+    },
+    {
+      "id": "v2",
+      "icon": "lightbulb",
+      "title": "Clinical Intelligence",
+      "description": "We combine AI with deep medical expertise to deliver insights that are clinically meaningful, not just statistically interesting."
+    },
+    {
+      "id": "v3",
+      "icon": "shield",
+      "title": "Trust & Privacy",
+      "description": "We hold patient data to the highest standards of security, privacy, and ethical use."
+    },
+    {
+      "id": "v4",
+      "icon": "globe",
+      "title": "Universal Access",
+      "description": "We believe every doctor — regardless of specialty or geography — deserves access to world-class clinical intelligence."
+    }
+  ],
+  "team": {
+    "heading": "Led by Clinicians and Technologists",
+    "subheading": "Our team brings together decades of experience in medicine, AI research, and healthcare technology.",
+    "members": [
+      {
+        "id": "m1",
+        "name": "Dr. Jaswanth Challa",
+        "role": "Dialysis Unit Head",
+        "initials": "JC"
+      },
+      {
+        "id": "m2",
+        "name": "Dr. Rajasekara Chakravarty",
+        "role": "Chief Nephrologist",
+        "initials": "RC"
+      },
+      {
+        "id": "m3",
+        "name": "Dr.  Muralidhar Joshi",
+        "role": "Chief Anesthesiolgist",
+        "initials": "MJ"
+      },
+      {
+        "id": "m4",
+        "name": "Dr. Gulla Surya Prakash",
+        "role": "Chief Cardilogist",
+        "initials": "GSP"
+      }
+    ]
+  },
+  "cta": {
+    "heading": "Join Us in Redefining Healthcare",
+    "subheading": "Whether you're a clinician, researcher, or health system — we'd love to show you what Srimae can do.",
+    "primaryLabel": "Request a Demo",
+    "secondaryLabel": "Contact Us"
+  }
+}
