@@ -20,17 +20,18 @@ const serviceIcons: Record<string, React.ReactNode> = {
 
 export function HomePage() {
   const site = 'https://srimae.com';
-  const title = 'Srimae — AI-Powered Clinical Intelligence for Doctors';
-  const description = 'Srimae empowers healthcare professionals with smart data insights for faster, more precise diagnosis and prevention across all medical domains.';
+  const title = 'SriMae — AI-Powered Clinical Intelligence for Doctors';
+  const description =
+    'SriMae empowers healthcare professionals with smart data insights for faster, more precise diagnosis and prevention across all medical domains.';
 
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
-      { '@type': 'WebSite', '@id': `${site}/#website`, name: 'Srimae', url: `${site}/` },
+      { '@type': 'WebSite', '@id': `${site}/#website`, name: 'SriMae', url: `${site}/` },
       {
         '@type': 'Organization',
         '@id': `${site}/#organization`,
-        name: 'Srimae',
+        name: 'SriMae',
         url: `${site}/`,
         description,
       },
@@ -63,10 +64,10 @@ export function HomePage() {
 
       <main>
         {/* ── Hero ── */}
-        <section className="relative overflow-hidden bg-primary text-primary-foreground">
+        <section className="relative overflow-hidden ombre-bg text-primary-foreground">
           <div className="absolute inset-0 pointer-events-none">
             <img
-              src="/airo-assets/images/pages/home/hero"
+              src="/assets/images/home-hero.jpg"
               alt=""
               className="w-full h-full object-cover opacity-15"
               width={1440}
@@ -74,7 +75,7 @@ export function HomePage() {
               loading="eager"
               fetchPriority="high"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary/60" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-black/10 to-transparent" />
           </div>
           <div className="relative container mx-auto px-4 max-w-6xl py-24 md:py-32">
             <div className="max-w-2xl">
@@ -106,21 +107,60 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* ── Stats ── */}
+        {/*
+          Home metrics strip:
+          - useTargetMetrics: false → motivational pillars (startup-safe)
+          - useTargetMetrics: true  → statsLegacy numeric KPIs (enable when numbers are real)
+          Toggle in src/marketing/content/home.json
+        */}
         <section className="bg-card border-b border-border">
           <div className="container mx-auto px-4 max-w-6xl py-12">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {home.stats.map((stat) => (
-                <div key={stat.id} className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-primary mb-1">
-                    {stat.value}
+            {(() => {
+              const useTarget =
+                'useTargetMetrics' in home && Boolean((home as { useTargetMetrics?: boolean }).useTargetMetrics);
+              const items =
+                useTarget && 'statsLegacy' in home && Array.isArray((home as { statsLegacy?: typeof home.stats }).statsLegacy)
+                  ? (home as { statsLegacy: typeof home.stats }).statsLegacy
+                  : home.stats;
+              const note = !useTarget && 'statsNote' in home ? (home as { statsNote?: string }).statsNote : undefined;
+
+              return (
+                <>
+                  <div
+                    className={
+                      useTarget
+                        ? 'grid grid-cols-2 md:grid-cols-4 gap-8'
+                        : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8'
+                    }
+                  >
+                    {items.map((stat) => (
+                      <div key={stat.id} className={`text-center ${useTarget ? '' : 'px-2'}`}>
+                        <div
+                          className={
+                            useTarget
+                              ? 'text-3xl md:text-4xl font-bold text-primary mb-1'
+                              : 'text-xl md:text-2xl font-bold ombre-text mb-2 leading-snug'
+                          }
+                          style={useTarget ? undefined : { fontFamily: 'DM Sans, sans-serif' }}
+                        >
+                          {stat.value}
+                        </div>
+                        <div
+                          className={`text-sm text-muted-foreground ${useTarget ? '' : 'leading-relaxed'}`}
+                        >
+                          {stat.label}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </div>
+                  {note ? (
+                    <p className="mt-10 max-w-2xl mx-auto text-center text-xs text-muted-foreground/80 leading-relaxed">
+                      {note}
+                    </p>
+                  ) : null}
+                </>
+              );
+            })()}
           </div>
         </section>
 
@@ -174,7 +214,7 @@ export function HomePage() {
                   className="bg-background rounded-2xl border border-border p-8 flex flex-col hover:shadow-lg transition-shadow"
                 >
                   <div className="flex items-center justify-between mb-6">
-                    <div className="w-14 h-14 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">
+                    <div className="w-14 h-14 rounded-xl ombre-btn flex items-center justify-center">
                       {serviceIcons[service.id] ?? <CheckCircle2 className="w-7 h-7" />}
                     </div>
                     <span className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full">
@@ -219,7 +259,7 @@ export function HomePage() {
                     <div className="hidden md:block absolute top-8 left-full w-full h-px bg-border -translate-x-1/2 z-0" />
                   )}
                   <div className="relative z-10 bg-background rounded-xl p-8 border border-border text-center shadow-sm">
-                    <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-5">
+                    <div className="w-14 h-14 rounded-full ombre-btn flex items-center justify-center text-xl font-bold mx-auto mb-5">
                       {step.step}
                     </div>
                     <h3 className="text-lg font-semibold text-foreground mb-3">
@@ -243,7 +283,7 @@ export function HomePage() {
                 Trusted by Leading Clinicians
               </h2>
               <p className="text-muted-foreground text-lg">
-                Hear from doctors who use Srimae every day.
+                Hear from doctors who use SriMae every day.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -264,17 +304,17 @@ export function HomePage() {
         </section>
 
         {/* ── CTA ── */}
-        <section className="bg-primary text-primary-foreground py-20 md:py-24">
+        <section className="ombre-cta-light py-20 md:py-24">
           <div className="container mx-auto px-4 max-w-3xl text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 ombre-text">
               {home.cta.heading}
             </h2>
-            <p className="text-primary-foreground/80 text-lg leading-relaxed mb-10">
+            <p className="text-foreground/70 text-lg leading-relaxed mb-10">
               {home.cta.subheading}
             </p>
             <Link
               to="/contact"
-              className="inline-flex items-center gap-2 bg-primary-foreground text-primary font-semibold px-8 py-4 rounded-[var(--radius-button)] hover:opacity-90 transition-opacity text-base"
+              className="inline-flex items-center gap-2 ombre-btn font-semibold px-8 py-4 rounded-[var(--radius-button)] hover:opacity-90 transition-opacity text-base"
             >
               {home.cta.buttonLabel}
               <ArrowRight className="w-5 h-5" />

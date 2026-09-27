@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AppLogo } from '@/components/layout/AppLogo';
 import {
   FileScan,
   FileSpreadsheet,
@@ -202,25 +203,25 @@ export default function PadocDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50">
-      <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
+    <div className="min-h-screen gradient-hero text-foreground">
+      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
         <div className="container flex h-14 items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <FileScan className="h-5 w-5 text-emerald-400" />
+          <div className="flex items-center gap-3">
+            <AppLogo size="sm" />
             <div>
-              <p className="text-sm font-semibold leading-none">PaDoc</p>
-              <p className="text-xs text-slate-400">{doctor?.displayName}</p>
+              <p className="text-sm font-semibold leading-none ombre-text" style={{ fontFamily: 'DM Sans, sans-serif' }}>PaDoc</p>
+              <p className="text-xs text-muted-foreground">{doctor?.displayName}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm" className="border-slate-700 bg-transparent">
-              <Link to="/login">Srimae dialysis</Link>
+            <Button asChild variant="outline" size="sm" className="border-border bg-background/80">
+              <Link to="/">Back to site</Link>
             </Button>
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="text-slate-300"
+              className="text-muted-foreground"
               onClick={logout}
             >
               <LogOut className="h-4 w-4 mr-1" />
@@ -233,20 +234,20 @@ export default function PadocDashboard() {
       <main className="container py-6 space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Doctor vault</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Classify PDFs, spreadsheets, Word files, and images. Scan preview is not saved to
             Postgres or the knowledge graph.
           </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="border-slate-800 bg-slate-900">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg text-slate-50">
-                <Upload className="h-5 w-5 text-emerald-400" />
+              <CardTitle className="flex items-center gap-2 text-lg text-foreground">
+                <Upload className="h-5 w-5 text-primary" />
                 Document intake
               </CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription>
                 Choose a file first. Upload happens only when you click Scan / Classify.
               </CardDescription>
             </CardHeader>
@@ -257,41 +258,41 @@ export default function PadocDashboard() {
                   id="scan-file"
                   type="file"
                   accept={PADOC_INGEST_ACCEPT}
-                  className="bg-slate-950 border-slate-700"
+                  className="bg-background border-border"
                   onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
                 />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   PDF, Excel, Word, CSV, or jpeg/png/gif/webp. Max {formatFileSize(PADOC_INGEST_MAX_BYTES)}.
                 </p>
               </div>
 
               {selectedFile ? (
-                <div className="rounded-md border border-slate-800 bg-slate-950 p-3 space-y-2">
+                <div className="rounded-md border border-border bg-muted/40 p-3 space-y-2">
                   <p className="text-sm font-medium truncate">{selectedFile.name}</p>
-                  <p className="text-xs text-slate-400">{formatFileSize(selectedFile.size)}</p>
+                  <p className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
                   {selectedKind === 'image' && localPreviewUrl ? (
                     <img
                       src={localPreviewUrl}
                       alt="Selected file preview"
-                      className="max-h-48 rounded-md border border-slate-800 object-contain bg-slate-900"
+                      className="max-h-48 rounded-md border border-border object-contain bg-muted/30"
                     />
                   ) : null}
                   {selectedKind === 'pdf' && localPreviewUrl ? (
                     <iframe
                       title="PDF preview"
                       src={localPreviewUrl}
-                      className="h-48 w-full rounded-md border border-slate-800 bg-slate-900"
+                      className="h-48 w-full rounded-md border border-border bg-card shadow-sm"
                     />
                   ) : null}
                   {selectedKind === 'spreadsheet' ? (
-                    <div className="flex items-center gap-2 text-sm text-slate-300">
-                      <FileSpreadsheet className="h-8 w-8 text-emerald-400" />
+                    <div className="flex items-center gap-2 text-sm text-foreground">
+                      <FileSpreadsheet className="h-8 w-8 text-primary" />
                       Spreadsheet selected
                     </div>
                   ) : null}
                   {selectedKind === 'doc' ? (
-                    <div className="flex items-center gap-2 text-sm text-slate-300">
-                      <FileText className="h-8 w-8 text-emerald-400" />
+                    <div className="flex items-center gap-2 text-sm text-foreground">
+                      <FileText className="h-8 w-8 text-primary" />
                       Word document selected
                     </div>
                   ) : null}
@@ -314,13 +315,13 @@ export default function PadocDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-slate-800 bg-slate-900">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg text-slate-50">
-                <Plus className="h-5 w-5 text-emerald-400" />
+              <CardTitle className="flex items-center gap-2 text-lg text-foreground">
+                <Plus className="h-5 w-5 text-primary" />
                 Add note / structured data
               </CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription>
                 Free-text notes and optional JSON for structured records.
               </CardDescription>
             </CardHeader>
@@ -331,7 +332,7 @@ export default function PadocDashboard() {
                   id="note-title"
                   value={noteTitle}
                   onChange={(e) => setNoteTitle(e.target.value)}
-                  className="bg-slate-950 border-slate-700"
+                  className="bg-background border-border"
                 />
               </div>
               <div className="space-y-2">
@@ -341,7 +342,7 @@ export default function PadocDashboard() {
                   value={noteBody}
                   onChange={(e) => setNoteBody(e.target.value)}
                   rows={4}
-                  className="bg-slate-950 border-slate-700"
+                  className="bg-background border-border"
                 />
               </div>
               <div className="space-y-2">
@@ -352,7 +353,7 @@ export default function PadocDashboard() {
                   onChange={(e) => setStructuredJson(e.target.value)}
                   rows={4}
                   placeholder='{"key": "value"}'
-                  className="bg-slate-950 border-slate-700 font-mono text-xs"
+                  className="bg-background border-border font-mono text-xs"
                 />
               </div>
               <Button type="button" onClick={handleSaveNote} disabled={savingNote}>
@@ -370,8 +371,8 @@ export default function PadocDashboard() {
         </div>
 
         {scanning ? (
-          <Card className="border-slate-800 bg-slate-900">
-            <CardContent className="py-10 flex items-center justify-center gap-2 text-slate-300">
+          <Card className="border-border bg-card shadow-sm">
+            <CardContent className="py-10 flex items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />
               Classifying document…
             </CardContent>
@@ -379,10 +380,10 @@ export default function PadocDashboard() {
         ) : null}
 
         {ingestPreview && !scanning ? (
-          <Card className="border-slate-800 bg-slate-900">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg text-slate-50">Intake preview</CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardTitle className="text-lg text-foreground">Intake preview</CardTitle>
+              <CardDescription>
                 Result of /ingest/preview. Not written to storage.
               </CardDescription>
             </CardHeader>
@@ -393,24 +394,24 @@ export default function PadocDashboard() {
         ) : null}
 
         <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-          <Card className="border-slate-800 bg-slate-900">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg text-slate-50">Your documents</CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardTitle className="text-lg text-foreground">Your documents</CardTitle>
+              <CardDescription>
                 {loading ? 'Loading…' : `${docs.length} item${docs.length === 1 ? '' : 's'}`}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2 max-h-[480px] overflow-y-auto">
               {!loading && docs.length === 0 && (
-                <p className="text-sm text-slate-500">No documents yet. Add a note to the vault.</p>
+                <p className="text-sm text-muted-foreground">No documents yet. Add a note to the vault.</p>
               )}
               {docs.map((doc) => (
                 <div
                   key={doc.id}
                   className={`flex items-start justify-between gap-2 rounded-md border p-3 cursor-pointer ${
                     selectedDoc?.id === doc.id
-                      ? 'border-emerald-500/60 bg-emerald-500/10'
-                      : 'border-slate-800 hover:border-slate-600'
+                      ? 'border-primary/50 bg-primary/10'
+                      : 'border-border hover:border-primary/40'
                   }`}
                   onClick={() => setSelectedDoc(doc)}
                   onKeyDown={(e) => {
@@ -421,13 +422,13 @@ export default function PadocDashboard() {
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <FileText className="h-4 w-4 shrink-0 text-slate-400" />
+                      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <span className="font-medium text-sm truncate">{doc.title}</span>
                       <Badge variant="secondary" className="text-xs">
                         {doc.dataKind}
                       </Badge>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {doc.createdAt ? new Date(doc.createdAt).toLocaleString() : '—'}
                       {doc.fileName ? ` · ${doc.fileName}` : ''}
                     </p>
@@ -436,7 +437,7 @@ export default function PadocDashboard() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="shrink-0 text-slate-400 hover:text-red-400"
+                    className="shrink-0 text-muted-foreground hover:text-red-400"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDelete(doc);
@@ -450,35 +451,35 @@ export default function PadocDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-slate-800 bg-slate-900">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg text-slate-50">Vault item</CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardTitle className="text-lg text-foreground">Vault item</CardTitle>
+              <CardDescription>
                 Saved notes from this portal (separate from intake preview).
               </CardDescription>
             </CardHeader>
             <CardContent>
               {!selectedDoc ? (
-                <p className="text-sm text-slate-500">Select a saved document.</p>
+                <p className="text-sm text-muted-foreground">Select a saved document.</p>
               ) : (
                 <div className="space-y-3 text-sm">
                   <div>
                     <p className="font-semibold text-base">{selectedDoc.title}</p>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {selectedDoc.dataKind} · status {selectedDoc.reviewStatus}
                     </p>
                   </div>
                   {selectedDoc.notes ? (
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">Notes</p>
-                      <p className="whitespace-pre-wrap text-slate-200">{selectedDoc.notes}</p>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Notes</p>
+                      <p className="whitespace-pre-wrap text-foreground">{selectedDoc.notes}</p>
                     </div>
                   ) : null}
                   {selectedDoc.fileUrl ? (
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">File</p>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">File</p>
                       <a
-                        className="text-emerald-400 underline"
+                        className="text-primary underline"
                         href={padocFileAbsoluteUrl(selectedDoc.fileUrl) ?? '#'}
                         target="_blank"
                         rel="noreferrer"
@@ -489,10 +490,10 @@ export default function PadocDashboard() {
                   ) : null}
                   {selectedDoc.structuredData != null || selectedDoc.extractedPanels != null ? (
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
                         Structured / extracted
                       </p>
-                      <pre className="max-h-72 overflow-auto rounded-md bg-slate-950 border border-slate-800 p-3 text-xs text-slate-300">
+                      <pre className="max-h-72 overflow-auto rounded-md bg-muted/50 border border-border p-3 text-xs text-foreground">
                         {JSON.stringify(
                           selectedDoc.structuredData ?? selectedDoc.extractedPanels,
                           null,

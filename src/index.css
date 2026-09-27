@@ -6,37 +6,37 @@
 
 @layer base {
   :root {
-    /* Clinical teal palette */
-    --background: 200 20% 98%;
-    --foreground: 210 25% 15%;
+    /* SriMae brand palette (aligned with marketing ombre) */
+    --background: 250 100% 98%;
+    --foreground: 0 0% 4%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 25% 15%;
+    --card-foreground: 0 0% 4%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 25% 15%;
+    --popover-foreground: 0 0% 4%;
 
-    /* Soft teal - calming, medical */
-    --primary: 175 45% 42%;
+    /* Brand purple */
+    --primary: 263 70% 50%;
     --primary-foreground: 0 0% 100%;
 
-    /* Light teal for secondary surfaces */
-    --secondary: 175 30% 95%;
-    --secondary-foreground: 175 45% 25%;
+    /* Magenta secondary */
+    --secondary: 294 40% 95%;
+    --secondary-foreground: 294 70% 35%;
 
-    --muted: 200 15% 94%;
-    --muted-foreground: 210 15% 45%;
+    --muted: 263 43% 90%;
+    --muted-foreground: 263 20% 40%;
 
-    /* Warm coral accent */
-    --accent: 15 85% 60%;
-    --accent-foreground: 0 0% 100%;
+    /* Lime accent (from brand gradient) */
+    --accent: 83 70% 50%;
+    --accent-foreground: 0 0% 29%;
 
     --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 200 20% 88%;
-    --input: 200 20% 88%;
-    --ring: 175 45% 42%;
+    --border: 250 40% 88%;
+    --input: 250 40% 88%;
+    --ring: 263 70% 50%;
 
     --radius: 0.75rem;
 
@@ -45,71 +45,71 @@
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    --info: 200 80% 50%;
+    --info: 263 70% 50%;
     --info-foreground: 0 0% 100%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(175 45% 42%) 0%, hsl(180 50% 35%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(175 30% 95%) 0%, hsl(200 20% 98%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(200 20% 98%) 100%);
+    /* Brand gradients (purple → magenta → lime) */
+    --gradient-primary: linear-gradient(90deg, #6d28d9 0%, #c628d9 55%, #94d928 100%);
+    --gradient-hero: linear-gradient(180deg, #ede9fe 0%, #f5d0fe 45%, #fafafa 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(250 100% 98%) 100%);
 
     /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(210 25% 15% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(210 25% 15% / 0.08), 0 2px 4px -2px hsl(210 25% 15% / 0.04);
-    --shadow-lg: 0 10px 15px -3px hsl(210 25% 15% / 0.08), 0 4px 6px -4px hsl(210 25% 15% / 0.04);
-    --shadow-glow: 0 0 20px hsl(175 45% 42% / 0.15);
+    --shadow-sm: 0 1px 2px 0 hsl(263 40% 20% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(263 40% 20% / 0.08), 0 2px 4px -2px hsl(263 40% 20% / 0.04);
+    --shadow-lg: 0 10px 15px -3px hsl(263 40% 20% / 0.08), 0 4px 6px -4px hsl(263 40% 20% / 0.04);
+    --shadow-glow: 0 0 20px hsl(263 70% 50% / 0.2);
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 250 100% 98%;
+    --sidebar-foreground: 263 30% 25%;
+    --sidebar-primary: 263 70% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 263 43% 94%;
+    --sidebar-accent-foreground: 263 70% 35%;
+    --sidebar-border: 250 40% 88%;
+    --sidebar-ring: 263 70% 50%;
   }
 
   .dark {
-    --background: 210 25% 8%;
-    --foreground: 200 20% 95%;
+    --background: 263 30% 8%;
+    --foreground: 250 40% 95%;
 
-    --card: 210 25% 12%;
-    --card-foreground: 200 20% 95%;
+    --card: 263 25% 12%;
+    --card-foreground: 250 40% 95%;
 
-    --popover: 210 25% 12%;
-    --popover-foreground: 200 20% 95%;
+    --popover: 263 25% 12%;
+    --popover-foreground: 250 40% 95%;
 
-    --primary: 175 50% 50%;
-    --primary-foreground: 210 25% 8%;
+    --primary: 263 70% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 25% 18%;
-    --secondary-foreground: 175 50% 70%;
+    --secondary: 263 20% 18%;
+    --secondary-foreground: 294 70% 75%;
 
-    --muted: 210 25% 18%;
-    --muted-foreground: 200 15% 60%;
+    --muted: 263 20% 18%;
+    --muted-foreground: 250 20% 65%;
 
-    --accent: 15 85% 55%;
+    --accent: 83 70% 45%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 65% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 25% 20%;
-    --input: 210 25% 20%;
-    --ring: 175 50% 50%;
+    --border: 263 20% 20%;
+    --input: 263 20% 20%;
+    --ring: 263 70% 60%;
 
     --success: 145 55% 40%;
     --warning: 38 92% 45%;
-    --info: 200 80% 45%;
+    --info: 263 70% 55%;
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-background: 263 30% 10%;
+    --sidebar-foreground: 250 40% 95%;
+    --sidebar-primary: 263 70% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 263 20% 16%;
+    --sidebar-accent-foreground: 250 40% 95%;
+    --sidebar-border: 263 20% 18%;
+    --sidebar-ring: 263 70% 60%;
   }
 }
 
@@ -135,6 +135,29 @@
   
   .gradient-card {
     background: var(--gradient-card);
+  }
+
+  /* Brand ombre (same as marketing) — available in dialysis portal */
+  .ombre-text {
+    background: linear-gradient(90deg, #6d28d9 0%, #c628d9 55%, #94d928 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: inline-block;
+  }
+
+  .ombre-btn {
+    background: linear-gradient(90deg, #6d28d9 0%, #c628d9 55%, #94d928 100%);
+    color: #fff;
+    transition: opacity 0.2s;
+  }
+
+  .ombre-btn:hover {
+    opacity: 0.88;
+  }
+
+  .ombre-cta-light {
+    background: linear-gradient(135deg, #ede9fe 0%, #f5d0fe 60%, #ecfccb 100%);
   }
   
   .shadow-clinical {

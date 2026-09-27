@@ -2,7 +2,7 @@
   "hero": {
     "eyebrow": "What we offer",
     "heading": "Our Services & Products",
-    "subheading": "From AI-powered clinical decision support to purpose-built patient apps — Srimae delivers intelligent healthcare tools for every need."
+    "subheading": "From AI-powered clinical decision support to purpose-built patient apps \u2014 Srimae delivers intelligent healthcare tools for every need."
   },
   "tabs": [
     {
@@ -50,6 +50,19 @@
           "Pattern discovery engine",
           "Exportable insights & reports"
         ]
+      },
+      {
+        "id": "sv4",
+        "tag": "Doctor portal",
+        "title": "PaDoc",
+        "description": "A secure document vault for doctors — store, organize, and review structured or unstructured clinical documents separate from the dialysis patient app.",
+        "highlights": [
+          "Doctor-only secure login",
+          "Structured & unstructured documents",
+          "Separate from dialysis patient data"
+        ],
+        "ctaLabel": "PaDoc login",
+        "ctaHref": "/padoc/login"
       }
     ]
   },
@@ -103,18 +116,6 @@
     ],
     "ctaLabel": "Request a Demo",
     "ctaHref": "/contact"
-  },
-  "padocApp": {
-    "badge": "Doctor portal",
-    "heading": "PaDoc",
-    "subheading": "A secure document vault for doctors — store, organize, and review structured or unstructured clinical documents separate from the dialysis patient app.",
-    "ctaLabel": "PaDoc login",
-    "ctaHref": "/padoc/login",
-    "highlights": [
-      "Doctor-only secure login",
-      "Structured & unstructured documents",
-      "Separate from dialysis patient data"
-    ]
   },
   "cta": {
     "heading": "Ready to See Srimae in Action?",

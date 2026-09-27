@@ -2,7 +2,7 @@
   "hero": {
     "eyebrow": "Transparent Pricing",
     "heading": "Plans Built for Every Care Team",
-    "subheading": "Simple, predictable pricing for the Dialysis Companion App and AI Clinical Solutions. No hidden fees — scale as your practice grows."
+    "subheading": "Simple, predictable pricing for the Dialysis Companion App and AI Clinical Solutions. No hidden fees \u2014 scale as your practice grows."
   },
   "toggle": {
     "monthly": "Monthly",
@@ -20,7 +20,7 @@
           "monthly": "0",
           "annual": "0"
         },
-        "description": "Get started at no cost — ideal for individual patients managing their own care.",
+        "description": "Get started at no cost \u2014 ideal for individual patients managing their own care.",
         "cta": "Get Started Free",
         "ctaHref": "https://ui.srimaitreyi.com/login",
         "ctaExternal": true,

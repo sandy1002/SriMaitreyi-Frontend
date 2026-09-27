@@ -19,8 +19,7 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between">
         <Link to={isAdmin ? '/admin' : isStaff ? '/staff' : user ? '/dashboard' : '/login'} className="flex items-center gap-3">
           <AppLogo size="md" />
-          <div>
-            <h1 className="text-lg font-bold text-foreground">Srimae</h1>
+          <div className="hidden sm:block">
             <p className="text-xs text-muted-foreground">
               {isAdmin ? 'Admin Console' : isStaff ? 'Staff Workspace' : 'Patient Medical Journal'}
             </p>
