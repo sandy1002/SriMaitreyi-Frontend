@@ -11,13 +11,12 @@ export function MarketingHeader() {
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="flex h-16 items-center justify-between">
-          <Link to="/services" className="flex items-center gap-2 font-bold text-lg text-foreground">
+          <Link to="/" className="flex items-center">
             <img
-              src="/logo.png"
+              src="/logo-srimae-main.png"
               alt={site.name}
-              className="h-9 w-9 rounded-lg object-contain"
+              className="block h-auto max-h-12 md:max-h-14 w-auto max-w-[200px] object-contain"
             />
-            <span className="hidden sm:inline">{site.name}</span>
           </Link>
 
           <nav aria-label="Main navigation" className="hidden md:flex items-center gap-8">
@@ -34,7 +33,7 @@ export function MarketingHeader() {
             ))}
             <Link
               to="/contact"
-              className="text-sm font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-[var(--radius-button)] hover:opacity-90 transition-opacity"
+              className="text-sm font-semibold ombre-btn px-4 py-2 rounded-[var(--radius-button)]"
             >
               Request Demo
             </Link>
@@ -67,7 +66,7 @@ export function MarketingHeader() {
               ))}
               <Link
                 to="/contact"
-                className="mt-2 text-sm font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-[var(--radius-button)] text-center hover:opacity-90 transition-opacity"
+                className="mt-2 text-sm font-semibold ombre-btn px-4 py-2 rounded-[var(--radius-button)] text-center"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Request Demo

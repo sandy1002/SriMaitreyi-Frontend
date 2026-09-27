@@ -29,13 +29,13 @@ export function PricingPage() {
 
   const cardBase =
   'relative flex flex-col rounded-2xl border p-8 transition-shadow hover:shadow-lg';
-  const cardHighlighted = 'border-primary bg-primary text-primary-foreground shadow-xl scale-[1.02]';
+  const cardHighlighted = 'border-primary ombre-btn shadow-xl scale-[1.02]';
   const cardNormal = 'border-border bg-card';
 
   const ctaOutline =
-  'w-full inline-flex items-center justify-center gap-2 border border-primary text-primary font-semibold px-6 py-3 rounded-[var(--radius-button)] hover:bg-primary/5 transition-colors text-sm';
+  'w-full inline-flex items-center justify-center gap-2 border border-primary ombre-text font-semibold px-6 py-3 rounded-[var(--radius-button)] hover:bg-primary/5 transition-colors text-sm';
   const ctaHighlighted =
-  'w-full inline-flex items-center justify-center gap-2 bg-white text-primary font-semibold px-6 py-3 rounded-[var(--radius-button)] hover:opacity-90 transition-opacity text-sm';
+  'w-full inline-flex items-center justify-center gap-2 bg-white ombre-text font-semibold px-6 py-3 rounded-[var(--radius-button)] hover:opacity-90 transition-opacity text-sm';
 
   return (
     <>
@@ -63,7 +63,7 @@ export function PricingPage() {
 
       <main>
         {/* ── Hero ── */}
-        <section className="bg-primary text-primary-foreground py-16 md:py-20">
+        <section className="ombre-btn py-16 md:py-20">
           <div className="container mx-auto px-4 max-w-3xl text-center">
             <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary-foreground/60 mb-4 border border-primary-foreground/20 px-3 py-1 rounded-full">
               {pricing.hero.eyebrow}
@@ -110,12 +110,12 @@ export function PricingPage() {
             <div className="text-center mb-12 max-w-2xl mx-auto">
               <div className="inline-flex items-center justify-center gap-3 mb-4">
                 <img
-                  src="/logo.png"
+                  src="/logo-dialysis.png"
                   alt="Dialysis App icon"
                   className="w-8 h-8 object-contain"
                   loading="lazy" />
                 
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                <h2 className="text-2xl md:text-3xl font-bold ombre-text">
                   {pricing.dialysis.heading}
                 </h2>
               </div>
@@ -133,7 +133,7 @@ export function PricingPage() {
                   {plan.badge &&
                 <span
                   className={`absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold px-4 py-1 rounded-full ${
-                  plan.highlighted ? 'bg-white text-primary' : 'bg-primary text-primary-foreground'}`
+                  plan.highlighted ? 'bg-white text-primary' : 'ombre-btn'}`
                   }>
                   
                       {plan.badge}
@@ -217,7 +217,7 @@ export function PricingPage() {
         <section className="py-20 md:py-24 bg-background">
           <div className="container mx-auto px-4 max-w-6xl">
             <div className="text-center mb-12 max-w-2xl mx-auto">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+              <h2 className="text-2xl md:text-3xl font-bold ombre-text mb-3">
                 {pricing.clinical.heading}
               </h2>
               <p className="text-muted-foreground text-lg leading-relaxed">
@@ -234,7 +234,7 @@ export function PricingPage() {
                   {plan.badge &&
                 <span
                   className={`absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold px-4 py-1 rounded-full ${
-                  plan.highlighted ? 'bg-white text-primary' : 'bg-primary text-primary-foreground'}`
+                  plan.highlighted ? 'bg-white text-primary' : 'ombre-btn'}`
                   }>
                   
                       {plan.badge}
@@ -296,7 +296,7 @@ export function PricingPage() {
         {/* ── FAQ ── */}
         <section className="py-20 md:py-24 bg-muted">
           <div className="container mx-auto px-4 max-w-3xl">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold ombre-text text-center mb-12">
               {pricing.faq.heading}
             </h2>
             <div className="flex flex-col gap-4">
@@ -316,17 +316,17 @@ export function PricingPage() {
         </section>
 
         {/* ── Bottom CTA ── */}
-        <section className="py-20 md:py-24 bg-primary text-primary-foreground">
+        <section className="py-20 md:py-24 ombre-cta-light">
           <div className="container mx-auto px-4 max-w-3xl text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 ombre-text">
               {pricing.cta.heading}
             </h2>
-            <p className="text-primary-foreground/80 text-lg leading-relaxed mb-10">
+            <p className="text-foreground/70 text-lg leading-relaxed mb-10">
               {pricing.cta.subheading}
             </p>
             <Link
               to="/contact"
-              className="inline-flex items-center gap-2 bg-white text-primary font-semibold px-8 py-4 rounded-[var(--radius-button)] hover:opacity-90 transition-opacity text-base">
+              className="inline-flex items-center gap-2 bg-white ombre-text font-semibold px-8 py-4 rounded-[var(--radius-button)] hover:opacity-90 transition-opacity text-base">
               
               {pricing.cta.buttonLabel}
               <ArrowRight className="w-5 h-5" />

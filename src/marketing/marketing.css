@@ -1,26 +1,27 @@
-/* Marketing site theme — scoped so clinical app styles stay unchanged. */
+/* Marketing theme from default-2.zip — scoped so clinical app teal stays unchanged. */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@600;700&family=Inter:wght@400;500&display=swap');
 
 .marketing-site {
-  --background: 0 0% 100%;
+  --background: 250 100% 98%;
   --foreground: 0 0% 4%;
-  --card: 0 0% 100%;
+  --card: 250 100% 98%;
   --card-foreground: 0 0% 4%;
-  --popover: 0 0% 100%;
+  --popover: 250 100% 98%;
   --popover-foreground: 0 0% 4%;
-  --primary: 214 52% 25%;
+  --primary: 263 70% 50%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 244 52% 25%;
+  --secondary: 294 70% 50%;
   --secondary-foreground: 0 0% 100%;
-  --muted: 214 23% 65%;
-  --muted-foreground: 0 0% 45%;
-  --accent: 34 52% 25%;
-  --accent-foreground: 0 0% 100%;
+  --muted: 263 43% 90%;
+  /* Match default-2-site purple muted text */
+  --muted-foreground: 250 100% 53%;
+  --accent: 83 70% 50%;
+  --accent-foreground: 0 0% 29%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 85%;
-  --input: 0 0% 85%;
-  --ring: 214 52% 25%;
+  --border: 250 96% 83%;
+  --input: 250 96% 83%;
+  --ring: 263 70% 50%;
   --radius: 0.5rem;
   --radius-button: calc(var(--radius) - 2px);
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
@@ -36,4 +37,35 @@
 .marketing-site h3,
 .marketing-site h4 {
   font-family: var(--font-heading);
+}
+
+/* Ombre / gradient utilities (from default-2) */
+.marketing-site .ombre-text {
+  background: linear-gradient(90deg, #6d28d9 0%, #c628d9 55%, #94d928 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}
+
+.marketing-site .ombre-bg {
+  background: linear-gradient(135deg, #6d28d9 0%, #c628d9 60%, #94d928 100%);
+}
+
+.marketing-site .ombre-cta-light {
+  background: linear-gradient(135deg, #ede9fe 0%, #f5d0fe 60%, #ecfccb 100%);
+}
+
+.marketing-site .ombre-border {
+  border-image: linear-gradient(90deg, #6d28d9, #c628d9, #94d928) 1;
+}
+
+.marketing-site .ombre-btn {
+  background: linear-gradient(90deg, #6d28d9 0%, #c628d9 55%, #94d928 100%);
+  color: #fff;
+  transition: opacity 0.2s;
+}
+
+.marketing-site .ombre-btn:hover {
+  opacity: 0.88;
 }

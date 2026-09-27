@@ -7,9 +7,9 @@
   "story": {
     "heading": "Why We Built Srimae",
     "paragraphs": [
-      "Healthcare generates enormous amounts of data — but most of it goes underutilized. Doctors are overwhelmed, time is scarce, and critical patterns that span multiple specialties often go undetected until it's too late.",
+      "Healthcare generates enormous amounts of data \u2014 but most of it goes underutilized. Doctors are overwhelmed, time is scarce, and critical patterns that span multiple specialties often go undetected until it's too late.",
       "Srimae was created to change that. By combining advanced AI with deep clinical domain knowledge, we give healthcare professionals the tools to see further, act faster, and deliver better outcomes for every patient they serve.",
-      "Our platform is built by a team of clinicians, data scientists, and engineers who understand both the complexity of medicine and the power of modern AI — and are committed to making that power accessible to every doctor, in every domain."
+      "Our platform is built by a team of clinicians, data scientists, and engineers who understand both the complexity of medicine and the power of modern AI \u2014 and are committed to making that power accessible to every doctor, in every domain."
     ]
   },
   "values": [
@@ -35,7 +35,7 @@
       "id": "v4",
       "icon": "globe",
       "title": "Universal Access",
-      "description": "We believe every doctor — regardless of specialty or geography — deserves access to world-class clinical intelligence."
+      "description": "We believe every doctor \u2014 regardless of specialty or geography \u2014 deserves access to world-class clinical intelligence."
     }
   ],
   "team": {
@@ -56,7 +56,7 @@
       },
       {
         "id": "m3",
-        "name": "Dr.  Muralidhar Joshi",
+        "name": "Dr.\u00a0 Muralidhar Joshi",
         "role": "Chief Anesthesiolgist",
         "initials": "MJ"
       },
@@ -70,7 +70,7 @@
   },
   "cta": {
     "heading": "Join Us in Redefining Healthcare",
-    "subheading": "Whether you're a clinician, researcher, or health system — we'd love to show you what Srimae can do.",
+    "subheading": "Whether you're a clinician, researcher, or health system \u2014 we'd love to show you what Srimae can do.",
     "primaryLabel": "Request a Demo",
     "secondaryLabel": "Contact Us"
   }

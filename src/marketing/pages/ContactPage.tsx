@@ -96,12 +96,12 @@ export function ContactPage() {
 
       <main>
         {/* Hero */}
-        <section className="bg-primary text-primary-foreground py-16 md:py-20">
+        <section className="ombre-cta-light py-16 md:py-20">
           <div className="container mx-auto px-4 max-w-3xl text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 ombre-text">
               {contact.hero.heading}
             </h1>
-            <p className="text-lg text-primary-foreground/80 leading-relaxed">
+            <p className="text-lg text-foreground/70 leading-relaxed">
               {contact.hero.subheading}
             </p>
           </div>
@@ -116,10 +116,10 @@ export function ContactPage() {
               <div className="lg:col-span-3">
                 {status === 'success' ? (
                   <div className="bg-card border border-border rounded-xl p-10 text-center">
-                    <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-5">
+                    <div className="w-14 h-14 rounded-full ombre-text font-semibold flex items-center justify-center mx-auto mb-5">
                       <Mail className="w-7 h-7" />
                     </div>
-                    <h2 className="text-2xl font-bold text-foreground mb-3">Message Sent!</h2>
+                    <h2 className="text-2xl font-bold ombre-text mb-3">Message Sent!</h2>
                     <p className="text-muted-foreground leading-relaxed">
                       Thank you for reaching out. Our team will get back to you within 24 hours.
                     </p>
@@ -139,7 +139,7 @@ export function ContactPage() {
                       aria-hidden="true"
                     />
 
-                    <h2 className="text-2xl font-bold text-foreground mb-2">Send us a message</h2>
+                    <h2 className="text-2xl font-bold ombre-text mb-2">Send us a message</h2>
 
                     <div className="flex flex-col gap-1.5">
                       <label htmlFor="name" className="text-sm font-medium text-foreground">
@@ -205,7 +205,7 @@ export function ContactPage() {
                     <button
                       type="submit"
                       disabled={status === 'sending'}
-                      className="bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-[var(--radius-button)] hover:opacity-90 transition-opacity text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="ombre-btn font-semibold px-6 py-3 rounded-[var(--radius-button)] hover:opacity-90 transition-opacity text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {status === 'sending' ? 'Sending…' : contact.form.submitLabel}
                     </button>
@@ -215,10 +215,10 @@ export function ContactPage() {
 
               {/* Contact Info */}
               <div className="lg:col-span-2 flex flex-col gap-6 justify-start pt-2">
-                <h2 className="text-2xl font-bold text-foreground">Contact information</h2>
+                <h2 className="text-2xl font-bold ombre-text">Contact information</h2>
                 {contact.info.map((item) => (
                   <div key={item.id} className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="w-10 h-10 rounded-lg ombre-text font-semibold flex items-center justify-center shrink-0 mt-0.5">
                       {infoIcons[item.icon] ?? <Mail className="w-5 h-5" />}
                     </div>
                     <div>

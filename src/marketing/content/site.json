@@ -5,23 +5,28 @@
   "nav": [
     {
       "label": "Home",
-      "href": "/services",
-      "id": "eE2GjZV1BiWy1p2gDd_fz"
+      "href": "/",
+      "id": "home"
     },
     {
       "label": "About",
       "href": "/about",
-      "id": "MMfsOU6MFGEcMDfDEi07x"
+      "id": "about"
+    },
+    {
+      "label": "Services",
+      "href": "/services",
+      "id": "services"
     },
     {
       "label": "Pricing",
       "href": "/pricing",
-      "id": "pricing_nav_001"
+      "id": "pricing"
     },
     {
       "label": "Contact",
       "href": "/contact",
-      "id": "1618mESmDRlU9beExLh7T"
+      "id": "contact"
     }
   ],
   "footer": {
