@@ -2,7 +2,7 @@
   "hero": {
     "eyebrow": "Transparent Pricing",
     "heading": "Plans Built for Every Care Team",
-    "subheading": "Simple, predictable pricing for the Dialysis Companion App and AI Clinical Solutions. No hidden fees \u2014 scale as your practice grows."
+    "subheading": "Simple, predictable pricing for the Dialysis Companion App and Doctor & Patient Portals. No hidden fees \u2014 scale as your practice grows."
   },
   "toggle": {
     "monthly": "Monthly",
@@ -79,8 +79,8 @@
     ]
   },
   "clinical": {
-    "heading": "AI Clinical Solutions",
-    "subheading": "AI-powered decision support and population health analytics for clinicians and health systems.",
+    "heading": "Doctor & Patient Portals",
+    "subheading": "Doctor Portal for secure clinical documents and Patient Portal for vitals self-monitoring and health checkup reports.",
     "plans": [
       {
         "id": "cp1",
@@ -89,16 +89,16 @@
           "monthly": "25",
           "annual": "20"
         },
-        "description": "Perfect for solo practitioners and small clinics exploring AI-assisted care.",
+        "description": "Ideal for solo doctors getting started with a secure document vault.",
         "cta": "Request a Demo",
         "ctaHref": "/contact",
         "ctaExternal": false,
         "highlighted": false,
         "features": [
-          "Clinical decision support",
+          "Doctor Portal document vault",
           "Up to 3 provider seats",
-          "Basic population health dashboard",
-          "Standard analytics reports",
+          "Structured & unstructured documents",
+          "Basic patient portal seats",
           "Email support"
         ]
       },
@@ -109,7 +109,7 @@
           "monthly": "299",
           "annual": "239"
         },
-        "description": "For growing practices and specialty groups that need full AI capabilities.",
+        "description": "For clinics that need Doctor and Patient portals together.",
         "cta": "Request a Demo",
         "ctaHref": "/contact",
         "ctaExternal": false,
@@ -118,8 +118,7 @@
         "features": [
           "Everything in Starter",
           "Up to 20 provider seats",
-          "Advanced population health analytics",
-          "Cross-domain research intelligence",
+          "Patient Portal vitals & checkup reports",
           "Custom alert thresholds",
           "Priority support & onboarding"
         ]
@@ -131,7 +130,7 @@
           "monthly": "Custom",
           "annual": "Custom"
         },
-        "description": "For health systems, ACOs, and large networks requiring enterprise-grade AI.",
+        "description": "For health systems needing enterprise-grade portals and compliance.",
         "cta": "Contact Sales",
         "ctaHref": "/contact",
         "ctaExternal": false,
@@ -140,7 +139,6 @@
           "Everything in Professional",
           "Unlimited provider seats",
           "EHR / EMR deep integration",
-          "Custom AI model fine-tuning",
           "Dedicated infrastructure",
           "HIPAA BAA & compliance package"
         ]
@@ -158,7 +156,7 @@
       {
         "id": "fq2",
         "question": "Is there a free trial for paid plans?",
-        "answer": "The Dialysis App Pro plan includes a 14-day free trial. AI Clinical Solutions plans include a guided demo and a 30-day pilot period for qualifying practices."
+        "answer": "The Dialysis App Pro plan includes a 14-day free trial. Doctor & Patient Portal plans include a guided demo and a 30-day pilot period for qualifying practices."
       },
       {
         "id": "fq3",

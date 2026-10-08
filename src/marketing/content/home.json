@@ -95,40 +95,29 @@
     ]
   },
   "services": {
-    "heading": "Our Services",
-    "subheading": "From individual clinicians to large hospital networks, SriMae offers tailored solutions that fit the way you work.",
+    "heading": "Doctor & Patient Portals",
+    "subheading": "Secure portals for doctors and patients — documents, vitals self-monitoring, and health reports beyond dialysis care.",
     "items": [
       {
         "id": "sv1",
-        "tag": "For Clinicians",
-        "title": "Clinical Decision Support",
-        "description": "Get AI-powered second opinions and differential diagnosis suggestions at the point of care.",
+        "tag": "For Doctors",
+        "title": "Doctor Portal",
+        "description": "A secure document vault for doctors — store, organize, and review clinical documents separate from the dialysis patient app.",
         "highlights": [
-          "Real-time insight delivery",
-          "Domain-specific recommendations",
-          "Evidence-backed suggestions"
+          "Doctor-only secure login",
+          "Structured & unstructured documents",
+          "Separate from dialysis patient data"
         ]
       },
       {
         "id": "sv2",
-        "tag": "For Hospitals",
-        "title": "Population Health Analytics",
-        "description": "Monitor patient cohorts, track outcomes, and identify at-risk populations before conditions escalate.",
+        "tag": "For Patients",
+        "title": "Patient Portal",
+        "description": "Track medications, headache diary, BP vitals, and checkup records for common conditions — fully separate from dialysis.",
         "highlights": [
-          "Cohort monitoring dashboards",
-          "Early warning alerts",
-          "Outcome trend analysis"
-        ]
-      },
-      {
-        "id": "sv3",
-        "tag": "For Researchers",
-        "title": "Cross-Domain Research Intelligence",
-        "description": "Discover hidden correlations across specialties and patient populations.",
-        "highlights": [
-          "Multi-specialty data access",
-          "Pattern discovery engine",
-          "Exportable insights & reports"
+          "Migraine & headache diary",
+          "Medications & home vitals",
+          "Regular health records"
         ]
       }
     ]

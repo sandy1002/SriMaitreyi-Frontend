@@ -658,3 +658,54 @@ export interface CbpReportsResponse {
   patient_gender?: string;
   reports: CbpReport[];
 }
+
+export interface AlertRuleMetric {
+  key: string;
+  domain: string;
+  label: string;
+  value_type: string;
+}
+
+export interface AlertRule {
+  id: string;
+  name: string;
+  description?: string | null;
+  domain: 'session' | 'nutrition' | string;
+  metricKey: string;
+  operator: string;
+  thresholdValue: string;
+  severity: string;
+  code: string;
+  messageTemplate: string;
+  notifyRoles: string[];
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AlertRuleCatalog {
+  domains: string[];
+  operators: string[];
+  severities: string[];
+  roles: string[];
+  metrics: AlertRuleMetric[];
+}
+
+export interface AppNotification {
+  id: string;
+  recipientRole: string;
+  patientId: string;
+  patientName?: string | null;
+  sourceType: string;
+  sourceId?: string | null;
+  sessionId?: string | null;
+  diaryId?: string | null;
+  severity: string;
+  code: string;
+  title: string;
+  message: string;
+  linkPath?: string | null;
+  status: string;
+  createdAt?: string;
+  readAt?: string | null;
+}

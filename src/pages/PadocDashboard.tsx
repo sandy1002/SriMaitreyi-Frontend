@@ -209,7 +209,7 @@ export default function PadocDashboard() {
           <div className="flex items-center gap-3">
             <AppLogo size="sm" />
             <div>
-              <p className="text-sm font-semibold leading-none ombre-text" style={{ fontFamily: 'DM Sans, sans-serif' }}>PaDoc</p>
+              <p className="text-sm font-semibold leading-none ombre-text" style={{ fontFamily: 'DM Sans, sans-serif' }}>Doctor Portal</p>
               <p className="text-xs text-muted-foreground">{doctor?.displayName}</p>
             </div>
           </div>

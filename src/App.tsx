@@ -10,6 +10,8 @@ import { SessionProvider } from "@/context/SessionContext";
 import Login from "./pages/Login";
 import PadocLogin from "./pages/PadocLogin";
 import PadocDashboard from "./pages/PadocDashboard";
+import PatientPortalLanding from "./pages/PatientPortalLanding";
+import PatientPortalHome from "./pages/PatientPortalHome";
 import Dashboard from "./pages/Dashboard";
 import ChangePassword from "./pages/ChangePassword";
 import NewSession from "./pages/NewSession";
@@ -62,6 +64,25 @@ const App = () => (
                   <Route path="/contact" element={<ContactPage />} />
                   <Route path="/pricing" element={<PricingPage />} />
                 </Route>
+                <Route
+                  path="/doctor/login"
+                  element={
+                    <PadocPublicOnlyRoute>
+                      <PadocLogin />
+                    </PadocPublicOnlyRoute>
+                  }
+                />
+                <Route
+                  path="/doctor/dashboard"
+                  element={
+                    <PadocProtectedRoute>
+                      <PadocDashboard />
+                    </PadocProtectedRoute>
+                  }
+                />
+                <Route path="/patient-portal" element={<PatientPortalLanding />} />
+                <Route path="/patient-portal/home" element={<PatientPortalHome />} />
+                {/* Legacy PaDoc URLs → Doctor Portal */}
                 <Route
                   path="/padoc/login"
                   element={

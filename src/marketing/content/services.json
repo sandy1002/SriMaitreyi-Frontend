@@ -2,7 +2,7 @@
   "hero": {
     "eyebrow": "What we offer",
     "heading": "Our Services & Products",
-    "subheading": "From AI-powered clinical decision support to purpose-built patient apps \u2014 Srimae delivers intelligent healthcare tools for every need."
+    "subheading": "From purpose-built dialysis tools to secure care portals for doctors and patients — Srimae delivers intelligent healthcare products for every need."
   },
   "tabs": [
     {
@@ -11,58 +11,38 @@
     },
     {
       "id": "tab-services",
-      "label": "AI Clinical Solutions"
+      "label": "Doctor & Patient"
     }
   ],
   "clinicalServices": {
-    "heading": "AI-Powered Solutions for Every Healthcare Role",
-    "subheading": "From individual clinicians to large hospital networks, Srimae delivers intelligent AI solutions that fit the way you work.",
+    "heading": "Doctor & Patient Portals",
+    "subheading": "Two focused portals — Doctor Portal for clinical documents, and Patient Portal for everyday health tracking (migraine, BP, medications, checkup records) — completely separate from dialysis care.",
     "items": [
       {
-        "id": "sv1",
-        "tag": "For Clinicians",
-        "title": "Clinical Decision Support",
-        "description": "Get AI-powered second opinions and differential diagnosis suggestions at the point of care.",
-        "highlights": [
-          "Real-time insight delivery",
-          "Domain-specific recommendations",
-          "Evidence-backed suggestions"
-        ]
-      },
-      {
-        "id": "sv2",
-        "tag": "For Hospitals",
-        "title": "Population Health Analytics",
-        "description": "Monitor patient cohorts, track outcomes, and identify at-risk populations before conditions escalate.",
-        "highlights": [
-          "Cohort monitoring dashboards",
-          "Early warning alerts",
-          "Outcome trend analysis"
-        ]
-      },
-      {
-        "id": "sv3",
-        "tag": "For Researchers",
-        "title": "Cross-Domain Research Intelligence",
-        "description": "Discover hidden correlations across specialties and patient populations to accelerate medical research.",
-        "highlights": [
-          "Multi-specialty data access",
-          "Pattern discovery engine",
-          "Exportable insights & reports"
-        ]
-      },
-      {
-        "id": "sv4",
-        "tag": "Doctor portal",
-        "title": "PaDoc",
+        "id": "sv-doctor",
+        "tag": "For Doctors",
+        "title": "Doctor Portal",
         "description": "A secure document vault for doctors — store, organize, and review structured or unstructured clinical documents separate from the dialysis patient app.",
         "highlights": [
           "Doctor-only secure login",
           "Structured & unstructured documents",
           "Separate from dialysis patient data"
         ],
-        "ctaLabel": "PaDoc login",
-        "ctaHref": "/padoc/login"
+        "ctaLabel": "Doctor Portal login",
+        "ctaHref": "/doctor/login"
+      },
+      {
+        "id": "sv-patient",
+        "tag": "For Patients",
+        "title": "Patient Portal",
+        "description": "For general patients — track medications, headache/migraine diary, BP vitals, and regular health records for common conditions, independent of dialysis.",
+        "highlights": [
+          "Migraine & headache diary",
+          "Medications & BP vitals",
+          "Checkup notes for common conditions"
+        ],
+        "ctaLabel": "Patient Portal",
+        "ctaHref": "/patient-portal"
       }
     ]
   },
