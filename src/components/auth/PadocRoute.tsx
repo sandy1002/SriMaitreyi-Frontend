@@ -13,7 +13,7 @@ export function PadocProtectedRoute({ children }: { children: React.ReactNode })
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/padoc/login" replace />;
+    return <Navigate to="/doctor/login" replace />;
   }
 
   return <>{children}</>;
@@ -31,7 +31,7 @@ export function PadocPublicOnlyRoute({ children }: { children: React.ReactNode }
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/padoc/dashboard" replace />;
+    return <Navigate to="/doctor/dashboard" replace />;
   }
 
   return <>{children}</>;

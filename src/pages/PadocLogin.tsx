@@ -7,14 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { AppLogo } from '@/components/layout/AppLogo';
+import { PortalAccessRequestForm } from '@/components/portal/PortalAccessRequestForm';
 
 const FEATURES = [
   'Doctor-only secure login',
   'Structured & unstructured documents',
-  'Separate from dialysis patient data',
+  'Access granted after Srimae admin approval',
 ];
 
 export default function PadocLogin() {
+  const [mode, setMode] = useState<'login' | 'request'>('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -32,11 +34,11 @@ export default function PadocLogin() {
     setIsSubmitting(true);
     try {
       await login(username.trim(), password);
-      navigate('/padoc/dashboard');
+      navigate('/doctor/dashboard');
     } catch {
       toast({
-        title: 'PaDoc login failed',
-        description: 'Invalid credentials.',
+        title: 'Doctor Portal login failed',
+        description: 'Invalid credentials, or your access is still pending admin approval.',
         variant: 'destructive',
       });
     } finally {
@@ -58,10 +60,9 @@ export default function PadocLogin() {
 
       <main className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 gap-10 items-center animate-fade-in">
-          {/* Left: branding */}
           <div className="flex flex-col gap-6">
             <div className="inline-flex items-center gap-2 self-start text-xs font-semibold uppercase tracking-widest text-muted-foreground border border-border px-3 py-1 rounded-full">
-              PaDoc — Doctor Portal
+              Doctor Portal
             </div>
             <h1
               className="text-4xl md:text-5xl font-bold leading-tight"
@@ -70,8 +71,8 @@ export default function PadocLogin() {
               <span className="ombre-text">Doctor login</span>
             </h1>
             <p className="text-muted-foreground text-lg leading-relaxed">
-              A secure document vault for doctors — store, organize, and review structured or
-              unstructured clinical documents separate from the dialysis patient app.
+              A secure document vault for doctors — store, organize, and review clinical documents
+              separate from the dialysis patient app. New accounts require Srimae admin approval.
             </p>
             <ul className="flex flex-col gap-3 mt-2">
               {FEATURES.map((text) => (
@@ -84,7 +85,6 @@ export default function PadocLogin() {
             <div className="h-1 w-24 rounded-full ombre-btn mt-2" />
           </div>
 
-          {/* Right: form card */}
           <div className="relative bg-card border border-border rounded-2xl p-8 shadow-lg">
             <div
               className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
@@ -99,66 +99,83 @@ export default function PadocLogin() {
               className="text-2xl font-bold text-foreground mb-1"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              PaDoc
+              Doctor Portal
             </h2>
-            <p className="text-sm text-muted-foreground mb-8">
-              Separate from Srimae dialysis. Store structured or unstructured documents for your
-              practice.
+            <p className="text-sm text-muted-foreground mb-4">
+              Sign in if approved, or request access for the main Srimae admin to review.
             </p>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="padoc-username" className="text-sm font-semibold">
-                  Username
-                </Label>
-                <Input
-                  id="padoc-username"
-                  autoComplete="username"
-                  placeholder="Username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="h-11"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="padoc-password" className="text-sm font-semibold">
-                  Password
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="padoc-password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-11 pr-12"
-                  />
-                  <button
-                    type="button"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
+            <div className="flex gap-2 mb-6">
               <Button
-                type="submit"
-                className="ombre-btn w-full h-11 border-0 font-semibold"
-                disabled={isSubmitting}
+                type="button"
+                size="sm"
+                variant={mode === 'login' ? 'default' : 'outline'}
+                className={mode === 'login' ? 'ombre-btn border-0' : ''}
+                onClick={() => setMode('login')}
               >
-                {isSubmitting ? 'Signing in…' : 'Sign in to PaDoc'}
+                Sign in
               </Button>
-            </form>
+              <Button
+                type="button"
+                size="sm"
+                variant={mode === 'request' ? 'default' : 'outline'}
+                className={mode === 'request' ? 'ombre-btn border-0' : ''}
+                onClick={() => setMode('request')}
+              >
+                Request access
+              </Button>
+            </div>
 
-            <p className="mt-6 text-sm text-muted-foreground text-center">
-              Need access?{' '}
-              <Link to="/contact" className="font-semibold ombre-text hover:underline">
-                Contact our team
-              </Link>
-            </p>
+            {mode === 'login' ? (
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="doctor-username" className="text-sm font-semibold">
+                    Username
+                  </Label>
+                  <Input
+                    id="doctor-username"
+                    autoComplete="username"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="h-11"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="doctor-password" className="text-sm font-semibold">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="doctor-password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="h-11 pr-12"
+                    />
+                    <button
+                      type="button"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <Button
+                  type="submit"
+                  className="ombre-btn w-full h-11 border-0 font-semibold"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Signing in…' : 'Sign in to Doctor Portal'}
+                </Button>
+              </form>
+            ) : (
+              <PortalAccessRequestForm portalType="doctor" onSubmitted={() => setMode('login')} />
+            )}
           </div>
         </div>
       </main>

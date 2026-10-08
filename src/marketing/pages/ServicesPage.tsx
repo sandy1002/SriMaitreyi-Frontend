@@ -5,9 +5,6 @@ import { Link } from 'react-router-dom';
 import {
   CheckCircle2,
   ArrowRight,
-  Stethoscope,
-  Building2,
-  FlaskConical,
   Droplets,
   Utensils,
   BarChart2,
@@ -15,14 +12,13 @@ import {
   FlaskConical as Beaker,
   NotebookPen,
   Shield,
+  HeartPulse,
 } from 'lucide-react';
 import { services } from '@/marketing/content';
 
 const serviceIcons: Record<string, React.ReactNode> = {
-  sv1: <Stethoscope className="w-7 h-7" />,
-  sv2: <Building2 className="w-7 h-7" />,
-  sv3: <FlaskConical className="w-7 h-7" />,
-  sv4: <Shield className="w-7 h-7" />,
+  'sv-doctor': <Shield className="w-7 h-7" />,
+  'sv-patient': <HeartPulse className="w-7 h-7" />,
 };
 
 const dialysisIcons: Record<string, React.ReactNode> = {
@@ -81,7 +77,7 @@ export function ServicesPage() {
   const url = `${site}/services`;
   const title = 'Services & Products — Srimae';
   const description =
-    "Explore Srimae's clinical decision support, population health analytics, research intelligence, and the Dialysis Companion App — AI-powered tools built for healthcare professionals.";
+    "Explore Srimae's Dialysis Companion App and Doctor & Patient Portals — secure Doctor and Patient portals for documents, vitals self-monitoring, and health checkup reports.";
 
   const [activeTab, setActiveTab] = useState<string>('tab-dialysis');
 
@@ -155,7 +151,7 @@ export function ServicesPage() {
                   {services.clinicalServices.subheading}
                 </p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                 {services.clinicalServices.items.map((service) => (
                   <div
                     key={service.id}

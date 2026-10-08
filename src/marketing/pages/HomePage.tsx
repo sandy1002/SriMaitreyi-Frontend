@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
-import { Brain, Activity, ShieldCheck, Users, BarChart2, Lock, ArrowRight, CheckCircle2, Quote, Stethoscope, Building2, FlaskConical } from 'lucide-react';
+import { Brain, Activity, ShieldCheck, Users, BarChart2, Lock, ArrowRight, CheckCircle2, Quote, Shield, HeartPulse } from 'lucide-react';
 import { home } from '@/marketing/content';
 
 const featureIcons: Record<string, React.ReactNode> = {
@@ -13,9 +13,8 @@ const featureIcons: Record<string, React.ReactNode> = {
 };
 
 const serviceIcons: Record<string, React.ReactNode> = {
-  sv1: <Stethoscope className="w-7 h-7" />,
-  sv2: <Building2 className="w-7 h-7" />,
-  sv3: <FlaskConical className="w-7 h-7" />,
+  sv1: <Shield className="w-7 h-7" />,
+  sv2: <HeartPulse className="w-7 h-7" />,
 };
 
 export function HomePage() {
@@ -207,7 +206,7 @@ export function HomePage() {
                 {home.services.subheading}
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {home.services.items.map((service) => (
                 <div
                   key={service.id}

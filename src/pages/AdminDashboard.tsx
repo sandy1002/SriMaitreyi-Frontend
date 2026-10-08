@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Header } from '@/components/layout/Header';
+import { AlertRulesAdminSection } from '@/components/admin/AlertRulesAdminSection';
+import { PortalAccessAdminSection } from '@/components/admin/PortalAccessAdminSection';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -408,6 +410,10 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        <PortalAccessAdminSection />
+
+        <AlertRulesAdminSection />
 
         {loading && overview.length === 0 ? (
           <p className="text-center text-muted-foreground py-12">Loading patients...</p>

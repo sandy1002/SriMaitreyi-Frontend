@@ -1425,3 +1425,317 @@ export async function updateLabInvestigation(
 export async function deleteLabInvestigation(patientId: string, reportId: string) {
   await apiRequest(`/patients/${patientId}/lab-investigations/${reportId}`, { method: 'DELETE' });
 }
+
+/* ── Alert rules (admin) ───────────────────────────────────────── */
+
+export async function fetchAlertRuleCatalog() {
+  return apiRequest('/alert-rules/catalog') as Promise<import('@/types').AlertRuleCatalog>;
+}
+
+export async function fetchAlertRules(params?: { domain?: string; activeOnly?: boolean }) {
+  const qs = new URLSearchParams();
+  if (params?.domain) qs.set('domain', params.domain);
+  if (params?.activeOnly) qs.set('active_only', 'true');
+  const q = qs.toString();
+  const data = await apiRequest(`/alert-rules${q ? `?${q}` : ''}`);
+  return {
+    rules: (data.rules ?? []) as import('@/types').AlertRule[],
+    count: data.count as number,
+  };
+}
+
+export async function createAlertRule(payload: {
+  name: string;
+  description?: string;
+  domain: string;
+  metricKey: string;
+  operator: string;
+  thresholdValue: string;
+  severity: string;
+  code: string;
+  messageTemplate: string;
+  notifyRoles: string[];
+  isActive?: boolean;
+}) {
+  return apiRequest('/alert-rules', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }) as Promise<import('@/types').AlertRule>;
+}
+
+export async function updateAlertRule(
+  ruleId: string,
+  payload: Partial<{
+    name: string;
+    description: string | null;
+    domain: string;
+    metricKey: string;
+    operator: string;
+    thresholdValue: string;
+    severity: string;
+    code: string;
+    messageTemplate: string;
+    notifyRoles: string[];
+    isActive: boolean;
+  }>
+) {
+  return apiRequest(`/alert-rules/${ruleId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }) as Promise<import('@/types').AlertRule>;
+}
+
+export async function deleteAlertRule(ruleId: string) {
+  await apiRequest(`/alert-rules/${ruleId}`, { method: 'DELETE' });
+}
+
+/* ── Notifications (staff/admin inbox) ─────────────────────────── */
+
+export async function fetchNotifications(params?: {
+  role?: string;
+  status?: string;
+  limit?: number;
+}) {
+  const qs = new URLSearchParams();
+  if (params?.role) qs.set('role', params.role);
+  if (params?.status) qs.set('status', params.status);
+  if (params?.limit) qs.set('limit', String(params.limit));
+  const q = qs.toString();
+  const data = await apiRequest(`/notifications${q ? `?${q}` : ''}`);
+  return {
+    role: data.role as string,
+    notifications: (data.notifications ?? []) as import('@/types').AppNotification[],
+    unreadCount: (data.unreadCount ?? 0) as number,
+    count: (data.count ?? 0) as number,
+  };
+}
+
+export async function fetchNotificationUnreadCount(role?: string) {
+  const qs = role ? `?role=${encodeURIComponent(role)}` : '';
+  const data = await apiRequest(`/notifications/unread-count${qs}`);
+  return (data.unreadCount ?? 0) as number;
+}
+
+export async function markNotificationRead(notificationId: string, role?: string) {
+  const qs = role ? `?role=${encodeURIComponent(role)}` : '';
+  return apiRequest(`/notifications/${notificationId}/read${qs}`, {
+    method: 'POST',
+  }) as Promise<import('@/types').AppNotification>;
+}
+
+export async function markAllNotificationsRead(role?: string) {
+  const qs = role ? `?role=${encodeURIComponent(role)}` : '';
+  return apiRequest(`/notifications/mark-all-read${qs}`, { method: 'POST' }) as Promise<{
+    role: string;
+    updated: number;
+  }>;
+}
+
+/* ── Portal access requests (Doctor / Patient signup) ──────────── */
+
+export interface PortalAccessRequest {
+  id: string;
+  portalType: 'doctor' | 'patient' | string;
+  fullName: string;
+  email: string;
+  phone?: string | null;
+  username: string;
+  organization?: string | null;
+  specialty?: string | null;
+  message?: string | null;
+  status: 'pending' | 'approved' | 'rejected' | string;
+  reviewNote?: string | null;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  createdAccountId?: string | null;
+  createdAt?: string;
+}
+
+export async function submitPortalAccessRequest(payload: {
+  portalType: 'doctor' | 'patient';
+  fullName: string;
+  email: string;
+  phone?: string;
+  username: string;
+  password: string;
+  organization?: string;
+  specialty?: string;
+  message?: string;
+}) {
+  return apiRequest('/portal-access/requests', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }) as Promise<{ ok: boolean; message: string; request: PortalAccessRequest }>;
+}
+
+export async function fetchPortalAccessRequests(params?: {
+  status?: string;
+  portalType?: string;
+}) {
+  const qs = new URLSearchParams();
+  if (params?.status) qs.set('status', params.status);
+  if (params?.portalType) qs.set('portal_type', params.portalType);
+  const q = qs.toString();
+  const data = await apiRequest(`/portal-access/requests${q ? `?${q}` : ''}`);
+  return {
+    requests: (data.requests ?? []) as PortalAccessRequest[],
+    pendingCount: (data.pendingCount ?? 0) as number,
+    count: (data.count ?? 0) as number,
+  };
+}
+
+export async function fetchPortalAccessPendingCount() {
+  const data = await apiRequest('/portal-access/requests/pending-count');
+  return (data.pendingCount ?? 0) as number;
+}
+
+export async function approvePortalAccessRequest(requestId: string, reviewNote?: string) {
+  return apiRequest(`/portal-access/requests/${requestId}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reviewNote: reviewNote || null }),
+  }) as Promise<{ ok: boolean; message: string; request: PortalAccessRequest }>;
+}
+
+export async function rejectPortalAccessRequest(requestId: string, reviewNote?: string) {
+  return apiRequest(`/portal-access/requests/${requestId}/reject`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reviewNote: reviewNote || null }),
+  }) as Promise<{ ok: boolean; request: PortalAccessRequest }>;
+}
+
+export async function healthPatientLogin(username: string, password: string) {
+  return apiRequest('/portal-access/patient/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  }) as Promise<{
+    patient: { id: string; username: string; displayName: string; email?: string; role: string };
+  }>;
+}
+
+/* ── General Patient Portal (non-dialysis) ─────────────────────── */
+
+export type HealthCondition = {
+  id: string;
+  label: string;
+  description: string;
+  modules: string[];
+};
+
+export async function fetchHealthDashboard(patientId: string) {
+  return apiRequest(`/patient-portal/${patientId}/dashboard`) as Promise<{
+    profile: {
+      id: string;
+      username: string;
+      displayName: string;
+      email?: string;
+      phone?: string;
+      focusConditions: string[];
+      profileNotes?: string;
+    };
+    conditionCatalog: HealthCondition[];
+    counts: {
+      medications: number;
+      headacheEntries: number;
+      vitalReadings: number;
+      healthRecords: number;
+    };
+    latestVital: Record<string, unknown> | null;
+    latestHeadache: Record<string, unknown> | null;
+  }>;
+}
+
+export async function updateHealthProfile(
+  patientId: string,
+  payload: {
+    displayName?: string;
+    phone?: string;
+    profileNotes?: string;
+    focusConditions?: string[];
+  }
+) {
+  return apiRequest(`/patient-portal/${patientId}/profile`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchHealthMedications(patientId: string) {
+  const data = await apiRequest(`/patient-portal/${patientId}/medications`);
+  return (data.medications ?? []) as Record<string, unknown>[];
+}
+
+export async function createHealthMedication(
+  patientId: string,
+  payload: Record<string, unknown>
+) {
+  return apiRequest(`/patient-portal/${patientId}/medications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteHealthMedication(patientId: string, medId: string) {
+  await apiRequest(`/patient-portal/${patientId}/medications/${medId}`, { method: 'DELETE' });
+}
+
+export async function fetchHealthHeadaches(patientId: string) {
+  const data = await apiRequest(`/patient-portal/${patientId}/headaches`);
+  return (data.entries ?? []) as Record<string, unknown>[];
+}
+
+export async function createHealthHeadache(
+  patientId: string,
+  payload: Record<string, unknown>
+) {
+  return apiRequest(`/patient-portal/${patientId}/headaches`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteHealthHeadache(patientId: string, entryId: string) {
+  await apiRequest(`/patient-portal/${patientId}/headaches/${entryId}`, { method: 'DELETE' });
+}
+
+export async function fetchHealthVitals(patientId: string) {
+  const data = await apiRequest(`/patient-portal/${patientId}/vitals`);
+  return (data.readings ?? []) as Record<string, unknown>[];
+}
+
+export async function createHealthVital(patientId: string, payload: Record<string, unknown>) {
+  return apiRequest(`/patient-portal/${patientId}/vitals`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteHealthVital(patientId: string, vitalId: string) {
+  await apiRequest(`/patient-portal/${patientId}/vitals/${vitalId}`, { method: 'DELETE' });
+}
+
+export async function fetchHealthRecords(patientId: string) {
+  const data = await apiRequest(`/patient-portal/${patientId}/records`);
+  return (data.records ?? []) as Record<string, unknown>[];
+}
+
+export async function createHealthRecord(patientId: string, payload: Record<string, unknown>) {
+  return apiRequest(`/patient-portal/${patientId}/records`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteHealthRecord(patientId: string, recordId: string) {
+  await apiRequest(`/patient-portal/${patientId}/records/${recordId}`, { method: 'DELETE' });
+}

@@ -4,6 +4,7 @@ import { LogOut, User, BookOpen, ShieldCheck, LayoutDashboard } from 'lucide-rea
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { AppLogo } from '@/components/layout/AppLogo';
+import { NotificationBell } from '@/components/layout/NotificationBell';
 
 export function Header() {
   const { user, patient, logout, isAdmin, isStaff } = useAuth();
@@ -59,6 +60,8 @@ export function Header() {
               </Link>
             </Button>
           )}
+
+          {(isAdmin || isStaff) && <NotificationBell />}
 
         {user && (
           <div className="flex items-center gap-4">

@@ -23,7 +23,7 @@ export function PricingPage() {
   const url = `${site}/pricing`;
   const title = 'Pricing — Srimae';
   const description =
-  'Simple, transparent pricing for the Srimae Dialysis Companion App and AI Clinical Solutions. Plans for individual patients, clinicians, and enterprise health systems.';
+  'Simple, transparent pricing for the Srimae Dialysis Companion App and Doctor & Patient Portals. Plans for patients, doctors, and health systems.';
 
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
 
@@ -213,7 +213,7 @@ export function PricingPage() {
           <div className="border-t border-border" />
         </div>
 
-        {/* ── AI Clinical Solutions Pricing ── */}
+        {/* ── Doctor & Patient Portals Pricing ── */}
         <section className="py-20 md:py-24 bg-background">
           <div className="container mx-auto px-4 max-w-6xl">
             <div className="text-center mb-12 max-w-2xl mx-auto">
